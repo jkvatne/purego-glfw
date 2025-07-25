@@ -1,12 +1,10 @@
 package glfw
 
-import "C"
 import (
 	"errors"
 	"fmt"
 	"golang.design/x/clipboard"
 	"golang.org/x/sys/windows"
-	"log/slog"
 	"syscall"
 	"unsafe"
 )
@@ -783,12 +781,10 @@ func adjustWindowRectExForDpi(rect *RECT, style uint32, menu int, exStyle uint32
 func adjustWindowRect(rect *RECT, style uint32, menu int, exStyle uint32, dpi int, from string) {
 	rIn := rect
 	if glfwIsWindows10Version1607OrGreater() {
-		// adjustWindowRectEx(rect, style, 0, exStyle)
 		adjustWindowRectExForDpi(rect, style, 0, exStyle, dpi)
 	} else {
 		adjustWindowRectEx(rect, style, 0, exStyle)
 	}
-	slog.Info("adjustWindowRect", "In", rIn, "out", rect, "dpi", dpi, "from", from)
 }
 
 func glfwGetWindowFrameSize(window *_GLFWwindow, left, top, right, bottom *int) {

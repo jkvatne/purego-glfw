@@ -3,7 +3,6 @@ package glfw
 import (
 	"errors"
 	"golang.org/x/sys/windows"
-	"log/slog"
 	"sync"
 	"syscall"
 	"unicode"
@@ -138,6 +137,7 @@ type _GLFWwndconfig = struct {
 	focusOnShow      bool
 	mousePassthrough bool
 	scaleToMonitor   bool
+	scaleFramebuffer bool
 	ns               struct {
 		retina    bool
 		frameName string
@@ -344,7 +344,7 @@ func glfwInputWindowDamage(window *_GLFWwindow) {
 }
 
 func glfwInputWindowCloseRequest(window *_GLFWwindow) {
-	slog.Error("Got CloseRequest")
+	// slog.Error("Got CloseRequest")
 }
 
 func getKeyMods() ModifierKey {

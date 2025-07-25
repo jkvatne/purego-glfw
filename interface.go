@@ -70,131 +70,92 @@ func PollEvents() {
 	glfwPollEvents()
 }
 
-func WindowHint(hint int, value int) {
+func WindowHint(hint int, value int) error {
 	switch hint {
 	case GLFW_RED_BITS:
 		_glfw.hints.framebuffer.redBits = value
-		return
 	case GLFW_GREEN_BITS:
 		_glfw.hints.framebuffer.greenBits = value
-		return
 	case GLFW_BLUE_BITS:
 		_glfw.hints.framebuffer.blueBits = value
-		return
 	case GLFW_ALPHA_BITS:
 		_glfw.hints.framebuffer.alphaBits = value
-		return
 	case GLFW_DEPTH_BITS:
 		_glfw.hints.framebuffer.depthBits = value
-		return
 	case GLFW_STENCIL_BITS:
-		_glfw.hints.framebuffer.stencilBits = value
-		return
 	case GLFW_ACCUM_RED_BITS:
 		_glfw.hints.framebuffer.accumRedBits = value
-		return
 	case GLFW_ACCUM_GREEN_BITS:
 		_glfw.hints.framebuffer.accumGreenBits = value
-		return
 	case GLFW_ACCUM_BLUE_BITS:
 		_glfw.hints.framebuffer.accumBlueBits = value
-		return
 	case GLFW_ACCUM_ALPHA_BITS:
 		_glfw.hints.framebuffer.accumAlphaBits = value
-		return
 	case GLFW_AUX_BUFFERS:
 		_glfw.hints.framebuffer.auxBuffers = value
-		return
 	case GLFW_DOUBLEBUFFER:
 		_glfw.hints.framebuffer.doublebuffer = value != 0
-		return
 	case GLFW_TRANSPARENT_FRAMEBUFFER:
 		_glfw.hints.framebuffer.transparent = value != 0
-		return
 	case GLFW_SAMPLES:
 		_glfw.hints.framebuffer.samples = value
-		return
 	case GLFW_SRGB_CAPABLE:
 		_glfw.hints.framebuffer.sRGB = value != 0
-		return
 	case GLFW_RESIZABLE:
 		_glfw.hints.window.resizable = value != 0
-		return
 	case GLFW_DECORATED:
 		_glfw.hints.window.decorated = value != 0
-		return
 	case GLFW_FOCUSED:
 		_glfw.hints.window.focused = value != 0
-		return
 	case GLFW_AUTO_ICONIFY:
 		_glfw.hints.window.autoIconify = value != 0
-		return
 	case GLFW_FLOATING:
 		_glfw.hints.window.floating = value != 0
-		return
 	case GLFW_MAXIMIZED:
 		_glfw.hints.window.maximized = value != 0
-		return
 	case GLFW_VISIBLE:
 		_glfw.hints.window.visible = value != 0
-		return
 	case GLFW_POSITION_X:
 		_glfw.hints.window.xpos = value
-		return
 	case GLFW_POSITION_Y:
 		_glfw.hints.window.ypos = value
-		return
 	case GLFW_SCALE_TO_MONITOR:
 		_glfw.hints.window.scaleToMonitor = value != 0
-		return
 	case GLFW_SCALE_FRAMEBUFFER:
 	case GLFW_COCOA_RETINA_FRAMEBUFFER:
-		// _glfw.hints.window.scaleFramebuffer = value != 0
-		return
+		_glfw.hints.window.scaleFramebuffer = value != 0
 	case GLFW_CENTER_CURSOR:
 		_glfw.hints.window.centerCursor = value != 0
-		return
 	case GLFW_FOCUS_ON_SHOW:
 		_glfw.hints.window.focusOnShow = value != 0
-		return
 	case GLFW_MOUSE_PASSTHROUGH:
 		_glfw.hints.window.mousePassthrough = value != 0
-		return
 	case GLFW_CLIENT_API:
 		_glfw.hints.context.client = value
-		return
 	case GLFW_CONTEXT_CREATION_API:
 		_glfw.hints.context.source = value
-		return
 	case GLFW_CONTEXT_VERSION_MAJOR:
 		_glfw.hints.context.major = value
-		return
 	case GLFW_CONTEXT_VERSION_MINOR:
 		_glfw.hints.context.minor = value
-		return
 	case GLFW_CONTEXT_ROBUSTNESS:
 		_glfw.hints.context.robustness = value
-		return
 	case GLFW_OPENGL_FORWARD_COMPAT:
 		_glfw.hints.context.forward = value != 0
-		return
 	case GLFW_CONTEXT_DEBUG:
 		_glfw.hints.context.debug = value != 0
-		return
 	case GLFW_CONTEXT_NO_ERROR:
 		_glfw.hints.context.noerror = value != 0
-		return
 	case GLFW_OPENGL_PROFILE:
 		_glfw.hints.context.profile = value
-		return
 	case GLFW_CONTEXT_RELEASE_BEHAVIOR:
 		_glfw.hints.context.release = value
-		return
 	case GLFW_REFRESH_RATE:
 		_glfw.hints.refreshRate = value
-		return
+	default:
+		return fmt.Errorf("Invalid window hint %d with value %d", hint, value)
 	}
-	slog.Error("Invalid window hint", "hint", hint, "value", value)
+	return nil
 }
 
 // GetClipboardString returns the contents of the system clipboard
