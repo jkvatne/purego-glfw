@@ -300,7 +300,10 @@ func CreateWindowEx(dwExStyle uint32, lpClassName uint16, lpWindowName string, d
 func DestroyWindow(h syscall.Handle) {
 	_, _, err := _DestroyWindow.Call(uintptr(h))
 	if !errors.Is(err, syscall.Errno(0)) {
-		panic("DestroyWindow failed, " + err.Error())
+		// An error 'invalid window handle' can occur without any specific reasons (#2551).
+		if !errors.Is(err, syscall.Errno(1400)) {
+			panic("DestroyWindow failed, " + err.Error())
+		}
 	}
 }
 

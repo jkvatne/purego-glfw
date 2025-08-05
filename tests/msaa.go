@@ -7,14 +7,17 @@ package main
 import (
 	"fmt"
 	"github.com/jkvatne/jkvgui/gl"
-	glfw "github.com/jkvatne/jkvgui/purego-glfw"
+	glfw "github.com/jkvatne/purego-glfw"
 	"os"
 	"runtime"
 	"strings"
 	"unsafe"
 )
 
-var vertices2 = [8]float32{-0.6, -0.6, 0.6, -0.6, 0.6, 0.6, -0.6, 0.6}
+// static const vec2 vertices[4] = {{ -0.6f, -0.6f },{  0.6f, -0.6f },{  0.6f,  0.6f },{ -0.6f,  0.6f }};
+var vertices2 = [8]float32{-0.6, 0.6, 0.6, -0.6, -0.6, -0.6, 0.6, 0.6}
+
+// {-0.6, -0.6, 0.6, -0.6, 0.6, 0.6, -0.6, 0.6}
 
 var vertex_shader_text2 = `
 #version 110
@@ -52,9 +55,11 @@ func checkError(sts uint32, program uint32, source string) {
 	if status == gl.FALSE {
 		var logLength int32
 		gl.GetShaderiv(program, gl.INFO_LOG_LENGTH, &logLength)
-		txt := strings.Repeat("\x00", int(logLength+1))
-		gl.GetShaderInfoLog(program, logLength, nil, gl.Str(txt))
-		fmt.Printf("Shader error", "source", source, "error", txt)
+		if logLength > 0 {
+			txt := strings.Repeat("\x00", int(logLength+1))
+			gl.GetShaderInfoLog(program, logLength, nil, gl.Str(txt))
+			fmt.Printf("Shader error, source=%s, error=%s\n", source, txt)
+		}
 	}
 }
 
@@ -76,7 +81,7 @@ func msaa() {
 	_ = glfw.WindowHint(glfw.GLFW_CONTEXT_VERSION_MAJOR, 2)
 	_ = glfw.WindowHint(glfw.GLFW_CONTEXT_VERSION_MINOR, 0)
 
-	window, err = glfw.CreateWindow(800, 800, "Aliasing Detector", nil, nil)
+	window, err = glfw.CreateWindow(800, 400, "Aliasing Detector", nil, nil)
 	window.SetPos(100, 100)
 	if err != nil {
 		glfw.Terminate()
@@ -95,15 +100,17 @@ func msaa() {
 		fmt.Printf("gl Init error, " + err.Error())
 	}
 	glfw.SwapInterval(1)
+	gl.Enable(gl.MULTISAMPLE)
 	gl.GetIntegerv(gl.SAMPLES, &samples)
 	if samples != 0 {
-		fmt.Printf("Context reports MSAA is available with %i samples\n", samples)
+		fmt.Printf("Context reports MSAA is available with %d samples\n", samples)
 	} else {
 		fmt.Printf("Context reports MSAA is unavailable\n")
+		os.Exit(0)
 	}
 	gl.GenBuffers(1, &vertex_buffer2)
 	gl.BindBuffer(gl.ARRAY_BUFFER, vertex_buffer2)
-	gl.BufferData(gl.ARRAY_BUFFER, 2*4*4, unsafe.Pointer(&vertices2[0]), gl.STATIC_DRAW)
+	gl.BufferData(gl.ARRAY_BUFFER, 32, unsafe.Pointer(&vertices2[0]), gl.STATIC_DRAW)
 
 	vertex_shader2 := gl.CreateShader(gl.VERTEX_SHADER)
 	csources, free := gl.Strs(vertex_shader_text2)
@@ -130,11 +137,14 @@ func msaa() {
 
 	gl.EnableVertexAttribArray(uint32(vpos_location))
 	gl.VertexAttribPointer(uint32(vpos_location), 2, gl.FLOAT, false, 4, nil)
-
+	angle := 0.0
 	for !window.ShouldClose() {
 		var width, height int32
 		var m, p, mvp Mat4
-		angle := glfw.GetTime() * 3.1415 / 180.0
+		angle = angle + 0.0001
+		if angle > 0.02 {
+			angle = 0
+		}
 
 		glfw.GetFramebufferSize(window, &width, &height)
 		ratio := float32(width) / float32(height)
@@ -142,12 +152,13 @@ func msaa() {
 		gl.Clear(gl.COLOR_BUFFER_BIT)
 		gl.UseProgram(program)
 		p = mat4x4_ortho(-ratio, ratio, -1, 1, 0, 1)
-		mat4x4_translate(-1, 0, 0)
-		m = mat4x4_rotate_Z(m, float32(angle))
-		mvp = mat4x4_mul(p, m)
+		m = mat4x4_translate(-1, 0, 0)
+		r := mat4x4_rotate_Z(m, float32(angle))
+		mvp = mat4x4_mul(p, r)
 		gl.UniformMatrix4fv(mvp_location, 1, false, &mvp[0])
 		gl.Disable(gl.MULTISAMPLE)
 		gl.DrawArrays(gl.TRIANGLE_FAN, 0, 4)
+
 		m = mat4x4_translate(1, 0, 0)
 		m = mat4x4_rotate_Z(m, float32(angle))
 		mvp = mat4x4_mul(p, m)

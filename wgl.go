@@ -472,7 +472,6 @@ func choosePixelFormatWGL(window *_GLFWwindow, ctxconfig *_GLFWctxconfig, fbconf
 		pixelFormat = i + 1
 		if _glfw.wgl.ARB_pixel_format {
 			// Get pixel format attributes through "modern" extension
-			fbconfig.samples = 0
 			values[0] = 0
 			wglGetPixelFormatAttribivARB(window.context.wgl.dc, pixelFormat, 0, 1 /*attribCount*/, &attribs[2], &values[2])
 			for j := 0; j < attribCount; j++ {

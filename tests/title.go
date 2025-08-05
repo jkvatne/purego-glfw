@@ -2,13 +2,15 @@ package main
 
 import (
 	"github.com/jkvatne/jkvgui/gl"
-	glfw "github.com/jkvatne/jkvgui/purego-glfw"
+	glfw "github.com/jkvatne/purego-glfw"
 	"os"
+	"runtime"
 )
 
 // UTF-8 window title test
 
 func title() {
+	runtime.LockOSThread()
 	if err := glfw.Init(); err != nil {
 		panic(err)
 	}

@@ -4,10 +4,11 @@ package main
 import (
 	"fmt"
 	"github.com/jkvatne/jkvgui/gl"
-	glfw "github.com/jkvatne/jkvgui/purego-glfw"
+	glfw "github.com/jkvatne/purego-glfw"
 	"log/slog"
 	"math/rand/v2"
 	"os"
+	"runtime"
 	"strings"
 	"unsafe"
 )
@@ -71,6 +72,7 @@ func CheckError(sts uint32, program uint32, source string) {
 }
 
 func reopen() {
+	runtime.LockOSThread()
 	count := 1
 	var monitor *glfw.Monitor
 	err := glfw.Init()

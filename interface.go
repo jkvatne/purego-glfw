@@ -301,7 +301,6 @@ func (w *Window) ShouldClose() bool {
 
 // Destroy destroys the specified window and its context.
 func (w *Window) Destroy() {
-	// windows.remove(w.data)
 	glfwDestroyWindow(w)
 }
 
