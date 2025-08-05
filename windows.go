@@ -38,16 +38,6 @@ type PIXELFORMATDESCRIPTOR = struct {
 	dwDamageMask    uint32
 }
 
-var (
-	gdi32          = windows.NewLazySystemDLL("gdi32.dll")
-	_GetDeviceCaps = gdi32.NewProc("GetDeviceCaps")
-	_CreateDC      = gdi32.NewProc("CreateDCW")
-	_DeleteDC      = gdi32.NewProc("DeleteDC")
-
-	ntdll                 = windows.NewLazySystemDLL("ntdll.dll")
-	_RtlVerifyVersionInfo = ntdll.NewProc("RtlVerifyVersionInfo")
-)
-
 const (
 	PFD_DRAW_TO_WINDOW = 0x04
 	PFD_SUPPORT_OPENGL = 0x20
@@ -86,187 +76,15 @@ const (
 	IDC_HELP        = 32651 // Arrow and question mark
 )
 
-const (
-	DPI_AWARENESS_CONTEXT_UNAWARE              = 0xFFFFFFFFFFFFFFFF
-	DPI_AWARENESS_CONTEXT_SYSTEM_AWARE         = 0xFFFFFFFFFFFFFFFE
-	DPI_AWARENESS_CONTEXT_PER_MONITOR_AWARE    = 0xFFFFFFFFFFFFFFFD
-	DPI_AWARENESS_CONTEXT_PER_MONITOR_AWARE_V2 = 0xFFFFFFFFFFFFFFFC
-	DPI_AWARENESS_CONTEXT_UNAWARE_GDISCALED    = 0xFFFFFFFFFFFFFFFB
-	PROCESS_DPI_UNAWARE                        = 0
-	PROCESS_SYSTEM_DPI_AWARE                   = 1
-	PROCESS_PER_MONITOR_DPI_AWARE              = 2
-	VER_MAJORVERSION                           = 0x0000002
-	VER_MINORVERSION                           = 0x0000001
-	VER_BUILDNUMBER                            = 0x0000004
-	VER_SERVICEPACKMAJOR                       = 0x00000020
-	WIN32_WINNT_WINBLUE                        = 0x0603
-)
-
-type _OSVERSIONINFOEXW struct {
-	dwOSVersionInfoSize uint32
-	dwMajorVersion      uint32
-	dwMinorVersion      uint32
-	dwBuildNumber       uint32
-	dwPlatformId        uint32
-	szCSDVersion        [128]uint16
-	wServicePackMajor   uint16
-	wServicePackMinor   uint16
-	wSuiteMask          uint16
-	wProductType        uint8
-	wReserved           uint8
-}
-
 var resources struct {
 	handle syscall.Handle
 	class  uint16
 	cursor syscall.Handle
 }
 
-type Point struct {
-	X, Y int32
-}
-
-type Msg struct {
-	Hwnd     syscall.Handle
-	Message  uint32
-	WParam   uintptr
-	LParam   uintptr
-	Time     uint32
-	Pt       Point
-	LPrivate uint32
-}
-
-var (
-	kernel32                       = windows.NewLazySystemDLL("kernel32.dll")
-	_GetModuleHandleW              = kernel32.NewProc("GetModuleHandleW")
-	_SetThreadExecutionState       = kernel32.NewProc("SetThreadExecutionState")
-	user32                         = windows.NewLazySystemDLL("user32.dll")
-	_SetProcessDpiAwarenessContext = user32.NewProc("SetProcessDpiAwarenessContext")
-	_EnumDisplayMonitors           = user32.NewProc("EnumDisplayMonitors")
-	_EnumDisplayDevices            = user32.NewProc("EnumDisplayDevicesW")
-	_EnumDisplaySettingsEx         = user32.NewProc("EnumDisplaySettingsExW")
-	_GetMonitorInfo                = user32.NewProc("GetMonitorInfoW")
-	_AdjustWindowRectEx            = user32.NewProc("AdjustWindowRectEx")
-	_CreateWindowEx                = user32.NewProc("CreateWindowExW")
-	_DefWindowProc                 = user32.NewProc("DefWindowProcW")
-	_DestroyWindow                 = user32.NewProc("DestroyWindow")
-	_DispatchMessage               = user32.NewProc("DispatchMessageW")
-	_GetWindowRect                 = user32.NewProc("GetWindowRect")
-	_GetClientRect                 = user32.NewProc("GetClientRect")
-	_GetDC                         = user32.NewProc("GetDC")
-	_GetDpiForWindow               = user32.NewProc("GetDpiForWindow")
-	_GetKeyState                   = user32.NewProc("GetKeyState")
-	_LoadCursor                    = user32.NewProc("LoadCursorW")
-	_LoadImage                     = user32.NewProc("LoadImageW")
-	_MonitorFromWindow             = user32.NewProc("MonitorFromWindow")
-	_PeekMessage                   = user32.NewProc("PeekMessageW")
-	_RegisterClassExW              = user32.NewProc("RegisterClassExW")
-	_ReleaseDC                     = user32.NewProc("releaseDC")
-	_ScreenToClient                = user32.NewProc("ScreenToClient")
-	_ShowWindow                    = user32.NewProc("ShowWindow")
-	_SetCursor                     = user32.NewProc("SetCursor")
-	_SetForegroundWindow           = user32.NewProc("SetForegroundWindow")
-	_SetFocus                      = user32.NewProc("SetFocus")
-	_SetProcessDPIAware            = user32.NewProc("SetProcessDPIAware")
-	_SetWindowPos                  = user32.NewProc("SetWindowPos")
-	_TranslateMessage              = user32.NewProc("TranslateMessage")
-	_UnregisterClass               = user32.NewProc("UnregisterClassW")
-	_BringWindowToTop              = user32.NewProc("BringWindowToTop")
-	_GetCursorPos                  = user32.NewProc("GetCursorPos")
-	_SystemParametersInfoW         = user32.NewProc("SystemParametersInfoW")
-	_GetWindowLongW                = user32.NewProc("GetWindowLongW")
-	_SetWindowLongW                = user32.NewProc("SetWindowLongW")
-	shcore                         = windows.NewLazySystemDLL("shcore")
-	_GetDpiForMonitor              = shcore.NewProc("GetDpiForMonitor")
-)
-
-type WndClassEx struct {
-	CbSize        uint32
-	Style         uint32
-	LpfnWndProc   uintptr
-	CnClsExtra    int32
-	CbWndExtra    int32
-	HInstance     syscall.Handle
-	HIcon         syscall.Handle
-	HCursor       syscall.Handle
-	HbrBackground syscall.Handle
-	LpszMenuName  *uint16
-	LpszClassName *uint16
-	HIconSm       syscall.Handle
-}
-
-func getKeyState(nVirtKey int) uint16 {
-	c, _, _ := _GetKeyState.Call(uintptr(nVirtKey))
-	return uint16(c)
-}
-func getModuleHandle() (syscall.Handle, error) {
-	h, _, err := _GetModuleHandleW.Call(uintptr(0))
-	if h == 0 {
-		return 0, fmt.Errorf("GetModuleHandleW failed: %v", err)
-	}
-	return syscall.Handle(h), nil
-}
-
-func registerClassEx(cls *WndClassEx) (uint16, error) {
-	a, _, err := _RegisterClassExW.Call(uintptr(unsafe.Pointer(cls)))
-	if a == 0 {
-		return 0, fmt.Errorf("RegisterClassExW failed: %v", err)
-	}
-	return uint16(a), nil
-}
-
-func loadImage(hInst syscall.Handle, res uint32, typ uint32, cx, cy int, fuload uint32) (syscall.Handle, error) {
-	h, _, err := _LoadImage.Call(uintptr(hInst), uintptr(res), uintptr(typ), uintptr(cx), uintptr(cy), uintptr(fuload))
-	if h == 0 {
-		return 0, fmt.Errorf("LoadImageW failed: %v", err)
-	}
-	return syscall.Handle(h), nil
-}
-
-func glfwSetWindowSize(window *Window, width, height int) {
-	rect := RECT{0, 0, int32(width), int32(height)}
-	adjustWindowRect(&rect, getWindowStyle(window), 0, getWindowExStyle(window), getDpiForWindow(window.Win32.handle), "glfwSetWindowSize")
-	_, _, err := _SetWindowPos.Call(uintptr(window.Win32.handle), 0, 0, 0, uintptr(rect.Right-rect.Left), uintptr(rect.Bottom-rect.Top), uintptr(SWP_NOACTIVATE|SWP_NOOWNERZORDER|SWP_NOMOVE|SWP_NOZORDER))
-	if err != nil && !errors.Is(err, syscall.Errno(0)) {
-		panic("setWindowPos failed, " + err.Error())
-	}
-}
-
-func createWindowEx(dwExStyle uint32, lpClassName uint16, lpWindowName string, dwStyle uint32, x, y, w, h int32, hWndParent, hMenu, hInstance syscall.Handle, lpParam uintptr) (syscall.Handle, error) {
-	wname, _ := syscall.UTF16PtrFromString(lpWindowName)
-	hwnd, _, err := _CreateWindowEx.Call(
-		uintptr(dwExStyle),
-		uintptr(lpClassName),
-		uintptr(unsafe.Pointer(wname)),
-		uintptr(dwStyle),
-		uintptr(x), uintptr(y),
-		uintptr(w), uintptr(h),
-		uintptr(hWndParent),
-		uintptr(hMenu),
-		uintptr(hInstance),
-		uintptr(lpParam))
-	if hwnd == 0 {
-		return 0, fmt.Errorf("CreateWindowEx failed: %v", err)
-	}
-	return syscall.Handle(hwnd), nil
-}
-
-func peekMessage(m *Msg, hwnd syscall.Handle, wMsgFilterMin, wMsgFilterMax, wRemoveMsg uint32) bool {
-	r, _, _ := _PeekMessage.Call(uintptr(unsafe.Pointer(m)), uintptr(hwnd), uintptr(wMsgFilterMin), uintptr(wMsgFilterMax), uintptr(wRemoveMsg))
-	return r != 0
-}
-
-func translateMessage(m *Msg) {
-	_TranslateMessage.Call(uintptr(unsafe.Pointer(m)))
-}
-
-func dispatchMessage(m *Msg) {
-	_DispatchMessage.Call(uintptr(unsafe.Pointer(m)))
-}
-
 func glfwPollEvents() {
 	var msg Msg
-	for peekMessage(&msg, 0, 0, 0, PM_REMOVE) {
+	for PeekMessage(&msg, 0, 0, 0, PM_REMOVE) {
 		if msg.Message == WM_QUIT {
 			window := _glfw.windowListHead
 			for window != nil {
@@ -274,8 +92,8 @@ func glfwPollEvents() {
 				window = window.next
 			}
 		} else {
-			translateMessage(&msg)
-			dispatchMessage(&msg)
+			TranslateMessage(&msg)
+			DispatchMessage(&msg)
 		}
 	}
 
@@ -286,57 +104,33 @@ func glfwPollEvents() {
 	//       Other Win hotkeys are handled implicitly by _glfwInputWindowFocus
 	//       because they change the input focus
 	// NOTE: The other half of this is in the WM_*KEY* handler in windowProc
-	/* TODO
-	hMonitor = GetActiveWindow()
-	if hMonitor != 0 {
-		window = GetPropW(hMonitor, "GLFW")
+	handle := GetActiveWindow()
+	if handle != 0 {
+		window := (*Window)(unsafe.Pointer(GetProp(handle, "GLFW")))
 		if window != nil {
-			keys := [4][2]int{{VK_LSHIFT, KeyLeftShift}, {VK_RSHIFT, KeyRightShift}, {VK_LWIN, KeyLeftSuper}, {VK_RWIN, KeyRightSuper}}
+			keys := [4][2]Key{{VK_LSHIFT, KeyLeftShift}, {VK_RSHIFT, KeyRightShift}, {VK_LWIN, KeyLeftSuper}, {VK_RWIN, KeyRightSuper}}
 			for i := 0; i < 4; i++ {
 				vk := keys[i][0]
 				key := keys[i][1]
-				scancode := _glfw.scancodes[key]
-				if (getKeyState(vk)&0x8000 != 0) || (window.keys[key] != GLFW_PRESS) {
+				scancode := _glfw.win32.scancodes[key]
+				if (GetKeyState(int(vk))&0x8000 != 0) || (window.keys[key] != GLFW_PRESS) {
 					continue
 				}
-				_glfwInputKey(window, key, scancode, GLFW_RELEASE, getKeyMods())
+				glfwInputKey(window, key, int(scancode), GLFW_RELEASE, getKeyMods())
 			}
 		}
 	}
-	window = _glfw.disabledCursorWindow
-	if window != nil {
-		var width, height int
-		// TODO _glfwPlatformGetWindowSize(window, &width, &height);
-		// NOTE: Re-center the cursor only if it has moved since the last call,
-		//       to avoid breaking glfwWaitEvents with WM_MOUSEMOVE
-		if window.Win32.lastCursorPosX != width/2 || window.Win32.lastCursorPosY != height/2 {
-			// TODO _glfwPlatformSetCursorPos(window, width / 2, height / 2);
-		}
-	}*/
-}
-
-func glfwIsValidContextConfig(ctxconfig *_GLFWctxconfig) error {
-	if (ctxconfig.major < 1 || ctxconfig.minor < 0) ||
-		(ctxconfig.major == 1 && ctxconfig.minor > 5) ||
-		(ctxconfig.major == 2 && ctxconfig.minor > 1) ||
-		(ctxconfig.major == 3 && ctxconfig.minor > 3) {
-		return fmt.Errorf("Invalid OpenGL version %d.%d", ctxconfig.major, ctxconfig.minor)
-	}
-
-	if ctxconfig.profile != 0 {
-		if ctxconfig.profile != GLFW_OPENGL_CORE_PROFILE && ctxconfig.profile != GLFW_OPENGL_COMPAT_PROFILE {
-			return fmt.Errorf("Invalid OpenGL profile 0x%08X", ctxconfig.profile)
-		}
-		if ctxconfig.major <= 2 || (ctxconfig.major == 3 && ctxconfig.minor < 2) {
-			// Desktop OpenGL context profiles are only defined for version 3.2 and above
-			return fmt.Errorf("Context profiles are only defined for OpenGL version 3.2 and above")
-		}
-	}
-	if ctxconfig.forward && ctxconfig.major <= 2 {
-		// Forward-compatible contexts are only defined for OpenGL version 3.0 and above
-		return fmt.Errorf("Forward-compatibility is only defined for OpenGL version 3.0 and above")
-	}
-	return nil
+	/*
+		window := _glfw.disabledCursorWindow
+		if window != nil {
+			var width, height int
+			// TODO _glfwPlatformGetWindowSize(window, &width, &height);
+			// NOTE: Re-center the cursor only if it has moved since the last call,
+			//       to avoid breaking glfwWaitEvents with WM_MOUSEMOVE
+			if window.Win32.lastCursorPosX != width/2 || window.Win32.lastCursorPosY != height/2 {
+				// TODO _glfwPlatformSetCursorPos(window, width / 2, height / 2);
+			}
+		}*/
 }
 
 func getWindowStyle(window *_GLFWwindow) uint32 {
@@ -381,7 +175,7 @@ func _glfwRegisterWindowClassWin32() error {
 	// wcls.hIcon = LoadImageW(NULL, IDI_APPLICATION, IMAGE_ICON,	0, 0, LR_DEFAULTSIZE | LR_SHARED);
 	// }
 	var err error
-	_glfw.class, err = registerClassEx(&wcls)
+	_glfw.class, err = RegisterClassEx(&wcls)
 	return err
 }
 
@@ -399,12 +193,7 @@ func createNativeWindow(window *_GLFWwindow, wndconfig *_GLFWwndconfig, fbconfig
 		_glfw.win32.mainWindowClass = _glfw.class
 	}
 	if window.monitor != nil {
-		var mi MONITORINFO
-		mi.CbSize = uint32(unsafe.Sizeof(mi))
-		_, _, err = _GetMonitorInfo.Call(uintptr(window.monitor.hMonitor), uintptr(unsafe.Pointer(&mi)))
-		if !errors.Is(err, syscall.Errno(0)) {
-			return err
-		}
+		mi := GetMonitorInfo(window.monitor.hMonitor)
 		// NOTE: This window placement is temporary
 		frameX = mi.RcMonitor.Left
 		frameY = mi.RcMonitor.Top
@@ -416,14 +205,19 @@ func createNativeWindow(window *_GLFWwindow, wndconfig *_GLFWwndconfig, fbconfig
 		if wndconfig.maximized {
 			style |= WS_MAXIMIZE
 		}
-		// TODO adjustWindowRectEx(&rect, style, FALSE, exStyle);
-		frameX = CW_USEDEFAULT
-		frameY = CW_USEDEFAULT
+		AdjustWindowRectEx(&rect, style, 0, exStyle)
+		if wndconfig.xpos == GLFW_ANY_POSISTION && wndconfig.ypos == GLFW_ANY_POSISTION {
+			frameX = CW_USEDEFAULT
+			frameY = CW_USEDEFAULT
+		} else {
+			frameX = int32(wndconfig.xpos) + rect.Left
+			frameY = int32(wndconfig.ypos) + rect.Top
+		}
 		frameWidth = rect.Right - rect.Left
 		frameHeight = rect.Bottom - rect.Top
 	}
 
-	window.Win32.handle, err = createWindowEx(
+	window.Win32.handle, err = CreateWindowEx(
 		exStyle,
 		_glfw.class,
 		wndconfig.title,
@@ -432,9 +226,10 @@ func createNativeWindow(window *_GLFWwindow, wndconfig *_GLFWwndconfig, fbconfig
 		frameWidth, frameHeight,
 		0, // No parent
 		0, // No menu
-		resources.handle,
+		_glfw.win32.instance,
 		uintptr(unsafe.Pointer(wndconfig)))
-	setProp(window.Win32.handle, window)
+
+	SetProp(HANDLE(window.Win32.handle), "GLFW", uintptr(unsafe.Pointer(window)))
 	return err
 }
 
@@ -443,11 +238,25 @@ func createNativeWindow(window *_GLFWwindow, wndconfig *_GLFWwndconfig, fbconfig
 //
 // This function may only be called from the main thread.
 func glfwDestroyWindow(w *Window) {
-	// windows.remove(w.data)
-	_, _, err := _DestroyWindow.Call(uintptr(w.Win32.handle))
-	if !errors.Is(err, syscall.Errno(0)) {
-		// slog.Error("DestroyWindow failed, " + err.Error())
+	w.windowCloseCallback = nil
+	w.refreshCallback = nil
+	w.charCallback = nil
+	w.keyCallback = nil
+	w.focusCallback = nil
+	w.scrollCallback = nil
+	w.sizeCallback = nil
+	w.dropCallback = nil
+	w.contentScaleCallback = nil
+	if uintptr(unsafe.Pointer(w)) == glfwPlatformGetTls(&_glfw.contextSlot) {
+		glfwMakeContextCurrent(nil)
 	}
+	DestroyWindow(w.Win32.handle)
+	// Unlink window from global linked list
+	prev := &_glfw.windowListHead
+	for *prev != w {
+		prev = &((*prev).next)
+	}
+	*prev = w.next
 	w.Win32.handle = 0
 }
 
@@ -457,19 +266,11 @@ func glfwTerminate() {
 	   	UnregisterDeviceNotification(_glfw.Win32.deviceNotificationHandle);
 	   }
 	*/
+	DestroyWindow(_glfw.win32.helperWindowHandle)
+	_glfw.win32.helperWindowHandle = 0
 
-	if _glfw.win32.helperWindowHandle != 0 {
-		_, _, err := _DestroyWindow.Call(uintptr(_glfw.win32.helperWindowHandle))
-		if !errors.Is(err, syscall.Errno(0)) {
-			// slog.Error("Helper UnregisterClass failed, " + err.Error())
-		}
-		_glfw.win32.helperWindowHandle = 0
-	}
 	if _glfw.win32.mainWindowClass != 0 {
-		_, _, err := _UnregisterClass.Call(uintptr(_glfw.win32.mainWindowClass), uintptr(_glfw.win32.instance))
-		if !errors.Is(err, syscall.Errno(0)) {
-			// .Error("UnregisterClass failed, " + err.Error())
-		}
+		UnregisterClass(_glfw.win32.mainWindowClass, _glfw.win32.instance)
 		_glfw.win32.mainWindowClass = 0
 	}
 }
@@ -477,31 +278,11 @@ func glfwTerminate() {
 func glfwPlatformInit() error {
 	var err error
 	createKeyTables()
-	if isWindows10Version1703OrGreater() {
-		_, _, err := _SetProcessDpiAwarenessContext.Call(uintptr(DPI_AWARENESS_CONTEXT_PER_MONITOR_AWARE_V2))
-		if !errors.Is(err, syscall.Errno(0)) {
-			panic("SetProcessDpiAwarenessContext failed, " + err.Error())
-		}
-	} else if isWindows8Point1OrGreater() {
-		_, _, err := _SetProcessDpiAwarenessContext.Call(uintptr(PROCESS_PER_MONITOR_DPI_AWARE))
-		if !errors.Is(err, syscall.Errno(0)) {
-			panic("SetProcessDpiAwarenessContext failed, " + err.Error())
-		}
-	} else if isWindowsVistaOrGreater() {
-		_, _, _ = _SetProcessDPIAware.Call()
-	}
-
-	/* This is not in C version
-	if err := _glfwRegisterWindowClassWin32(); err != nil {
-		return fmt.Errorf("glfw platform init failed, _glfwRegisterWindowClassWin32 failed, %v ", err.Error())
-	}*/
-	// _, _, err := _procGetModuleHandleExW.Call(GET_MODULE_HANDLE_EX_FLAG_FROM_ADDRESS|GET_MODULE_HANDLE_EX_FLAG_UNCHANGED_REFCOUNT, uintptr(unsafe.Pointer(&_glfw)), uintptr(unsafe.Pointer(&_glfw.instance)))
-
-	_glfw.instance, err = getModuleHandle()
+	SetProcessDpiAwareness()
+	_glfw.instance, err = GetModuleHandle()
 	if err != nil {
 		return fmt.Errorf("glfw platform init failed %v ", err.Error())
 	}
-
 	err = createHelperWindow()
 	if err != nil {
 		return err
@@ -568,8 +349,8 @@ func glfwCreateWindow(width, height int, title string, monitor *Monitor, share *
 	window.next = _glfw.windowListHead
 	_glfw.windowListHead = window
 
-	window.videoMode.width = width
-	window.videoMode.height = height
+	window.videoMode.Width = width
+	window.videoMode.Height = height
 	window.videoMode.redBits = fbconfig.redBits
 	window.videoMode.greenBits = fbconfig.greenBits
 	window.videoMode.blueBits = fbconfig.blueBits
@@ -668,12 +449,12 @@ func createHelperWindow() error {
 	wc.HInstance = _glfw.instance
 	wc.LpszClassName = syscall.StringToUTF16Ptr("GLFW3 Helper")
 
-	_glfw.win32.helperWindowClass, err = registerClassEx(&wc)
+	_glfw.win32.helperWindowClass, err = RegisterClassEx(&wc)
 	if _glfw.win32.helperWindowClass == 0 || err != nil {
 		panic("Win32: Failed to register helper window class")
 	}
 	_glfw.win32.helperWindowHandle, err =
-		createWindowEx(WS_OVERLAPPED,
+		CreateWindowEx(WS_OVERLAPPED,
 			_glfw.win32.helperWindowClass,
 			"Helper window",
 			WS_OVERLAPPED|WS_CLIPSIBLINGS|WS_CLIPCHILDREN,
@@ -691,100 +472,20 @@ func createHelperWindow() error {
 	}
 
 	// TODO Register for HID device notifications
-	/*
-		{
-			dbi DEV_BROADCAST_DEVICEINTERFACE_W
+	/*		dbi DEV_BROADCAST_DEVICEINTERFACE_W
 			ZeroMemory(&dbi, sizeof(dbi));
 			dbi.dbcc_size = sizeof(dbi);
 			dbi.dbcc_devicetype = DBT_DEVTYP_DEVICEINTERFACE;
 			dbi.dbcc_classguid = GUID_DEVINTERFACE_HID;
 			_glfw.win32.deviceNotificationHandle =	RegisterDeviceNotificationW(_glfw.win32.helperWindowHandle,
 					(DEV_BROADCAST_HDR*) &dbi,	DEVICE_NOTIFY_WINDOW_HANDLE);
-		}
-	*/
+		}*/
 	var msg Msg
-	for peekMessage(&msg, _glfw.win32.helperWindowHandle, 0, 0, PM_REMOVE) {
-		translateMessage(&msg)
-		dispatchMessage(&msg)
+	for PeekMessage(&msg, _glfw.win32.helperWindowHandle, 0, 0, PM_REMOVE) {
+		TranslateMessage(&msg)
+		DispatchMessage(&msg)
 	}
 	return nil
-}
-
-func glfwIsWindows10Version1607OrGreater() bool {
-	var osvi _OSVERSIONINFOEXW
-	osvi.dwOSVersionInfoSize = uint32(unsafe.Sizeof(osvi))
-	osvi.dwMajorVersion = 10
-	osvi.dwMinorVersion = 0
-	osvi.dwBuildNumber = 14393
-	var mask uint32 = VER_MAJORVERSION | VER_MINORVERSION | VER_BUILDNUMBER
-	r, _, err := _RtlVerifyVersionInfo.Call(uintptr(unsafe.Pointer(&osvi)), uintptr(mask), uintptr(0x80000000000000db))
-	if !errors.Is(err, syscall.Errno(0)) {
-		panic("SetProcessDpiAwarenessContext failed, " + err.Error())
-	}
-	return r == 0
-}
-
-func isWindows10Version1703OrGreater() bool {
-	var osvi _OSVERSIONINFOEXW
-	osvi.dwOSVersionInfoSize = uint32(unsafe.Sizeof(osvi))
-	osvi.dwMajorVersion = 10
-	osvi.dwMinorVersion = 0
-	osvi.dwBuildNumber = 15063
-	var mask uint32 = VER_MAJORVERSION | VER_MINORVERSION | VER_BUILDNUMBER
-	r, _, err := _RtlVerifyVersionInfo.Call(uintptr(unsafe.Pointer(&osvi)), uintptr(mask), uintptr(0x80000000000000db))
-	if !errors.Is(err, syscall.Errno(0)) {
-		panic("SetProcessDpiAwarenessContext failed, " + err.Error())
-	}
-	return r == 0
-}
-
-func isWindows8Point1OrGreater() bool {
-	var osvi _OSVERSIONINFOEXW
-	osvi.dwOSVersionInfoSize = uint32(unsafe.Sizeof(osvi))
-	osvi.dwMajorVersion = uint32(WIN32_WINNT_WINBLUE >> 8)
-	osvi.dwMinorVersion = uint32(WIN32_WINNT_WINBLUE & 0xFF)
-	osvi.wServicePackMajor = 0
-	var mask uint32 = VER_MAJORVERSION | VER_MINORVERSION | VER_SERVICEPACKMAJOR
-	r, _, err := _RtlVerifyVersionInfo.Call(uintptr(unsafe.Pointer(&osvi)), uintptr(mask), uintptr(0x800000000001801b))
-	if !errors.Is(err, syscall.Errno(0)) {
-		panic("SetProcessDpiAwarenessContext failed, " + err.Error())
-	}
-	return r == 0
-}
-
-func isWindowsVistaOrGreater() bool {
-	return true
-}
-
-func adjustWindowRectEx(rect *RECT, style uint32, menu int, exStyle uint32) {
-	_, _, err := _AdjustWindowRectEx.Call(uintptr(unsafe.Pointer(rect)), uintptr(style), uintptr(menu), uintptr(exStyle))
-	if !errors.Is(err, syscall.Errno(0)) {
-		panic("adjustWindowRectEx failed, " + err.Error())
-	}
-}
-
-func getDpiForWindow(handle syscall.Handle) int {
-	r, _, err := _GetDpiForWindow.Call(uintptr(handle))
-	if !errors.Is(err, syscall.Errno(0)) {
-		panic("getDpiForWindow failed, " + err.Error())
-	}
-	return int(r)
-}
-
-func adjustWindowRectExForDpi(rect *RECT, style uint32, menu int, exStyle uint32, dpi int) {
-	_, _, err := _AdjustWindowRectEx.Call(uintptr(unsafe.Pointer(rect)), uintptr(style), uintptr(menu), uintptr(exStyle), uintptr(dpi))
-	if !errors.Is(err, syscall.Errno(0)) {
-		panic("adjustWindowRectEx failed, " + err.Error())
-	}
-}
-
-func adjustWindowRect(rect *RECT, style uint32, menu int, exStyle uint32, dpi int, from string) {
-	rIn := rect
-	if glfwIsWindows10Version1607OrGreater() {
-		adjustWindowRectExForDpi(rect, style, 0, exStyle, dpi)
-	} else {
-		adjustWindowRectEx(rect, style, 0, exStyle)
-	}
 }
 
 func glfwGetWindowFrameSize(window *_GLFWwindow, left, top, right, bottom *int) {
@@ -793,8 +494,8 @@ func glfwGetWindowFrameSize(window *_GLFWwindow, left, top, right, bottom *int) 
 	glfwGetWindowSize(window, &width, &height)
 	rect.Right = int32(width)
 	rect.Bottom = int32(height)
-	dpi := getDpiForWindow(window.Win32.handle)
-	adjustWindowRect(&rect, getWindowStyle(window), 0, getWindowExStyle(window), dpi, "glfwGetWindowFrameSize")
+	dpi := GetDpiForWindow(window.Win32.handle)
+	AdjustWindowRect(&rect, getWindowStyle(window), 0, getWindowExStyle(window), dpi, "glfwGetWindowFrameSize")
 	*left = int(-rect.Left)
 	*top = int(-rect.Top)
 	*right = int(rect.Right) - width
@@ -816,11 +517,10 @@ func glfwGetCursorPos(w *_GLFWwindow, x *int, y *int) {
 		var pos POINT
 		_, _, err := _GetCursorPos.Call(uintptr(unsafe.Pointer(&pos)))
 		if !errors.Is(err, syscall.Errno(0)) {
-			// if we get an error (typical error 5, access deniedm return something way off.
+			// if we get an error (typical error 5, access denied, return something way off.
 			*x = -32767
 			*y = -32767
 			return
-			// panic("GetCursorPos failed, " + err.Error())
 		}
 		screenToClient(w.Win32.handle, &pos)
 		*x = int(pos.X)
@@ -865,7 +565,7 @@ func glfwGetContentScale(w *Window) (float32, float32) {
 	var xscale, yscale float32
 	var xdpi, ydpi int
 	handle := monitorFromWindow(w.Win32.handle, MONITOR_DEFAULTTONEAREST)
-	if isWindows8Point1OrGreater() {
+	if IsWindows8Point1OrGreater() {
 		_, _, err := _GetDpiForMonitor.Call(uintptr(handle), uintptr(0),
 			uintptr(unsafe.Pointer(&xdpi)), uintptr(unsafe.Pointer(&ydpi)))
 		if !errors.Is(err, syscall.Errno(0)) {
@@ -882,28 +582,6 @@ func glfwGetContentScale(w *Window) (float32, float32) {
 	return xscale, yscale
 }
 
-func setWindowPos(hwnd syscall.Handle, after syscall.Handle, x, y, w, h int32, flags uint32) {
-	_, _, err := _SetWindowPos.Call(uintptr(hwnd), uintptr(after), uintptr(x), uintptr(y), uintptr(w), uintptr(h), uintptr(flags))
-	if err != nil && !errors.Is(err, syscall.Errno(0)) {
-		panic("setWindowPos failed, " + err.Error())
-	}
-}
-
-func getWindowLongW(hWnd syscall.Handle, index int32) uint32 {
-	r1, _, err := _GetWindowLongW.Call(uintptr(hWnd), uintptr(index))
-	if err != nil && !errors.Is(err, syscall.Errno(0)) {
-		panic("getWindowLongW failed, " + err.Error())
-	}
-	return uint32(r1)
-}
-
-func SetWindowLongW(hWnd syscall.Handle, index int32, newValue uint32) {
-	_, _, err := _SetWindowLongW.Call(uintptr(hWnd), uintptr(index), uintptr(newValue))
-	if err != nil && !errors.Is(err, syscall.Errno(0)) {
-		panic("getWindowLongW failed, " + err.Error())
-	}
-}
-
 func glfwGetWindowMonitor(window *Window) *Monitor {
 	return window.monitor
 }
@@ -912,8 +590,8 @@ func glfwSetWindowMonitor(window *Window, monitor *Monitor, xpos int, ypos int, 
 	if width <= 0 || height <= 0 {
 		panic("glfwSetWindowMonitor: invalid width or height")
 	}
-	window.videoMode.width = width
-	window.videoMode.height = height
+	window.videoMode.Width = width
+	window.videoMode.Height = height
 	window.videoMode.refreshRate = refreshRate
 	// This is _glfw.platform.setWindowMonitor(window, monitor, xpos, ypos, width, height,	refreshRate);
 	if window.monitor == monitor {
@@ -924,15 +602,15 @@ func glfwSetWindowMonitor(window *Window, monitor *Monitor, xpos int, ypos int, 
 			}
 		} else {
 			rect := RECT{int32(xpos), int32(ypos), int32(xpos + width), int32(ypos + height)}
-			if glfwIsWindows10Version1607OrGreater() {
-				adjustWindowRectExForDpi(&rect, getWindowStyle(window), 0, getWindowExStyle(window), getDpiForWindow(window.Win32.handle))
+			if IsWindows10Version1607OrGreater() {
+				AdjustWindowRectExForDpi(&rect, getWindowStyle(window), 0, getWindowExStyle(window), GetDpiForWindow(window.Win32.handle))
 			} else {
-				adjustWindowRectEx(&rect, getWindowStyle(window), 0, getWindowExStyle(window))
+				AdjustWindowRectEx(&rect, getWindowStyle(window), 0, getWindowExStyle(window))
 			}
 			_, _, err := _SetWindowPos.Call(uintptr(window.Win32.handle), 0 /* HWND_TOP*/, uintptr(rect.Left), uintptr(rect.Top),
 				uintptr(rect.Right-rect.Left), uintptr(rect.Bottom-rect.Top), uintptr(SWP_NOCOPYBITS|SWP_NOACTIVATE|SWP_NOZORDER))
 			if err != nil && !errors.Is(err, syscall.Errno(0)) {
-				panic("setWindowPos failed, " + err.Error())
+				panic("SetWindowPos failed, " + err.Error())
 			}
 		}
 		return
@@ -945,28 +623,23 @@ func glfwSetWindowMonitor(window *Window, monitor *Monitor, xpos int, ypos int, 
 	window.monitor = monitor
 
 	if window.monitor != nil {
-		var mi MONITORINFO
-		mi.CbSize = uint32(unsafe.Sizeof(mi))
 		flags := SWP_SHOWWINDOW | SWP_NOACTIVATE | SWP_NOCOPYBITS
 		if window.decorated {
-			style := getWindowLongW(window.Win32.handle, GWL_STYLE)
+			style := GetWindowLongW(window.Win32.handle, GWL_STYLE)
 			style &= ^uint32(WS_OVERLAPPEDWINDOW)
 			style |= getWindowStyle(window)
 			SetWindowLongW(window.Win32.handle, GWL_STYLE, style)
 			flags |= SWP_FRAMECHANGED
 		}
 		acquireMonitor(window)
-		GetMonitorInfo(window.monitor.hMonitor, &mi)
-		// setWindowPos(window.Win32.handle, HWND_TOPMOST,	mi.RcMonitor.Left,	mi.RcMonitor.Top, mi.RcMonitor.Right - mi.RcMonitor.Left, mi.RcMonitor.Bottom - mi.RcMonitor.Top, flags);
-		_, _, err := _SetWindowPos.Call(uintptr(window.Win32.handle), uintptr(HWND_TOPMOST), uintptr(mi.RcMonitor.Left), uintptr(mi.RcMonitor.Top),
-			uintptr(mi.RcMonitor.Right-mi.RcMonitor.Left), uintptr(mi.RcMonitor.Bottom-mi.RcMonitor.Top),
-			uintptr(SWP_NOCOPYBITS|SWP_NOACTIVATE|SWP_NOZORDER))
-		if err != nil && !errors.Is(err, syscall.Errno(0)) {
-			panic("setWindowPos failed, " + err.Error())
-		}
+		mi := GetMonitorInfo(window.monitor.hMonitor)
+		SetWindowPos(window.Win32.handle, HWND_TOPMOST,
+			mi.RcMonitor.Left, mi.RcMonitor.Top,
+			mi.RcMonitor.Right-mi.RcMonitor.Left, mi.RcMonitor.Bottom-mi.RcMonitor.Top,
+			SWP_NOCOPYBITS|SWP_NOACTIVATE|SWP_NOZORDER)
 	} else {
 		rect := RECT{int32(xpos), int32(ypos), int32(xpos + width), int32(ypos + height)}
-		style := getWindowLongW(window.Win32.handle, GWL_STYLE)
+		style := GetWindowLongW(window.Win32.handle, GWL_STYLE)
 		flags := SWP_NOACTIVATE | SWP_NOCOPYBITS
 		if window.decorated {
 			style = style &^ uint32(WS_POPUP)
@@ -980,21 +653,13 @@ func glfwSetWindowMonitor(window *Window, monitor *Monitor, xpos int, ypos int, 
 			after = syscall.Handle(HWND_TOPMOST)
 		}
 
-		if glfwIsWindows10Version1607OrGreater() {
-			adjustWindowRectExForDpi(&rect, getWindowStyle(window), 0, getWindowExStyle(window), getDpiForWindow(window.Win32.handle))
+		if IsWindows10Version1607OrGreater() {
+			AdjustWindowRectExForDpi(&rect, getWindowStyle(window), 0, getWindowExStyle(window), GetDpiForWindow(window.Win32.handle))
 		} else {
-			adjustWindowRectEx(&rect, getWindowStyle(window), 0, getWindowExStyle(window))
+			AdjustWindowRectEx(&rect, getWindowStyle(window), 0, getWindowExStyle(window))
 		}
-		setWindowPos(window.Win32.handle, after, rect.Left, rect.Top, rect.Right-rect.Left, rect.Bottom-rect.Top, SWP_NOCOPYBITS|SWP_NOACTIVATE|SWP_NOZORDER)
+		SetWindowPos(window.Win32.handle, after, rect.Left, rect.Top, rect.Right-rect.Left, rect.Bottom-rect.Top, SWP_NOCOPYBITS|SWP_NOACTIVATE|SWP_NOZORDER)
 	}
-}
-
-func enumDisplayDevices(device uintptr, no int, adapter *DISPLAY_DEVICEW, flags uint32) bool {
-	ret, _, err := _EnumDisplayDevices.Call(device, uintptr(no), uintptr(unsafe.Pointer(adapter)), uintptr(flags))
-	if !errors.Is(err, syscall.Errno(0)) {
-		panic("EnumDisplayDevices failed")
-	}
-	return ret == 1
 }
 
 func glfwPollMonitors() {
@@ -1009,7 +674,7 @@ func glfwPollMonitors() {
 		var adapter DISPLAY_DEVICEW
 		adapterType := GLFW_INSERT_LAST
 		adapter.cb = uint32(unsafe.Sizeof(adapter))
-		enumDisplayDevices(0, adapterIndex, &adapter, 0)
+		EnumDisplayDevices(0, adapterIndex, &adapter, 0)
 
 		if (adapter.StateFlags & DISPLAY_DEVICE_ACTIVE) == 0 {
 			continue
@@ -1021,7 +686,7 @@ func glfwPollMonitors() {
 		for displayIndex := 0; ; displayIndex++ {
 			var display DISPLAY_DEVICEW
 			display.cb = uint32(unsafe.Sizeof(display))
-			if !enumDisplayDevices(uintptr(unsafe.Pointer(&adapter.DeviceName)), displayIndex, &display, 0) {
+			if !EnumDisplayDevices(uintptr(unsafe.Pointer(&adapter.DeviceName)), displayIndex, &display, 0) {
 				break
 			}
 
@@ -1069,8 +734,8 @@ func glfwPollMonitors() {
 	}
 }
 
-func loadCursor(cursorID uint16) HANDLE {
-	h, err := loadImage(0, uint32(cursorID), IMAGE_CURSOR, 0, 0, LR_DEFAULTSIZE|LR_SHARED)
+func LoadCursor(cursorID uint16) HANDLE {
+	h, err := LoadImage(0, uint32(cursorID), IMAGE_CURSOR, 0, 0, LR_DEFAULTSIZE|LR_SHARED)
 	if err != nil && !errors.Is(err, syscall.Errno(0)) {
 		panic("LoadCursor failed, " + err.Error())
 	}
@@ -1078,4 +743,18 @@ func loadCursor(cursorID uint16) HANDLE {
 		panic("LoadCursor failed")
 	}
 	return HANDLE(h)
+}
+
+func glfwSetWindowSize(window *Window, width, height int) {
+	rect := RECT{0, 0, int32(width), int32(height)}
+	AdjustWindowRect(&rect, getWindowStyle(window), 0, getWindowExStyle(window), GetDpiForWindow(window.Win32.handle), "glfwSetWindowSize")
+	SetWindowPos(window.Win32.handle, 0, 0, 0, rect.Right-rect.Left, rect.Bottom-rect.Top, SWP_NOACTIVATE|SWP_NOOWNERZORDER|SWP_NOMOVE|SWP_NOZORDER)
+}
+
+func AdjustWindowRect(rect *RECT, style uint32, menu int, exStyle uint32, dpi int, from string) {
+	if IsWindows10Version1607OrGreater() {
+		AdjustWindowRectExForDpi(rect, style, 0, exStyle, dpi)
+	} else {
+		AdjustWindowRectEx(rect, style, 0, exStyle)
+	}
 }

@@ -1,9 +1,13 @@
 package glfw
 
+import "C"
 import (
+	"errors"
 	"fmt"
 	"golang.design/x/clipboard"
-	"log/slog"
+	"syscall"
+	"time"
+	"unsafe"
 )
 
 // MouseButton definitions
@@ -54,7 +58,6 @@ type StandardCursor uint16
 type Hint uint32
 
 // Window represents a Window.
-
 type Window = _GLFWwindow
 
 type Cursor struct {
@@ -65,8 +68,12 @@ type Cursor struct {
 // PollEvents processes only those events that have already been received and
 // then returns immediately. Processing events will cause the Window and input
 // callbacks associated with those events to be called.
-// this was called glfwPollEvents()
 func PollEvents() {
+	glfwPollEvents()
+}
+
+func WaitEvents() {
+	WaitMessage()
 	glfwPollEvents()
 }
 
@@ -194,7 +201,7 @@ func CreateStandardCursor(shape int) *Cursor {
 	default:
 		panic("Win32: Unknown or unsupported standard cursor")
 	}
-	cursor.handle = loadCursor(id)
+	cursor.handle = LoadCursor(id)
 	if cursor.handle == 0 {
 		panic("Win32: Failed to create standard cursor")
 	}
@@ -202,16 +209,10 @@ func CreateStandardCursor(shape int) *Cursor {
 }
 
 func CreateWindow(width, height int, title string, monitor *Monitor, share *Window) (*Window, error) {
-	s := &_GLFWwindow{}
-	s.context = &_GLFWcontext{}
-	if share != nil {
-		s = share
-	}
-	w, err := glfwCreateWindow(width, height, title, monitor, s)
+	wnd, err := glfwCreateWindow(width, height, title, monitor, share)
 	if err != nil {
 		return nil, fmt.Errorf("glfwCreateWindow failed: %v", err)
 	}
-	wnd := w
 	return wnd, nil
 }
 
@@ -228,8 +229,22 @@ func (w *Window) SetCursor(c *Cursor) {
 // SetPos sets the position, in screen coordinates, of the Window's upper-left corner
 func (w *Window) SetPos(xPos, yPos int) {
 	rect := RECT{Left: int32(xPos), Top: int32(yPos), Right: int32(xPos), Bottom: int32(yPos)}
-	adjustWindowRect(&rect, getWindowStyle(w), 0, getWindowExStyle(w), getDpiForWindow(w.Win32.handle), "glfwSetWindowPos")
-	setWindowPos(w.Win32.handle, 0, rect.Left, rect.Top, 0, 0, SWP_NOACTIVATE|SWP_NOZORDER|SWP_NOSIZE)
+	AdjustWindowRect(&rect, getWindowStyle(w), 0, getWindowExStyle(w), GetDpiForWindow(w.Win32.handle), "glfwSetWindowPos")
+	SetWindowPos(w.Win32.handle, 0, rect.Left, rect.Top, 0, 0, SWP_NOACTIVATE|SWP_NOZORDER|SWP_NOSIZE)
+}
+
+// SetSize sets the size, in screen coordinates, of the client area of the Window.
+func (w *Window) SetSize(width, height int) {
+	if w.monitor != nil {
+		if w.monitor.window == w {
+			acquireMonitor(w)
+			fitToMonitor(w)
+		}
+	} else {
+		rect := RECT{0, 0, int32(width), int32(height)}
+		AdjustWindowRect(&rect, getWindowStyle(w), 0, getWindowExStyle(w), GetDpiForWindow(w.Win32.handle), "glfwSetWindowSize")
+		SetWindowPos(w.Win32.handle, 0, 0, 0, int32(width), int32(height), SWP_NOACTIVATE|SWP_NOOWNERZORDER|SWP_NOMOVE|SWP_NOZORDER)
+	}
 }
 
 // SetMonitor sets the monitor that the window uses for full screen mode or,
@@ -256,7 +271,6 @@ func (w *Window) GetContentScale() (float32, float32) {
 func (w *Window) GetFrameSize() (left, top, right, bottom int) {
 	var l, t, r, b int
 	glfwGetWindowFrameSize(w, &l, &t, &r, &b)
-	slog.Info("GetFrameSize", "Wno", w.Win32.handle, "l", l, "t", t, "r", r, "b", b)
 	return l, t, r, b
 }
 
@@ -291,20 +305,6 @@ func (w *Window) Destroy() {
 	glfwDestroyWindow(w)
 }
 
-// SetSize sets the size, in screen coordinates, of the client area of the Window.
-func (w *Window) SetSize(width, height int) {
-	if w.monitor != nil {
-		if w.monitor.window == w {
-			acquireMonitor(w)
-			fitToMonitor(w)
-		}
-	} else {
-		rect := RECT{0, 0, int32(width), int32(height)}
-		adjustWindowRect(&rect, getWindowStyle(w), 0, getWindowExStyle(w), getDpiForWindow(w.Win32.handle), "glfwSetWindowSize")
-		setWindowPos(w.Win32.handle, 0, 0, 0, int32(width), int32(height), SWP_NOACTIVATE|SWP_NOOWNERZORDER|SWP_NOMOVE|SWP_NOZORDER)
-	}
-}
-
 // Show makes the Window visible if it was previously hidden.
 func (w *Window) Show() {
 	if w.monitor != nil {
@@ -317,17 +317,6 @@ func (w *Window) Show() {
 }
 
 func (w *Window) MakeContextCurrent() {
-	// _GLFWWindow * Window = (_GLFWWindow *)hMonitor;
-	// _GLFWWindow * previous;
-	// _GLFW_REQUIRE_INIT();
-	// previous := glfwPlatformGetTls(&_glfw.contextSlot);
-	// if previous != nil {
-	//	_ = previous.context.makeCurrent(nil)
-	// }
-	// previous = w
-	// if w == nil {
-	// 	panic("Window is nil")
-	// }
 	_ = w.context.makeCurrent(w)
 }
 
@@ -343,25 +332,61 @@ func (w *Window) Maximize() {
 	glfwShowWindow(w)
 }
 
+func (w *Window) SetWindowShouldClose(close bool) {
+	w.shouldClose = close
+}
+
 // Terminate destroys all remaining Windows, frees any allocated resources and
 // sets the library to an uninitialized state.
 func Terminate() {
 	glfwTerminate()
 }
 
-// Init is glfwInit(void) from init.c
-func Init() error {
-	var err error
-
-	err = clipboard.Init()
-	if err != nil {
+func GetFramebufferSize(window *Window, width *int32, height *int32) {
+	var area RECT
+	_, _, err := _GetClientRect.Call(uintptr(unsafe.Pointer(window.Win32.handle)), uintptr(unsafe.Pointer(&area)))
+	if !errors.Is(err, syscall.Errno(0)) {
 		panic(err)
 	}
+	*width = area.Right
+	*height = area.Bottom
+}
 
+func getTime() float64 {
+	return float64(time.Now().UnixNano()) / 1.0e9
+}
+
+var startTime = float64(time.Now().UnixNano()) / 1.0e9
+
+func GetTime() float64 {
+	return getTime() - startTime
+}
+
+func SetTime(t float64) {
+	startTime = getTime() - t
+}
+
+// Init is glfwInit(void)
+func Init() error {
 	// Repeated calls do nothing
 	if _glfw.initialized {
 		return nil
 	}
 	_glfw.hints.init = _GLFWinitconfig{}
-	return glfwPlatformInit()
+	err := clipboard.Init()
+	if err != nil {
+		panic(err)
+	}
+	if err = glfwPlatformInit(); err != nil {
+		return err
+	}
+	err = glfwPlatformCreateTls(&_glfw.errorSlot)
+	if err != nil {
+		return err
+	}
+	err = glfwPlatformCreateTls(&_glfw.contextSlot)
+	if err != nil {
+		return err
+	}
+	return nil
 }

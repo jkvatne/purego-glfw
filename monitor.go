@@ -1,8 +1,6 @@
 package glfw
 
 import (
-	"errors"
-	"fmt"
 	"syscall"
 	"unsafe"
 )
@@ -38,21 +36,6 @@ type POINT struct {
 	X, Y int32
 }
 
-type RECT struct {
-	Left, Top, Right, Bottom int32
-}
-
-type HANDLE syscall.Handle
-type HDC HANDLE
-type HMONITOR HANDLE
-
-type MONITORINFO struct {
-	CbSize    uint32
-	RcMonitor RECT
-	RcWork    RECT
-	DwFlags   uint32
-}
-
 // GetMonitors returns a slice of handles for all currently connected monitors.
 func GetMonitors() []*Monitor {
 	return _glfw.monitors
@@ -84,52 +67,13 @@ func (m *Monitor) GetPos() (x, y int) {
 	// return int(m.Bounds.Left), int(m.Bounds.Top)
 }
 
-// GetMonitorInfo automatically sets the MONITORINFO's CbSize field.
-func GetMonitorInfo(hMonitor HMONITOR, lmpi *MONITORINFO) bool {
-	if lmpi != nil {
-		lmpi.CbSize = uint32(unsafe.Sizeof(*lmpi))
-	}
-	// lmpi.CbSize = 24
-	ret, _, err := _GetMonitorInfo.Call(uintptr(hMonitor), uintptr(unsafe.Pointer(lmpi)))
-	if !errors.Is(err, syscall.Errno(0)) {
-		panic("GetMonitorInfo failed, " + err.Error())
-	}
-	return ret != 0
-}
-
-// Use NewEnumDisplayMonitorsCallback to create the callback function.
-func EnumDisplayMonitors(hdc HDC, clip *RECT, lpfnEnum uintptr, data uintptr) error {
-	ret, _, _ := _EnumDisplayMonitors.Call(
-		uintptr(hdc),
-		uintptr(unsafe.Pointer(clip)),
-		lpfnEnum,
-		uintptr(unsafe.Pointer(data)),
-	)
-	if ret == 0 {
-		return fmt.Errorf("w32.EnumDisplayMonitors returned FALSE")
-	}
-	return nil
-}
-
 func enumMonitorCallback(monitor HMONITOR, hdc HDC, bounds RECT, lParam uintptr) bool {
 	m := (*Monitor)(unsafe.Pointer(lParam))
 	m.hMonitor = monitor
 	m.hDc = hdc
 	m.Bounds = bounds
+	// monitorInfo := GetMonitorInfo(m.hMonitor)
 	// Monitors = append(Monitors, &m)
-	var monitorInfo MONITORINFO
-	GetMonitorInfo(monitor, &monitorInfo)
-	// slog.Info("EnumMonitors RcMonitor", "left", monitorInfo.RcMonitor.Left, "top", monitorInfo.RcMonitor.Top, "right", monitorInfo.RcMonitor.Right, "bottom", monitorInfo.RcMonitor.Bottom)
-	// slog.Info("EnumMonitors RcWork", "left", monitorInfo.RcWork.Left, "top", monitorInfo.RcWork.Top, "right", monitorInfo.RcWork.Right, "bottom", monitorInfo.RcWork.Bottom)
-	// var scaleFactor int
-	// r1, _, err := _GetScaleFactorForMonitor.Call(uintptr(m.hMonitor), uintptr(unsafe.Pointer(&scaleFactor)))
-	// if !errors.Is(err, syscall.Errno(0)) || r1 != 0 {
-	//	panic("_GetScaleFactorForMonitor failed, " + err.Error())
-	// }
-	// slog.Info("ScaleFactor", "hmonitor", monitor, "value", scaleFactor)
-	// if monitorInfo.DwFlags != 0 {
-	//	slog.Info("Primary monitor")
-	// }
 	return true
 }
 
@@ -150,7 +94,6 @@ func NewEnumDisplayMonitorsCallback(callback func(monitor HMONITOR, hdc HDC, bou
 }
 
 // GetPhysicalSize returns the size, in millimetres, of the display area of the monitor.
-
 func (m *Monitor) GetPhysicalSize() (width, height int) {
 	return m.widthMM, m.heightMM
 }
@@ -159,25 +102,12 @@ func (m *Monitor) GetPhysicalSize() (width, height int) {
 // corner of the work area of the specified monitor along with the work area
 // size in screen coordinates.
 func (m *Monitor) GetWorkarea() (x, y, width, height int) {
-	var mi MONITORINFO
-	mi.CbSize = uint32(unsafe.Sizeof(mi))
-	_, _, err := _GetMonitorInfo.Call(uintptr(m.hMonitor), uintptr(unsafe.Pointer(&mi)))
-	if !errors.Is(err, syscall.Errno(0)) {
-		panic(err)
-	}
+	mi := GetMonitorInfo(m.hMonitor)
 	x = int(mi.RcWork.Left)
 	y = int(mi.RcWork.Top)
 	width = int(mi.RcWork.Right - mi.RcWork.Left)
 	height = int(mi.RcWork.Bottom - mi.RcWork.Top)
 	return x, y, width, height
-}
-
-func GetDeviceCaps(dc HDC, flags int) int {
-	r1, _, err := _GetDeviceCaps.Call(uintptr(unsafe.Pointer(dc)), uintptr(flags))
-	if err != nil && !errors.Is(err, syscall.Errno(0)) {
-		panic("GetDeviceCaps failed, " + err.Error())
-	}
-	return int(r1)
 }
 
 // GetContentScale function retrieves the content scale for the specified monitor.
@@ -189,16 +119,40 @@ func GetDeviceCaps(dc HDC, flags int) int {
 // This function must only be called from the main thread.
 func (m *Monitor) GetContentScale() (float32, float32) {
 	var dpiX, dpiY int
-	if isWindows8Point1OrGreater() {
-		r1, _, err := _GetDpiForMonitor.Call(uintptr(m.hMonitor), uintptr(0), uintptr(unsafe.Pointer(&dpiX)), uintptr(unsafe.Pointer(&dpiY)))
-		if !errors.Is(err, syscall.Errno(0)) || r1 != 0 {
-			panic("GetContentScale failed, " + err.Error())
-		}
+	if IsWindows8Point1OrGreater() {
+		dpiX, dpiY = GetDpiForMonitor(m.hMonitor, MDT_EFFECTIVE_DPI)
 	} else {
 		dc := getDC(0)
 		dpiX = GetDeviceCaps(dc, LOGPIXELSX)
 		dpiX = GetDeviceCaps(dc, LOGPIXELSY)
 		releaseDC(0, dc)
 	}
-	return float32(dpiX) / USER_DEFAULT_SCREEN_DPI, float32(dpiX) / USER_DEFAULT_SCREEN_DPI
+	return float32(dpiX) / USER_DEFAULT_SCREEN_DPI, float32(dpiY) / USER_DEFAULT_SCREEN_DPI
+}
+
+func (m *Monitor) GetMonitorName() string {
+	s := GoStr(&m.name[0])
+	return s
+}
+
+func GetVideoMode(monitor *Monitor) _GLFWvidmode {
+	mode := monitor.currentMode
+	var dm DEVMODEW
+	dm.dmSize = uint16(unsafe.Sizeof(dm))
+	EnumDisplaySettingsEx(&monitor.adapterName[0], ENUM_CURRENT_SETTINGS, &dm, 0)
+	mode.Width = int(dm.dmPelsWidth)
+	mode.Height = int(dm.dmPelsHeight)
+	mode.refreshRate = int(dm.dmDisplayFrequency)
+	n := int(max(24, dm.dmBitsPerPel) / 3)
+	mode.blueBits = n
+	mode.redBits = n
+	mode.greenBits = n
+	delta := dm.dmBitsPerPel - uint32(mode.redBits*3)
+	if delta >= 1 {
+		mode.greenBits++
+	}
+	if delta == 2 {
+		mode.redBits++
+	}
+	return mode
 }

@@ -6,12 +6,13 @@ import (
 	"sync"
 	"syscall"
 	"unicode"
+	"unicode/utf16"
 	"unsafe"
 )
 
 type _GLFWvidmode struct {
-	width       int
-	height      int
+	Width       int
+	Height      int
 	redBits     int
 	greenBits   int
 	blueBits    int
@@ -21,26 +22,34 @@ type _GLFWvidmode struct {
 type (
 	_GLFWmakecontextcurrentfun = func(w *Window) error
 	_GLFWswapbuffersfun        = func(w *Window)
-	_GLFWextensionsupportedfun = func(x byte) bool
-	_GLFWgetprocaddressfun     = func()
+	_GLFWswapintervalfun       = func(n int)
+	_GLFWextensionsupportedfun = func(s string) bool
+	_GLFWgetprocaddressfun     = func(s string) uintptr
 	_GLFWdestroycontextfun     = func(w *Window)
 )
 
 // Context structure
-//
 type _GLFWcontext struct {
+	client                  int
+	source                  int
 	major, minor, revision  int
 	forward, debug, noerror bool
 	profile                 int
 	robustness              int
 	release                 int
+	GetStringi              uintptr
+	GetIntegerv             uintptr
+	GetString               uintptr
 	makeCurrent             _GLFWmakecontextcurrentfun
 	swapBuffers             _GLFWswapbuffersfun
+	swapInterval            _GLFWswapintervalfun
+	extensionSupported      _GLFWextensionsupportedfun
 	getProcAddress          _GLFWgetprocaddressfun
 	destroy                 _GLFWdestroycontextfun
 	wgl                     struct {
 		dc       HDC
 		handle   HANDLE
+		hMonitor HANDLE
 		interval int
 	}
 }
@@ -86,6 +95,7 @@ type _GLFWwindow struct {
 	sizeCallback           SizeCallback
 	dropCallback           DropCallback
 	contentScaleCallback   ContentScaleCallback
+	windowCloseCallback    func(w *_GLFWwindow)
 	fFramebufferSizeHolder func(w *_GLFWwindow, width int, height int)
 	fCloseHolder           func(w *_GLFWwindow)
 	fMaximizeHolder        func(w *_GLFWwindow, maximized bool)
@@ -227,32 +237,35 @@ var _glfw struct {
 		mouseTrailSize       uint32
 	}
 	wgl struct {
-		dc                         HDC
-		handle                     syscall.Handle
-		interval                   int
-		instance                   *windows.LazyDLL
-		wglCreateContextAttribsARB *windows.LazyProc
-		wglDeleteContext           *windows.LazyProc
-		wglGetProcAddress          *windows.LazyProc
-		wglGetCurrentDC            *windows.LazyProc
-		wglGetCurrentContext       *windows.LazyProc
-		wglMakeCurrent             *windows.LazyProc
-		wglSwapBuffers             *windows.LazyProc
-		wglCreateContext           *windows.LazyProc
-		wglSetPixelFormat          *windows.LazyProc
-		wglChoosePixelFormat       *windows.LazyProc
-		wglDescribePixelFormat     *windows.LazyProc
-		getProcAddress             *windows.LazyProc
-		GetExtensionsStringEXT     *windows.LazyProc
-		GetExtensionsStringARB     *windows.LazyProc
-		GetPixelFormatAttribivARB  *windows.LazyProc
-		GetDeviceCaps              *windows.LazyProc
-		GetString                  *windows.LazyProc
-		ARB_pixel_format           int
-		ARB_multisample            bool
-		ARB_framebuffer_sRGB       bool
-		EXT_framebuffer_sRGB       bool
-		EXT_colorspace             bool
+		dc       HDC
+		handle   syscall.Handle
+		interval int
+		// _GLFWlibraryWGL
+		instance                       *windows.LazyDLL
+		wglCreateContext               *windows.LazyProc
+		wglDeleteContext               *windows.LazyProc
+		wglGetProcAddress              *windows.LazyProc
+		wglGetCurrentDC                *windows.LazyProc
+		wglGetCurrentContext           *windows.LazyProc
+		wglMakeCurrent                 *windows.LazyProc
+		wglShareLists                  *windows.LazyProc
+		SwapIntervalEXT                uintptr
+		GetPixelFormatAttribivARB      uintptr
+		GetExtensionsStringEXT         uintptr
+		GetExtensionsStringARB         uintptr
+		wglCreateContextAttribsARB     uintptr
+		EXT_swap_control               bool
+		EXT_colorspace                 bool
+		ARB_multisample                bool
+		ARB_framebuffer_sRGB           bool
+		EXT_framebuffer_sRGB           bool
+		ARB_pixel_format               bool
+		ARB_create_context             bool
+		ARB_create_context_profile     bool
+		EXT_create_context_es2_profile bool
+		ARB_create_context_robustness  bool
+		ARB_create_context_no_error    bool
+		ARB_context_flush_control      bool
 	}
 }
 
@@ -349,42 +362,29 @@ func glfwInputWindowCloseRequest(window *_GLFWwindow) {
 
 func getKeyMods() ModifierKey {
 	var mods ModifierKey
-	if getKeyState(VK_SHIFT)&0x8000 != 0 {
+	if GetKeyState(VK_SHIFT)&0x8000 != 0 {
 		mods |= ModShift
 	}
-	if getKeyState(VK_CONTROL)&0x8000 != 0 {
+	if GetKeyState(VK_CONTROL)&0x8000 != 0 {
 		mods |= ModControl
 	}
-	if getKeyState(VK_MENU)&0x8000 != 0 {
+	if GetKeyState(VK_MENU)&0x8000 != 0 {
 		mods |= ModAlt
 	}
-	if (getKeyState(VK_LWIN)|getKeyState(VK_RWIN))&0x8000 != 0 {
+	if (GetKeyState(VK_LWIN)|GetKeyState(VK_RWIN))&0x8000 != 0 {
 		mods |= ModSuper
 	}
-	if (getKeyState(VK_CAPITAL) & 1) != 0 {
+	if (GetKeyState(VK_CAPITAL) & 1) != 0 {
 		mods |= ModCapsLock
 	}
-	if (getKeyState(VK_NUMLOCK) & 1) != 0 {
+	if (GetKeyState(VK_NUMLOCK) & 1) != 0 {
 		mods |= ModNumLock
 	}
 	return mods
 }
 
-var winMap map[syscall.Handle]*_GLFWwindow
-
-func getProp(hwnd syscall.Handle) *_GLFWwindow {
-	return winMap[hwnd]
-}
-
-func setProp(hwnd syscall.Handle, prop *_GLFWwindow) {
-	if winMap == nil {
-		winMap = make(map[syscall.Handle]*_GLFWwindow)
-	}
-	winMap[hwnd] = prop
-}
-
 func windowProc(hwnd syscall.Handle, msg uint32, wParam, lParam uintptr) uintptr {
-	window := getProp(hwnd)
+	window := (*Window)(unsafe.Pointer(GetProp(HANDLE(hwnd), "GLFW")))
 	if window == nil {
 		r1, _, _ := _DefWindowProc.Call(uintptr(hwnd), uintptr(msg), wParam, lParam)
 		return r1
@@ -613,7 +613,7 @@ func windowProc(hwnd syscall.Handle, msg uint32, wParam, lParam uintptr) uintptr
 
 func glfwPlatformPollEvents() {
 	var msg Msg
-	for peekMessage(&msg, 0, 0, 0, PM_REMOVE) {
+	for PeekMessage(&msg, 0, 0, 0, PM_REMOVE) {
 		if msg.Message == WM_QUIT {
 			// NOTE: While GLFW does not itself post WM_QUIT, other processes may post it to this one, for example Task Manager
 			// HACK: Treat WM_QUIT as a close on all windows
@@ -623,8 +623,8 @@ func glfwPlatformPollEvents() {
 				window = window.next
 			}
 		} else {
-			translateMessage(&msg)
-			dispatchMessage(&msg)
+			TranslateMessage(&msg)
+			DispatchMessage(&msg)
 		}
 	}
 
@@ -643,7 +643,7 @@ func glfwPlatformPollEvents() {
 				vk := keys[i][0];
 				key := keys[i][1];
 				// scancode := Win32.scancodes[key];
-				if getKeyState(vk) & 0x8000 || window.keys[key] != GLFW_PRESS {
+				if GetKeyState(vk) & 0x8000 || window.keys[key] != GLFW_PRESS {
 					continue;
 				}
 				_glfwInputKey(window, key, scancode, GLFW_RELEASE, getKeyMods());
@@ -660,10 +660,6 @@ func glfwPlatformPollEvents() {
 		}
 	}
 	*/
-}
-
-func glfwSwapBuffers(window *_GLFWwindow) {
-	window.context.swapBuffers(window)
 }
 
 func cursorInContentArea(w *_GLFWwindow) bool {
@@ -691,7 +687,7 @@ func glfwSetCursor(window *_GLFWwindow, cursor *Cursor) {
 			if window.cursor != nil {
 				setCursorWin32(window.cursor.handle)
 			} else {
-				setCursorWin32(loadCursor(IDC_ARROW))
+				setCursorWin32(LoadCursor(IDC_ARROW))
 			}
 		} else {
 			// NOTE: Via Remote Desktop, setting the cursor to NULL does not hide it.
@@ -738,42 +734,6 @@ func glfwFocusWindow(window *_GLFWwindow) {
 	SetFocus(window)
 }
 
-type POINTL = struct {
-	X, Y int32
-}
-
-type DEVMODEW = struct {
-	mDeviceName          [32]uint16
-	dmSpecVersion        uint16
-	dmDriverVersion      uint16
-	dmSize               uint16
-	dmDriverExtra        uint16
-	dmFields             uint32
-	dmPosition           POINTL
-	dmDisplayOrientation uint32
-	dmDisplayFixedOutput uint32
-	dmColor              uint16
-	dmDuplex             uint16
-	dmYResolution        uint16
-	dmTTOption           uint16
-	dmCollate            uint16
-	dmFormName           [32]uint16
-	dmLogPixels          uint16
-	dmBitsPerPel         uint32
-	dmPelsWidth          int32
-	dmPelsHeight         int32
-	dmDisplayFlags       uint32
-	dmDisplayFrequency   uint32
-	dmICMMethod          uint32
-	dmICMIntent          uint32
-	dmMediaType          uint32
-	dmDitherType         uint32
-	dmReserved1          uint32
-	dmReserved2          uint32
-	dmPanningWidth       uint32
-	dmPanningHeight      uint32
-}
-
 const (
 	ENUM_CURRENT_SETTINGS      = -1
 	HORZSIZE                   = 4
@@ -784,13 +744,6 @@ const (
 	DISPLAY_DEVICE_REMOTE      = 0x04000000
 	DISPLAY_DEVICE_DISCONNECT  = 0x02000000
 )
-
-func EnumDisplaySettingsEx(name *uint16, mode int, dm *DEVMODEW, flags int) {
-	_, _, err := _EnumDisplaySettingsEx.Call(uintptr(unsafe.Pointer(name)), uintptr(mode), uintptr(unsafe.Pointer(dm)), uintptr(flags))
-	if !errors.Is(err, syscall.Errno(0)) {
-		panic("EnumDisplySetting failed, " + err.Error())
-	}
-}
 
 func createMonitor(adapter *DISPLAY_DEVICEW, display *DISPLAY_DEVICEW) *Monitor {
 	var monitor Monitor
@@ -806,7 +759,7 @@ func createMonitor(adapter *DISPLAY_DEVICEW, display *DISPLAY_DEVICEW) *Monitor 
 		panic("CreateDC failed, " + err.Error())
 	}
 	dc := HDC(ret)
-	if isWindows8Point1OrGreater() {
+	if IsWindows8Point1OrGreater() {
 		widthMM = GetDeviceCaps(dc, HORZSIZE)
 		heightMM = GetDeviceCaps(dc, VERTSIZE)
 	} else {
@@ -823,27 +776,24 @@ func createMonitor(adapter *DISPLAY_DEVICEW, display *DISPLAY_DEVICEW) *Monitor 
 	if adapter.StateFlags&DISPLAY_DEVICE_MODESPRUNED != 0 {
 		monitor.modesPruned = true
 	}
-	// copy(monitor.adapterName, adapter.DeviceName)
+	for i := 0; i < len(adapter.DeviceName); i++ {
+		monitor.adapterName[i] = adapter.DeviceName[i]
+	}
 	// WideCharToMultiByte(CP_UTF8, 0, adapter.DeviceName, -1, monitor.win32.publicAdapterName, sizeof(monitor.win32.publicAdapterName), NULL, NULL)
-	// if display != nil {
-	//	wcscpy(monitor.win32.displayName, display.DeviceName)
+	if display != nil {
+		for i := 0; i < len(adapter.DeviceName); i++ {
+			monitor.displayName[i] = display.DeviceName[i]
+		}
+	}
 	//	WideCharToMultiByte(CP_UTF8, 0, display.DeviceName, -1, monitor.win32.publicDisplayName, sizeof(monitor.win32.publicDisplayName), NULL, NULL)
-	// }
+	monitor.publicDisplayName = string(utf16.Decode(display.DeviceName[:]))
+	monitor.publicAdapterName = string(utf16.Decode(adapter.DeviceName[:]))
 	rect.Left = dm.dmPosition.X
 	rect.Top = dm.dmPosition.Y
 	rect.Right = dm.dmPosition.X + dm.dmPelsWidth
 	rect.Bottom = dm.dmPosition.Y + dm.dmPelsHeight
 	_ = EnumDisplayMonitors(0, &rect, NewEnumDisplayMonitorsCallback(enumMonitorCallback), uintptr(unsafe.Pointer(&monitor)))
 	return &monitor
-}
-
-type DISPLAY_DEVICEW struct {
-	cb           uint32
-	DeviceName   [32]uint16
-	DeviceString [128]uint16
-	StateFlags   uint32
-	DeviceID     [128]uint16
-	DeviceKey    [128]uint16
 }
 
 const (
@@ -1015,7 +965,7 @@ func glfwInputMonitor(monitor *Monitor, action int, placement int) {
 				// glfwGetWindowSize(window, &width, &height);
 				// _glfw.platform.setWindowMonitor(window, NULL, 0, 0, width, height, 0);
 				// _glfw.platform.getWindowFrameSize(window, &xoff, &yoff, NULL, NULL);
-				// _glfw.platform.setWindowPos(window, xoff, yoff);
+				// _glfw.platform.SetWindowPos(window, xoff, yoff);
 			}
 		}
 		for i := 0; i < _glfw.monitorCount; i++ {
@@ -1091,7 +1041,7 @@ func glfwChooseVideoMode(monitor *Monitor, desired *_GLFWvidmode) *_GLFWvidmode 
 		if desired.blueBits != GLFW_DONT_CARE {
 			colorDiff += abs(current.blueBits - desired.blueBits)
 		}
-		sizeDiff = abs((current.width-desired.width)*(current.width-desired.width) + (current.height-desired.height)*(current.height-desired.height))
+		sizeDiff = abs((current.Width-desired.Width)*(current.Width-desired.Width) + (current.Height-desired.Height)*(current.Height-desired.Height))
 		if desired.refreshRate != GLFW_DONT_CARE {
 			rateDiff = abs(current.refreshRate - desired.refreshRate)
 		} else {
@@ -1125,8 +1075,8 @@ func glfwSetVideoModeWin32(monitor *Monitor, desired *_GLFWvidmode) error {
 
 	dm.dmSize = uint16(unsafe.Sizeof(dm))
 	dm.dmFields = DM_PELSWIDTH | DM_PELSHEIGHT | DM_BITSPERPEL | DM_DISPLAYFREQUENCY
-	dm.dmPelsWidth = int32(best.width)
-	dm.dmPelsHeight = int32(best.height)
+	dm.dmPelsWidth = int32(best.Width)
+	dm.dmPelsHeight = int32(best.Height)
 	dm.dmBitsPerPel = uint32(best.redBits + best.greenBits + best.blueBits)
 	dm.dmDisplayFrequency = uint32(best.refreshRate)
 
@@ -1165,8 +1115,7 @@ func glfwSetVideoModeWin32(monitor *Monitor, desired *_GLFWvidmode) error {
 */
 
 func fitToMonitor(window *Window) {
-	var mi MONITORINFO
-	GetMonitorInfo(window.monitor.hMonitor, &mi)
+	mi := GetMonitorInfo(window.monitor.hMonitor)
 	_, _, err := _SetWindowPos.Call(
 		uintptr(window.Win32.handle),
 		uintptr(HWND_TOPMOST),
@@ -1216,4 +1165,10 @@ func releaseMonitor(window *Window) {
 	}
 	glfwInputMonitorWindow(window.monitor, nil)
 	// TODO _glfwRestoreVideoModeWin32(window.monitor)
+}
+
+func glfwSetPos(w *Window, xPos, yPos int) {
+	rect := RECT{Left: int32(xPos), Top: int32(yPos), Right: int32(xPos), Bottom: int32(yPos)}
+	AdjustWindowRect(&rect, getWindowStyle(w), 0, getWindowExStyle(w), GetDpiForWindow(w.Win32.handle), "glfwSetWindowPos")
+	SetWindowPos(w.Win32.handle, 0, rect.Left, rect.Top, 0, 0, SWP_NOACTIVATE|SWP_NOZORDER|SWP_NOSIZE)
 }
