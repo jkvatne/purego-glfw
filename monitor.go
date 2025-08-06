@@ -140,14 +140,14 @@ func GetVideoMode(monitor *Monitor) GLFWvidmode {
 	var dm DEVMODEW
 	dm.dmSize = uint16(unsafe.Sizeof(dm))
 	EnumDisplaySettingsEx(&monitor.adapterName[0], ENUM_CURRENT_SETTINGS, &dm, 0)
-	mode.Width = int(dm.dmPelsWidth)
-	mode.Height = int(dm.dmPelsHeight)
-	mode.RefreshRate = int(dm.dmDisplayFrequency)
-	mode.RedBits, mode.GreenBits, mode.BlueBits = SplitBpp(int(dm.dmBitsPerPel))
+	mode.Width = dm.dmPelsWidth
+	mode.Height = dm.dmPelsHeight
+	mode.RefreshRate = dm.dmDisplayFrequency
+	mode.RedBits, mode.GreenBits, mode.BlueBits = SplitBpp(dm.dmBitsPerPel)
 	return mode
 }
 
-func SplitBpp(bitsPerPel int) (int, int, int) {
+func SplitBpp(bitsPerPel int32) (int32, int32, int32) {
 	bitsPerPel = min(24, bitsPerPel)
 	n := bitsPerPel / 3
 	blueBits := n
@@ -170,7 +170,10 @@ func GetVideoModes(monitor *Monitor) (result []GLFWvidmode) {
 		var mode GLFWvidmode
 		var dm DEVMODEW
 		dm.dmSize = uint16(unsafe.Sizeof(dm))
-		EnumDisplaySettingsEx(&monitor.adapterName[0], modeIndex, &dm, 0)
+		n := EnumDisplaySettingsEx(&monitor.adapterName[0], modeIndex, &dm, 0)
+		if n == 0 {
+			break
+		}
 		if dm.dmSize == 0 {
 			break
 		}
@@ -179,10 +182,10 @@ func GetVideoModes(monitor *Monitor) (result []GLFWvidmode) {
 		if dm.dmBitsPerPel < 15 {
 			continue
 		}
-		mode.Width = int(dm.dmPelsWidth)
-		mode.Height = int(dm.dmPelsHeight)
-		mode.RefreshRate = int(dm.dmDisplayFrequency)
-		mode.RedBits, mode.GreenBits, mode.BlueBits = SplitBpp(int(dm.dmBitsPerPel))
+		mode.Width = dm.dmPelsWidth
+		mode.Height = dm.dmPelsHeight
+		mode.RefreshRate = dm.dmDisplayFrequency
+		mode.RedBits, mode.GreenBits, mode.BlueBits = SplitBpp(dm.dmBitsPerPel)
 		i := 0
 		for ; i < count; i++ {
 			if CompareVideoModes(&result[i], &mode) == 0 {
@@ -212,7 +215,7 @@ func GetVideoModes(monitor *Monitor) (result []GLFWvidmode) {
 
 // Lexically compare video modes, used by qsort
 //
-func CompareVideoModes(fp, sp *GLFWvidmode) int {
+func CompareVideoModes(fp, sp *GLFWvidmode) int32 {
 	fbpp := fp.RedBits + fp.GreenBits + fp.BlueBits
 	sbpp := sp.RedBits + sp.GreenBits + sp.BlueBits
 	farea := fp.Width * fp.Height

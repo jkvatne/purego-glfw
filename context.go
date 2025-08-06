@@ -32,14 +32,13 @@ func glfwIsValidContextConfig(ctxconfig *_GLFWctxconfig) error {
 	return nil
 }
 
-func glfwChooseFBConfig(desired *_GLFWfbconfig, alternatives []_GLFWfbconfig, count int) *_GLFWfbconfig {
-	var i int
-	var missing, leastMissing = INT_MAX, INT_MAX
-	var colorDiff, leastColorDiff = INT_MAX, INT_MAX
-	var extraDiff, leastExtraDiff = INT_MAX, INT_MAX
+func glfwChooseFBConfig(desired *_GLFWfbconfig, alternatives []_GLFWfbconfig, count int32) *_GLFWfbconfig {
+	var missing, leastMissing = int32(INT_MAX), int32(INT_MAX)
+	var colorDiff, leastColorDiff = int32(INT_MAX), int32(INT_MAX)
+	var extraDiff, leastExtraDiff = int32(INT_MAX), int32(INT_MAX)
 	var closest *_GLFWfbconfig
 
-	for i = 0; i < count; i++ {
+	for i := int32(0); i < count; i++ {
 		current := &alternatives[i]
 		// Count number of missing buffers
 		missing = 0
@@ -149,10 +148,10 @@ func _glfwRefreshContextAttribs(window *_GLFWwindow, ctxconfig *_GLFWctxconfig) 
 		}
 	}
 	i := 0
-	var v [3]int
+	var v [3]int32
 	for _, ch := range version {
 		if ch >= '0' && ch <= '9' {
-			v[i] = v[i]*10 + int(ch) - int('0')
+			v[i] = v[i]*10 + int32(ch) - int32('0')
 		} else {
 			i++
 			if i >= 3 {

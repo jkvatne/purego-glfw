@@ -326,7 +326,7 @@ func glfwPlatformCreateWindow(window *_GLFWwindow, wndconfig *_GLFWwndconfig, ct
 	return nil
 }
 
-func glfwCreateWindow(width, height int, title string, monitor *Monitor, share *_GLFWwindow) (*_GLFWwindow, error) {
+func glfwCreateWindow(width, height int32, title string, monitor *Monitor, share *_GLFWwindow) (*_GLFWwindow, error) {
 
 	if width <= 0 || height <= 0 {
 		return nil, fmt.Errorf("invalid width/heigth")
@@ -488,18 +488,18 @@ func createHelperWindow() error {
 	return nil
 }
 
-func glfwGetWindowFrameSize(window *_GLFWwindow, left, top, right, bottom *int) {
+func glfwGetWindowFrameSize(window *_GLFWwindow, left, top, right, bottom *int32) {
 	var rect RECT
-	var width, height int
+	var width, height int32
 	glfwGetWindowSize(window, &width, &height)
-	rect.Right = int32(width)
-	rect.Bottom = int32(height)
+	rect.Right = width
+	rect.Bottom = height
 	dpi := GetDpiForWindow(window.Win32.handle)
 	AdjustWindowRect(&rect, getWindowStyle(window), 0, getWindowExStyle(window), dpi, "glfwGetWindowFrameSize")
-	*left = int(-rect.Left)
-	*top = int(-rect.Top)
-	*right = int(rect.Right) - width
-	*bottom = int(rect.Bottom) - height
+	*left = -rect.Left
+	*top = -rect.Top
+	*right = rect.Right - width
+	*bottom = rect.Bottom - height
 }
 
 func screenToClient(handle syscall.Handle, p *POINT) {
@@ -509,10 +509,10 @@ func screenToClient(handle syscall.Handle, p *POINT) {
 	}
 }
 
-func glfwGetCursorPos(w *_GLFWwindow, x *int, y *int) {
+func glfwGetCursorPos(w *_GLFWwindow, x *int32, y *int32) {
 	if w.cursorMode == GLFW_CURSOR_DISABLED {
-		*x = int(w.virtualCursorPosX)
-		*y = int(w.virtualCursorPosY)
+		*x = int32(w.virtualCursorPosX)
+		*y = int32(w.virtualCursorPosY)
 	} else {
 		var pos POINT
 		_, _, err := _GetCursorPos.Call(uintptr(unsafe.Pointer(&pos)))
@@ -523,20 +523,19 @@ func glfwGetCursorPos(w *_GLFWwindow, x *int, y *int) {
 			return
 		}
 		screenToClient(w.Win32.handle, &pos)
-		*x = int(pos.X)
-		*y = int(pos.Y)
+		*x = int32(pos.X)
+		*y = int32(pos.Y)
 	}
 }
 
-func glfwGetWindowSize(window *_GLFWwindow, width *int, height *int) {
+func glfwGetWindowSize(window *_GLFWwindow, width *int32, height *int32) {
 	var area RECT
 	_, _, err := _GetClientRect.Call(uintptr(unsafe.Pointer(window.Win32.handle)), uintptr(unsafe.Pointer(&area)))
 	if !errors.Is(err, syscall.Errno(0)) {
 		panic(err)
 	}
-	// GetClientRect(window->win32.hMonitor, &area);
-	*width = int(area.Right)
-	*height = int(area.Bottom)
+	*width = area.Right
+	*height = area.Bottom
 }
 
 // GetClipboardString returns the contents of the system clipboard, if it
@@ -586,7 +585,7 @@ func glfwGetWindowMonitor(window *Window) *Monitor {
 	return window.monitor
 }
 
-func glfwSetWindowMonitor(window *Window, monitor *Monitor, xpos int, ypos int, width int, height int, refreshRate int) {
+func glfwSetWindowMonitor(window *Window, monitor *Monitor, xpos int32, ypos int32, width int32, height int32, refreshRate int32) {
 	if width <= 0 || height <= 0 {
 		panic("glfwSetWindowMonitor: invalid width or height")
 	}

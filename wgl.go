@@ -115,7 +115,7 @@ func makeCurrent(dc HDC, handle HANDLE) bool {
 	return r1 != 0
 }
 
-func setPixelFormat(dc HDC, iPixelFormat int, pfd *PIXELFORMATDESCRIPTOR) int {
+func setPixelFormat(dc HDC, iPixelFormat int32, pfd *PIXELFORMATDESCRIPTOR) int32 {
 	ret, _, err := _SetPixelFormat.Call(uintptr(unsafe.Pointer(dc)), uintptr(iPixelFormat), uintptr(unsafe.Pointer(pfd)))
 	if !errors.Is(err, syscall.Errno(0)) {
 		panic("wglSetPixelFormat failed, " + err.Error())
@@ -124,10 +124,10 @@ func setPixelFormat(dc HDC, iPixelFormat int, pfd *PIXELFORMATDESCRIPTOR) int {
 		err = syscall.GetLastError()
 		panic("wglSetPixelFormat failed" + err.Error())
 	}
-	return int(ret)
+	return int32(ret)
 }
 
-func choosePixelFormat(dc HDC, pfd *PIXELFORMATDESCRIPTOR) int {
+func choosePixelFormat(dc HDC, pfd *PIXELFORMATDESCRIPTOR) int32 {
 	ret, _, err := _ChoosePixelFormat.Call(uintptr(unsafe.Pointer(dc)), uintptr(unsafe.Pointer(pfd)))
 	if !errors.Is(err, syscall.Errno(0)) {
 		panic("wglSetPixewglChoosePixelFormatlFormat failed, " + err.Error())
@@ -136,7 +136,7 @@ func choosePixelFormat(dc HDC, pfd *PIXELFORMATDESCRIPTOR) int {
 		err = syscall.GetLastError()
 		panic("wglChoosePixelFormat failed, " + err.Error())
 	}
-	return int(ret)
+	return int32(ret)
 }
 
 func wglCreateContextAttribsARB(dc HDC, share syscall.Handle, attribs *int32) HANDLE {
@@ -268,25 +268,25 @@ func releaseDC(w syscall.Handle, dc HDC) {
 	}
 }
 
-func describePixelFormat(dc HDC, iPixelFormat int, nBytes int, ppfd *PIXELFORMATDESCRIPTOR) int {
+func describePixelFormat(dc HDC, iPixelFormat int32, nBytes int, ppfd *PIXELFORMATDESCRIPTOR) int32 {
 	r1, _, err := _DescribePixelFormat.Call(uintptr(dc), uintptr(iPixelFormat), uintptr(nBytes), uintptr(unsafe.Pointer(ppfd)))
 	if r1 == 0 || !errors.Is(err, syscall.Errno(0)) {
 		slog.Error("describePixelFormat failed, " + err.Error())
 		r1 = 0
 	}
-	return int(r1)
+	return int32(r1)
 }
 
-var attribs [40]int
-var values [40]int
+var attribs [40]int32
+var values [40]int32
 var attribCount int
 
-func ADD_ATTRIB(a int) {
+func ADD_ATTRIB(a int32) {
 	attribs[attribCount] = a
 	attribCount++
 }
 
-func FIND_ATTRIB_VALUE(a int) int {
+func FIND_ATTRIB_VALUE(a int32) int32 {
 	for i := 0; i < attribCount; i++ {
 		if attribs[i] == a {
 			return values[i]
@@ -409,7 +409,7 @@ func glfwCreateContextWGL(window *_GLFWwindow, ctxconfig *_GLFWctxconfig, fbconf
 	return nil
 }
 
-func wglGetPixelFormatAttribivARB(dc HDC, pixelFormat int, layerPlane int, nAttrib int, attributes *int, piValues *int) {
+func wglGetPixelFormatAttribivARB(dc HDC, pixelFormat int32, layerPlane int, nAttrib int, attributes *int32, piValues *int32) {
 	r, _, err := syscall.SyscallN(_glfw.wgl.GetPixelFormatAttribivARB, uintptr(dc), uintptr(pixelFormat), uintptr(layerPlane),
 		uintptr(nAttrib), uintptr(unsafe.Pointer(attributes)), uintptr(unsafe.Pointer(piValues)))
 	if !errors.Is(err, syscall.Errno(0)) || r == 0 {
@@ -417,10 +417,10 @@ func wglGetPixelFormatAttribivARB(dc HDC, pixelFormat int, layerPlane int, nAttr
 	}
 }
 
-func choosePixelFormatWGL(window *_GLFWwindow, ctxconfig *_GLFWctxconfig, fbconfig *_GLFWfbconfig) int {
+func choosePixelFormatWGL(window *_GLFWwindow, ctxconfig *_GLFWctxconfig, fbconfig *_GLFWfbconfig) int32 {
 	var (
 		closest                               *_GLFWfbconfig
-		pixelFormat, nativeCount, usableCount int
+		pixelFormat, nativeCount, usableCount int32
 		pfd                                   PIXELFORMATDESCRIPTOR
 	)
 	nativeCount = describePixelFormat(window.context.wgl.dc, 1, int(unsafe.Sizeof(pfd)), nil)
@@ -461,15 +461,15 @@ func choosePixelFormatWGL(window *_GLFWwindow, ctxconfig *_GLFWctxconfig, fbconf
 				ADD_ATTRIB(WGL_COLORSPACE_EXT)
 			}
 		}
-		attrib := WGL_NUMBER_PIXEL_FORMATS_ARB
-		var extensionCount int
+		attrib := int32(WGL_NUMBER_PIXEL_FORMATS_ARB)
+		var extensionCount int32
 		wglGetPixelFormatAttribivARB(window.context.wgl.dc, 1, 0, 1, &attrib, &extensionCount)
 		nativeCount = min(nativeCount, extensionCount)
 	}
 	usableConfigs := make([]_GLFWfbconfig, nativeCount)
-	for i := 0; i < nativeCount; i++ {
+	for i := 0; i < int(nativeCount); i++ {
 		u := &usableConfigs[usableCount]
-		pixelFormat = i + 1
+		pixelFormat = int32(i + 1)
 		if _glfw.wgl.ARB_pixel_format {
 			// Get pixel format attributes through "modern" extension
 			values[0] = 0
@@ -533,17 +533,17 @@ func choosePixelFormatWGL(window *_GLFWwindow, ctxconfig *_GLFWctxconfig, fbconf
 			if ((pfd.dwFlags & PFD_DOUBLEBUFFER) != 0) != fbconfig.doublebuffer {
 				continue
 			}
-			u.redBits = int(pfd.cRedBits)
-			u.greenBits = int(pfd.cGreenBits)
-			u.blueBits = int(pfd.cBlueBits)
-			u.alphaBits = int(pfd.cAlphaBits)
-			u.depthBits = int(pfd.cDepthBits)
-			u.stencilBits = int(pfd.cStencilBits)
-			u.accumRedBits = int(pfd.cAccumRedBits)
-			u.accumGreenBits = int(pfd.cAccumGreenBits)
-			u.accumBlueBits = int(pfd.cAccumBlueBits)
-			u.accumAlphaBits = int(pfd.cAccumAlphaBits)
-			u.auxBuffers = int(pfd.cAuxBuffers)
+			u.redBits = int32(pfd.cRedBits)
+			u.greenBits = int32(pfd.cGreenBits)
+			u.blueBits = int32(pfd.cBlueBits)
+			u.alphaBits = int32(pfd.cAlphaBits)
+			u.depthBits = int32(pfd.cDepthBits)
+			u.stencilBits = int32(pfd.cStencilBits)
+			u.accumRedBits = int32(pfd.cAccumRedBits)
+			u.accumGreenBits = int32(pfd.cAccumGreenBits)
+			u.accumBlueBits = int32(pfd.cAccumBlueBits)
+			u.accumAlphaBits = int32(pfd.cAccumAlphaBits)
+			u.auxBuffers = int32(pfd.cAuxBuffers)
 		}
 		u.handle = uintptr(pixelFormat)
 		usableCount++
@@ -555,7 +555,7 @@ func choosePixelFormatWGL(window *_GLFWwindow, ctxconfig *_GLFWctxconfig, fbconf
 	if closest == nil {
 		panic("WGL: Failed to find a suitable pixel format")
 	}
-	pixelFormat = int(closest.handle)
+	pixelFormat = int32(closest.handle)
 	return pixelFormat
 }
 

@@ -77,7 +77,7 @@ func msaa() {
 	}
 	fmt.Printf("Requesting MSAA with %d samples\n", samples)
 
-	_ = glfw.WindowHint(glfw.GLFW_SAMPLES, int(samples))
+	_ = glfw.WindowHint(glfw.GLFW_SAMPLES, samples)
 	_ = glfw.WindowHint(glfw.GLFW_CONTEXT_VERSION_MAJOR, 2)
 	_ = glfw.WindowHint(glfw.GLFW_CONTEXT_VERSION_MINOR, 0)
 

@@ -87,8 +87,8 @@ func reopen() {
 			monitors := glfw.GetMonitors()
 			monitor = monitors[rand.Int()%len(monitors)]
 		}
-		width := 400
-		height := 400
+		width := int32(400)
+		height := int32(400)
 		if monitor != nil {
 			mode := glfw.GetVideoMode(monitor)
 			width = mode.Width

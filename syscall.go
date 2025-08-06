@@ -184,11 +184,11 @@ type DEVMODEW = struct {
 	dmCollate            uint16
 	dmFormName           [32]uint16
 	dmLogPixels          uint16
-	dmBitsPerPel         uint32
+	dmBitsPerPel         int32
 	dmPelsWidth          int32
 	dmPelsHeight         int32
 	dmDisplayFlags       uint32
-	dmDisplayFrequency   uint32
+	dmDisplayFrequency   int32
 	dmICMMethod          uint32
 	dmICMIntent          uint32
 	dmMediaType          uint32
@@ -468,11 +468,12 @@ func AdjustWindowRectExForDpi(rect *RECT, style uint32, menu int, exStyle uint32
 	}
 }
 
-func EnumDisplaySettingsEx(name *uint16, mode int, dm *DEVMODEW, flags int) {
-	_, _, err := _EnumDisplaySettingsEx.Call(uintptr(unsafe.Pointer(name)), uintptr(mode), uintptr(unsafe.Pointer(dm)), uintptr(flags))
+func EnumDisplaySettingsEx(name *uint16, mode int, dm *DEVMODEW, flags int) int {
+	r, _, err := _EnumDisplaySettingsEx.Call(uintptr(unsafe.Pointer(name)), uintptr(mode), uintptr(unsafe.Pointer(dm)), uintptr(flags))
 	if !errors.Is(err, syscall.Errno(0)) {
 		panic("EnumDisplySettingsEx failed, " + err.Error())
 	}
+	return int(r)
 }
 func TlsSetValue(index int, value uintptr) {
 	_, _, err := _TlsSetValue.Call(uintptr(index), value)

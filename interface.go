@@ -85,7 +85,7 @@ func WaitEventsTimeout(timeout float64) {
 	glfwPollEvents()
 }
 
-func WindowHint(hint int, value int) error {
+func WindowHint(hint int, value int32) error {
 	switch hint {
 	case GLFW_RED_BITS:
 		_glfw.hints.framebuffer.redBits = value
@@ -216,7 +216,7 @@ func CreateStandardCursor(shape int) *Cursor {
 	return &cursor
 }
 
-func CreateWindow(width, height int, title string, monitor *Monitor, share *Window) (*Window, error) {
+func CreateWindow(width, height int32, title string, monitor *Monitor, share *Window) (*Window, error) {
 	wnd, err := glfwCreateWindow(width, height, title, monitor, share)
 	if err != nil {
 		return nil, fmt.Errorf("glfwCreateWindow failed: %v", err)
@@ -235,8 +235,8 @@ func (w *Window) SetCursor(c *Cursor) {
 }
 
 // SetPos sets the position, in screen coordinates, of the Window's upper-left corner
-func (w *Window) SetPos(xPos, yPos int) {
-	rect := RECT{Left: int32(xPos), Top: int32(yPos), Right: int32(xPos), Bottom: int32(yPos)}
+func (w *Window) SetPos(xPos, yPos int32) {
+	rect := RECT{Left: xPos, Top: yPos, Right: xPos, Bottom: yPos}
 	AdjustWindowRect(&rect, getWindowStyle(w), 0, getWindowExStyle(w), GetDpiForWindow(w.Win32.handle), "glfwSetWindowPos")
 	SetWindowPos(w.Win32.handle, 0, rect.Left, rect.Top, 0, 0, SWP_NOACTIVATE|SWP_NOZORDER|SWP_NOSIZE)
 }
@@ -257,7 +257,7 @@ func (w *Window) SetSize(width, height int) {
 
 // SetMonitor sets the monitor that the window uses for full screen mode or,
 // if the monitor is NULL, makes it windowed mode.
-func (w *Window) SetMonitor(monitor *Monitor, xpos, ypos, width, height, refreshRate int) {
+func (w *Window) SetMonitor(monitor *Monitor, xpos, ypos, width, height, refreshRate int32) {
 	glfwSetWindowMonitor(w, monitor, xpos, ypos, width, height, refreshRate)
 }
 
@@ -276,23 +276,23 @@ func (w *Window) GetContentScale() (float32, float32) {
 
 // GetFrameSize retrieves the size, in screen coordinates, of each edge of the frame
 // This size includes the title bar if the Window has one.
-func (w *Window) GetFrameSize() (left, top, right, bottom int) {
-	var l, t, r, b int
+func (w *Window) GetFrameSize() (left, top, right, bottom int32) {
+	var l, t, r, b int32
 	glfwGetWindowFrameSize(w, &l, &t, &r, &b)
 	return l, t, r, b
 }
 
 // GetCursorPos returns the last reported position of the cursor.
 func (w *Window) GetCursorPos() (x float64, y float64) {
-	var xPos, yPos int
+	var xPos, yPos int32
 	glfwGetCursorPos(w, &xPos, &yPos)
 	return float64(xPos), float64(yPos)
 }
 
 // GetSize returns the size, in screen coordinates, of the client area of the
 // specified Window.
-func (w *Window) GetSize() (width int, height int) {
-	var wi, h int
+func (w *Window) GetSize() (width int32, height int32) {
+	var wi, h int32
 	glfwGetWindowSize(w, &wi, &h)
 	return wi, h
 }

@@ -11,12 +11,12 @@ import (
 )
 
 type GLFWvidmode struct {
-	Width       int
-	Height      int
-	RedBits     int
-	GreenBits   int
-	BlueBits    int
-	RefreshRate int
+	Width       int32
+	Height      int32
+	RedBits     int32
+	GreenBits   int32
+	BlueBits    int32
+	RefreshRate int32
 }
 
 type (
@@ -30,13 +30,13 @@ type (
 
 // Context structure
 type _GLFWcontext struct {
-	client                  int
-	source                  int
-	major, minor, revision  int
+	client                  int32
+	source                  int32
+	major, minor, revision  int32
 	forward, debug, noerror bool
-	profile                 int
-	robustness              int
-	release                 int
+	profile                 int32
+	robustness              int32
+	release                 int32
 	GetStringi              uintptr
 	GetIntegerv             uintptr
 	GetString               uintptr
@@ -131,10 +131,10 @@ type _GLFWinitconfig = struct {
 	}
 }
 type _GLFWwndconfig = struct {
-	xpos             int
-	ypos             int
-	width            int
-	height           int
+	xpos             int32
+	ypos             int32
+	width            int32
+	height           int32
 	title            string
 	resizable        bool
 	visible          bool
@@ -155,16 +155,16 @@ type _GLFWwndconfig = struct {
 }
 
 type _GLFWctxconfig = struct {
-	client     int
-	source     int
-	major      int
-	minor      int
+	client     int32
+	source     int32
+	major      int32
+	minor      int32
 	forward    bool
 	debug      bool
 	noerror    bool
-	profile    int
-	robustness int
-	release    int
+	profile    int32
+	robustness int32
+	release    int32
 	share      *_GLFWwindow
 	nsgl       struct {
 		offline bool
@@ -176,22 +176,22 @@ type hints = struct {
 	framebuffer _GLFWfbconfig
 	window      _GLFWwndconfig
 	context     _GLFWctxconfig
-	refreshRate int
+	refreshRate int32
 }
 
 type _GLFWfbconfig = struct {
-	redBits        int
-	greenBits      int
-	blueBits       int
-	alphaBits      int
-	depthBits      int
-	stencilBits    int
-	accumRedBits   int
-	accumGreenBits int
-	accumBlueBits  int
-	accumAlphaBits int
-	auxBuffers     int
-	samples        int
+	redBits        int32
+	greenBits      int32
+	blueBits       int32
+	alphaBits      int32
+	depthBits      int32
+	stencilBits    int32
+	accumRedBits   int32
+	accumGreenBits int32
+	accumBlueBits  int32
+	accumAlphaBits int32
+	auxBuffers     int32
+	samples        int32
 	sRGB           bool
 	doublebuffer   bool
 	transparent    bool
@@ -664,7 +664,7 @@ func glfwPlatformPollEvents() {
 }
 
 func cursorInContentArea(w *_GLFWwindow) bool {
-	var x, y, width, height int
+	var x, y, width, height int32
 	glfwGetCursorPos(w, &x, &y)
 	glfwGetWindowSize(w, &width, &height)
 	return x >= 0 && y >= 0 && x < width && y < height // PtInRect(&area, pos);
@@ -1010,7 +1010,7 @@ func refreshVideoModes(monitor *Monitor) bool {
 	return true
 }
 
-func abs(x int) int {
+func abs(x int32) int32 {
 	if x < 0 {
 		return -x
 	}
@@ -1020,9 +1020,9 @@ func abs(x int) int {
 // Chooses the video mode most closely matching the desired one
 // const GLFWvidmode* _glfwChooseVideoMode(_GLFWmonitor* monitor,const GLFWvidmode* desired)
 func glfwChooseVideoMode(monitor *Monitor, desired *GLFWvidmode) *GLFWvidmode {
-	var sizeDiff, leastSizeDiff int = INT_MAX, INT_MAX
-	var rateDiff, leastRateDiff int = INT_MAX, INT_MAX
-	var colorDiff, leastColorDiff int = INT_MAX, INT_MAX
+	var sizeDiff, leastSizeDiff int32 = INT_MAX, INT_MAX
+	var rateDiff, leastRateDiff int32 = INT_MAX, INT_MAX
+	var colorDiff, leastColorDiff int32 = INT_MAX, INT_MAX
 	var current GLFWvidmode
 	var closest *GLFWvidmode
 
