@@ -221,6 +221,7 @@ var _glfw struct {
 	windowListHead  *_GLFWwindow
 	monitors        []*Monitor
 	monitorCallback func(w *Monitor, action int)
+	errorCallback   ErrorCallbackFunc
 	monitorCount    int
 	errorSlot       _GLFWtls
 	contextSlot     _GLFWtls

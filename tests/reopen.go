@@ -155,8 +155,7 @@ func reopen() {
 			if t > 2.0 {
 				break
 			}
-			var w, h int32
-			glfw.GetFramebufferSize(window, &w, &h)
+			w, h := window.GetFramebufferSize()
 			ratio := float32(w) / float32(h)
 			gl.Viewport(0, 0, w, h)
 			gl.Clear(gl.COLOR_BUFFER_BIT)

@@ -139,14 +139,13 @@ func msaa() {
 	gl.VertexAttribPointer(uint32(vpos_location), 2, gl.FLOAT, false, 4, nil)
 	angle := 0.0
 	for !window.ShouldClose() {
-		var width, height int32
 		var m, p, mvp Mat4
 		angle = angle + 0.0001
 		if angle > 0.02 {
 			angle = 0
 		}
 
-		glfw.GetFramebufferSize(window, &width, &height)
+		width, height := window.GetFramebufferSize()
 		ratio := float32(width) / float32(height)
 		gl.Viewport(0, 0, width, height)
 		gl.Clear(gl.COLOR_BUFFER_BIT)

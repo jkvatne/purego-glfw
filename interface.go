@@ -77,6 +77,14 @@ func WaitEvents() {
 	glfwPollEvents()
 }
 
+func WaitEventsTimeout(timeout float64) {
+	if timeout < 0.0 {
+		panic("Wait time must be positive")
+	}
+	MsgWaitForMultipleObjects(0, nil, 0, uint32(timeout*1e3), QS_ALLINPUT)
+	glfwPollEvents()
+}
+
 func WindowHint(hint int, value int) error {
 	switch hint {
 	case GLFW_RED_BITS:
@@ -335,20 +343,21 @@ func (w *Window) SetWindowShouldClose(close bool) {
 	w.shouldClose = close
 }
 
+func (w *Window) GetFramebufferSize() (width int32, height int32) {
+	var area RECT
+	_, _, err := _GetClientRect.Call(uintptr(unsafe.Pointer(w.Win32.handle)), uintptr(unsafe.Pointer(&area)))
+	if !errors.Is(err, syscall.Errno(0)) {
+		panic(err)
+	}
+	width = area.Right
+	height = area.Bottom
+	return width, height
+}
+
 // Terminate destroys all remaining Windows, frees any allocated resources and
 // sets the library to an uninitialized state.
 func Terminate() {
 	glfwTerminate()
-}
-
-func GetFramebufferSize(window *Window, width *int32, height *int32) {
-	var area RECT
-	_, _, err := _GetClientRect.Call(uintptr(unsafe.Pointer(window.Win32.handle)), uintptr(unsafe.Pointer(&area)))
-	if !errors.Is(err, syscall.Errno(0)) {
-		panic(err)
-	}
-	*width = area.Right
-	*height = area.Bottom
 }
 
 func getTime() float64 {

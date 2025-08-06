@@ -16,5 +16,7 @@ func main() {
 		reopen()
 	case "msaa":
 		msaa()
+	case "timeout":
+		timeout()
 	}
 }

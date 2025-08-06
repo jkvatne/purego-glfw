@@ -74,6 +74,7 @@ var (
 	_GetActiveWindow               = user32.NewProc("GetActiveWindow")
 	_GetPropA                      = user32.NewProc("GetPropA")
 	_SetPropA                      = user32.NewProc("SetPropA")
+	_MsgWaitForMultipleObjects     = user32.NewProc("MsgWaitForMultipleObjects")
 )
 
 var (
@@ -529,4 +530,13 @@ func glfwPlatformCreateTls(tls *_GLFWtls) error {
 	}
 	tls.allocated = true
 	return nil
+}
+
+func MsgWaitForMultipleObjects(nCount uint32, pHandles *HANDLE, fWaitAll uint32, dwMilliseconds uint32, dwWakeMask uint32) uint32 {
+	r, _, err := _MsgWaitForMultipleObjects.Call(uintptr(nCount), uintptr(unsafe.Pointer(pHandles)), uintptr(fWaitAll),
+		uintptr(dwMilliseconds), uintptr(dwWakeMask))
+	if !errors.Is(err, syscall.Errno(0)) {
+		panic("MsgWaitForMultipleObjects failed, " + err.Error())
+	}
+	return uint32(r)
 }
