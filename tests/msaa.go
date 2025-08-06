@@ -67,6 +67,9 @@ func msaa() {
 	var samples int32 = 4
 	var window *glfw.Window
 	var vertex_buffer2 uint32
+	fmt.Printf("Multisample anti-aliasing test.\n")
+	fmt.Printf("Notice bottom side aliasing at the left and not at the right side\n")
+
 	// TODO glfwSetErrorCallback(error_callback);
 	runtime.LockOSThread()
 
@@ -138,7 +141,8 @@ func msaa() {
 	gl.EnableVertexAttribArray(uint32(vpos_location))
 	gl.VertexAttribPointer(uint32(vpos_location), 2, gl.FLOAT, false, 4, nil)
 	angle := 0.0
-	for !window.ShouldClose() {
+	glfw.SetTime(0)
+	for !window.ShouldClose() && glfw.GetTime() < 5.0 {
 		var m, p, mvp Mat4
 		angle = angle + 0.0001
 		if angle > 0.02 {
@@ -169,4 +173,5 @@ func msaa() {
 	}
 	window.Destroy()
 	glfw.Terminate()
+	fmt.Printf("Multisample anti-aliasing test finished\n")
 }

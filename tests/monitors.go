@@ -122,9 +122,7 @@ func test_modes(monitor *glfw.Monitor) {
 			fmt.Printf("*** Size mismatch: %dx%d instead of %dx%d\n",
 				current.Width, current.Height,
 				mode.Width, mode.Height)
-			os.Exit(5)
 		}
-		fmt.Printf("Closing window\n")
 		window.Destroy()
 		window = nil
 		glfw.PollEvents()
@@ -132,6 +130,7 @@ func test_modes(monitor *glfw.Monitor) {
 }
 
 func monitor() {
+	fmt.Printf("Monitor test started\n")
 	runtime.LockOSThread()
 	glfw.SetErrorCallback(error_callback)
 	err := glfw.Init()
@@ -148,4 +147,5 @@ func monitor() {
 		test_modes(mons[i])
 	}
 	glfw.Terminate()
+	fmt.Printf("Monitor test finished\n")
 }

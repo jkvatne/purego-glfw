@@ -21,6 +21,7 @@ func key_callback3(window *glfw.Window, key glfw.Key, scancode int, action glfw.
 }
 
 func timeout() {
+	fmt.Printf("Test timeouts at 1 second. Window should change color each second\n")
 	runtime.LockOSThread()
 	glfw.SetErrorCallback(error_callback)
 	err := glfw.Init()
@@ -35,7 +36,8 @@ func timeout() {
 	window.MakeContextCurrent()
 	gl.Init()
 	window.SetKeyCallback(key_callback)
-	for !window.ShouldClose() {
+	glfw.SetTime(0)
+	for !window.ShouldClose() && glfw.GetTime() < 5.0 {
 		width, height := window.GetFramebufferSize()
 		gl.Viewport(0, 0, width, height)
 		gl.ClearColor(rand.Float32(), rand.Float32(), rand.Float32(), 1)
@@ -45,4 +47,5 @@ func timeout() {
 	}
 	window.Destroy()
 	glfw.Terminate()
+	fmt.Printf("Timeout test finished\n")
 }

@@ -20,5 +20,11 @@ func main() {
 		timeout()
 	case "monitor":
 		monitor()
+	default:
+		title()
+		monitor()
+		msaa()
+		timeout()
+		reopen()
 	}
 }

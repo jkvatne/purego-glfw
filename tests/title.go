@@ -1,6 +1,7 @@
 package main
 
 import (
+	"fmt"
 	"github.com/jkvatne/jkvgui/gl"
 	glfw "github.com/jkvatne/purego-glfw"
 	"os"
@@ -10,6 +11,7 @@ import (
 // UTF-8 window title test
 
 func title() {
+	fmt.Printf("Windows title shouls show utf characters\n")
 	runtime.LockOSThread()
 	if err := glfw.Init(); err != nil {
 		panic(err)
@@ -30,5 +32,7 @@ func title() {
 		window.SwapBuffers()
 		glfw.PollEvents()
 	}
+	window.Destroy()
 	glfw.Terminate()
+	fmt.Printf("Window title test finished\n")
 }

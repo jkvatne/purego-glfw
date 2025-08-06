@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"github.com/jkvatne/jkvgui/gl"
 	glfw "github.com/jkvatne/purego-glfw"
-	"log/slog"
 	"math/rand/v2"
 	"os"
 	"runtime"
@@ -65,14 +64,17 @@ func CheckError(sts uint32, program uint32, source string) {
 	if status == gl.FALSE {
 		var logLength int32
 		gl.GetShaderiv(program, gl.INFO_LOG_LENGTH, &logLength)
-		txt := strings.Repeat("\x00", int(logLength+1))
-		gl.GetShaderInfoLog(program, logLength, nil, gl.Str(txt))
-		slog.Error("Shader error", "source", source, "error", txt)
+		if logLength > 0 {
+			txt := strings.Repeat("\x00", int(logLength+1))
+			gl.GetShaderInfoLog(program, logLength, nil, gl.Str(txt))
+			fmt.Printf("Shader error %s, Source: %s", txt, source)
+		}
 	}
 }
 
 func reopen() {
 	runtime.LockOSThread()
+	fmt.Printf("Test reopening windows, including full-screen\n")
 	count := 1
 	var monitor *glfw.Monitor
 	err := glfw.Init()
@@ -81,7 +83,8 @@ func reopen() {
 	}
 	glfw.WindowHint(glfw.ContextVersionMajor, 2)
 	glfw.WindowHint(glfw.ContextVersionMinor, 0)
-	for {
+	glfw.SetTime(0)
+	for glfw.GetTime() < 5.0 {
 		monitor = nil
 		if count&1 == 0 {
 			monitors := glfw.GetMonitors()
@@ -94,7 +97,7 @@ func reopen() {
 			width = mode.Width
 			height = mode.Height
 			x, y := monitor.GetPos()
-			slog.Info("Monitor", "x", x, "y", y, "width", mode.Width, "height", mode.Height)
+			fmt.Printf("Monitor x=%d, y=%d, w=%d, h=%d", x, y, mode.Width, mode.Height)
 		}
 		base := glfw.GetTime()
 		window, err := glfw.CreateWindow(width, height, "Window Re-opener", monitor, nil)
@@ -149,10 +152,9 @@ func reopen() {
 		gl.EnableVertexAttribArray(uint32(vpos_location))
 		gl.VertexAttribPointer(uint32(vpos_location), 2, gl.FLOAT, false, 2*4, nil)
 
-		glfw.SetTime(0.0)
+		t := glfw.GetTime()
 		for {
-			t := glfw.GetTime()
-			if t > 2.0 {
+			if glfw.GetTime() > t+1.0 {
 				break
 			}
 			w, h := window.GetFramebufferSize()
@@ -175,9 +177,9 @@ func reopen() {
 				os.Exit(0)
 			}
 		}
-		fmt.Printf("Closing window\n")
 		close_window(window)
 		count++
 	}
 	glfw.Terminate()
+	fmt.Printf("Re-opening test finished\n")
 }

@@ -721,11 +721,11 @@ func BringWindowToTop(window *_GLFWwindow) {
 
 func SetForegroundWindow(window *_GLFWwindow) {
 	r1, _, err := _SetForegroundWindow.Call(uintptr(unsafe.Pointer(window.Win32.handle)))
-	if r1 == 0 || err != nil && !errors.Is(err, syscall.Errno(0)) {
+	if err != nil && !errors.Is(err, syscall.Errno(0)) {
 		panic("SetForegroundWindow failed, " + err.Error())
 	}
 	if r1 == 0 {
-		panic("SetForegroundWindow failed")
+		panic("SetForegroundWindow failed, returned 0")
 	}
 }
 
