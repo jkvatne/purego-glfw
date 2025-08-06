@@ -7,7 +7,7 @@ import (
 var testname string
 
 func main() {
-	flag.StringVar(&testname, "t", "", "Test can be: title, msaa, reopen")
+	flag.StringVar(&testname, "t", "", "Test can be: title, msaa, reopen, timeout, monitor")
 	flag.Parse()
 	switch testname {
 	case "title":
@@ -18,5 +18,7 @@ func main() {
 		msaa()
 	case "timeout":
 		timeout()
+	case "monitor":
+		monitor()
 	}
 }

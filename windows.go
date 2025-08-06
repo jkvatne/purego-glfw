@@ -351,10 +351,10 @@ func glfwCreateWindow(width, height int, title string, monitor *Monitor, share *
 
 	window.videoMode.Width = width
 	window.videoMode.Height = height
-	window.videoMode.redBits = fbconfig.redBits
-	window.videoMode.greenBits = fbconfig.greenBits
-	window.videoMode.blueBits = fbconfig.blueBits
-	window.videoMode.refreshRate = _glfw.hints.refreshRate
+	window.videoMode.RedBits = fbconfig.redBits
+	window.videoMode.GreenBits = fbconfig.greenBits
+	window.videoMode.BlueBits = fbconfig.blueBits
+	window.videoMode.RefreshRate = _glfw.hints.refreshRate
 
 	window.monitor = monitor
 	window.resizable = wndconfig.resizable
@@ -592,8 +592,8 @@ func glfwSetWindowMonitor(window *Window, monitor *Monitor, xpos int, ypos int, 
 	}
 	window.videoMode.Width = width
 	window.videoMode.Height = height
-	window.videoMode.refreshRate = refreshRate
-	// This is _glfw.platform.setWindowMonitor(window, monitor, xpos, ypos, width, height,	refreshRate);
+	window.videoMode.RefreshRate = refreshRate
+	// This is _glfw.platform.setWindowMonitor(window, monitor, xpos, ypos, width, height,	RefreshRate);
 	if window.monitor == monitor {
 		if monitor != nil {
 			if monitor.window == window {

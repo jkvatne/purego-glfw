@@ -14,8 +14,8 @@ type Monitor struct {
 	userPointer unsafe.Pointer
 	widthMM     int
 	heightMM    int
-	modes       []_GLFWvidmode
-	currentMode _GLFWvidmode
+	modes       []GLFWvidmode
+	currentMode GLFWvidmode
 
 	// This is defined in the window API's platform.h _GLFW_PLATFORM_MONITOR_STATE;
 	hMonitor HMONITOR
@@ -135,24 +135,100 @@ func (m *Monitor) GetMonitorName() string {
 	return s
 }
 
-func GetVideoMode(monitor *Monitor) _GLFWvidmode {
+func GetVideoMode(monitor *Monitor) GLFWvidmode {
 	mode := monitor.currentMode
 	var dm DEVMODEW
 	dm.dmSize = uint16(unsafe.Sizeof(dm))
 	EnumDisplaySettingsEx(&monitor.adapterName[0], ENUM_CURRENT_SETTINGS, &dm, 0)
 	mode.Width = int(dm.dmPelsWidth)
 	mode.Height = int(dm.dmPelsHeight)
-	mode.refreshRate = int(dm.dmDisplayFrequency)
-	n := int(max(24, dm.dmBitsPerPel) / 3)
-	mode.blueBits = n
-	mode.redBits = n
-	mode.greenBits = n
-	delta := dm.dmBitsPerPel - uint32(mode.redBits*3)
+	mode.RefreshRate = int(dm.dmDisplayFrequency)
+	mode.RedBits, mode.GreenBits, mode.BlueBits = SplitBpp(int(dm.dmBitsPerPel))
+	return mode
+}
+
+func SplitBpp(bitsPerPel int) (int, int, int) {
+	bitsPerPel = min(24, bitsPerPel)
+	n := bitsPerPel / 3
+	blueBits := n
+	redBits := n
+	greenBits := n
+	delta := bitsPerPel - redBits*3
 	if delta >= 1 {
-		mode.greenBits++
+		greenBits++
 	}
 	if delta == 2 {
-		mode.redBits++
+		redBits++
 	}
-	return mode
+	return redBits, greenBits, blueBits
+}
+
+func GetVideoModes(monitor *Monitor) (result []GLFWvidmode) {
+	modeIndex := 0
+	count := 0
+	for {
+		var mode GLFWvidmode
+		var dm DEVMODEW
+		dm.dmSize = uint16(unsafe.Sizeof(dm))
+		EnumDisplaySettingsEx(&monitor.adapterName[0], modeIndex, &dm, 0)
+		if dm.dmSize == 0 {
+			break
+		}
+		modeIndex++
+		// Skip modes with less than 15 BPP
+		if dm.dmBitsPerPel < 15 {
+			continue
+		}
+		mode.Width = int(dm.dmPelsWidth)
+		mode.Height = int(dm.dmPelsHeight)
+		mode.RefreshRate = int(dm.dmDisplayFrequency)
+		mode.RedBits, mode.GreenBits, mode.BlueBits = SplitBpp(int(dm.dmBitsPerPel))
+		i := 0
+		for ; i < count; i++ {
+			if CompareVideoModes(&result[i], &mode) == 0 {
+				break
+			}
+		}
+		// Skip duplicate modes
+		if i < count {
+			continue
+		}
+		// if monitor.modesPruned	{
+		// Skip modes not supported by the connected displays
+		// TODO if ChangeDisplaySettingsEx(monitor.win32.adapterName,	&dm,NULL,CDS_TEST,NULL) != DISP_CHANGE_SUCCESSFUL)	{
+		//	continue;
+		// }
+		// }
+		count++
+		result = append(result, mode)
+	}
+	if count == 0 {
+		// HACK: Report the current mode if no valid modes were found
+		result = append(result, GetVideoMode(monitor))
+		count = 1
+	}
+	return result
+}
+
+// Lexically compare video modes, used by qsort
+//
+func CompareVideoModes(fp, sp *GLFWvidmode) int {
+	fbpp := fp.RedBits + fp.GreenBits + fp.BlueBits
+	sbpp := sp.RedBits + sp.GreenBits + sp.BlueBits
+	farea := fp.Width * fp.Height
+	sarea := sp.Width * sp.Height
+	// First sort on color bits per pixel
+	if fbpp != sbpp {
+		return fbpp - sbpp
+	}
+	// Then sort on screen area
+	if farea != sarea {
+		return farea - sarea
+	}
+	// Then sort on width
+	if fp.Width != sp.Width {
+		return fp.Width - sp.Width
+	}
+	// Lastly sort on refresh rate
+	return fp.RefreshRate - sp.RefreshRate
 }

@@ -10,13 +10,13 @@ import (
 	"unsafe"
 )
 
-type _GLFWvidmode struct {
+type GLFWvidmode struct {
 	Width       int
 	Height      int
-	redBits     int
-	greenBits   int
-	blueBits    int
-	refreshRate int
+	RedBits     int
+	GreenBits   int
+	BlueBits    int
+	RefreshRate int
 }
 
 type (
@@ -65,7 +65,7 @@ type _GLFWwindow struct {
 	shouldClose            bool
 	userPointer            unsafe.Pointer
 	doublebuffer           bool
-	videoMode              _GLFWvidmode
+	videoMode              GLFWvidmode
 	monitor                *Monitor
 	cursor                 *Cursor
 	minwidth               int
@@ -996,7 +996,7 @@ func glfwInputWindowMonitor(window *_GLFWwindow, monitor *Monitor) {
 
 // Retrieves the available modes for the specified monitor
 func refreshVideoModes(monitor *Monitor) bool {
-	var modes []_GLFWvidmode
+	var modes []GLFWvidmode
 
 	if len(monitor.modes) != 0 {
 		return true
@@ -1019,12 +1019,12 @@ func abs(x int) int {
 
 // Chooses the video mode most closely matching the desired one
 // const GLFWvidmode* _glfwChooseVideoMode(_GLFWmonitor* monitor,const GLFWvidmode* desired)
-func glfwChooseVideoMode(monitor *Monitor, desired *_GLFWvidmode) *_GLFWvidmode {
+func glfwChooseVideoMode(monitor *Monitor, desired *GLFWvidmode) *GLFWvidmode {
 	var sizeDiff, leastSizeDiff int = INT_MAX, INT_MAX
 	var rateDiff, leastRateDiff int = INT_MAX, INT_MAX
 	var colorDiff, leastColorDiff int = INT_MAX, INT_MAX
-	var current _GLFWvidmode
-	var closest *_GLFWvidmode
+	var current GLFWvidmode
+	var closest *GLFWvidmode
 
 	if !refreshVideoModes(monitor) {
 		return nil
@@ -1033,20 +1033,20 @@ func glfwChooseVideoMode(monitor *Monitor, desired *_GLFWvidmode) *_GLFWvidmode 
 	for i := 0; i < len(monitor.modes); i++ {
 		current = monitor.modes[i]
 		colorDiff = 0
-		if desired.redBits != GLFW_DONT_CARE {
-			colorDiff += abs(current.redBits - desired.redBits)
+		if desired.RedBits != GLFW_DONT_CARE {
+			colorDiff += abs(current.RedBits - desired.RedBits)
 		}
-		if desired.greenBits != GLFW_DONT_CARE {
-			colorDiff += abs(current.greenBits - desired.greenBits)
+		if desired.GreenBits != GLFW_DONT_CARE {
+			colorDiff += abs(current.GreenBits - desired.GreenBits)
 		}
-		if desired.blueBits != GLFW_DONT_CARE {
-			colorDiff += abs(current.blueBits - desired.blueBits)
+		if desired.BlueBits != GLFW_DONT_CARE {
+			colorDiff += abs(current.BlueBits - desired.BlueBits)
 		}
 		sizeDiff = abs((current.Width-desired.Width)*(current.Width-desired.Width) + (current.Height-desired.Height)*(current.Height-desired.Height))
-		if desired.refreshRate != GLFW_DONT_CARE {
-			rateDiff = abs(current.refreshRate - desired.refreshRate)
+		if desired.RefreshRate != GLFW_DONT_CARE {
+			rateDiff = abs(current.RefreshRate - desired.RefreshRate)
 		} else {
-			rateDiff = INT_MAX - current.refreshRate
+			rateDiff = INT_MAX - current.RefreshRate
 		}
 		if (colorDiff < leastColorDiff) || (colorDiff == leastColorDiff && sizeDiff < leastSizeDiff) ||
 			(colorDiff == leastColorDiff && sizeDiff == leastSizeDiff && rateDiff < leastRateDiff) {
@@ -1062,9 +1062,9 @@ func glfwChooseVideoMode(monitor *Monitor, desired *_GLFWvidmode) *_GLFWvidmode 
 // Change the current video mode
 //
 /*
-func glfwSetVideoModeWin32(monitor *Monitor, desired *_GLFWvidmode) error {
-	var current _GLFWvidmode
-	var best *_GLFWvidmode
+func glfwSetVideoModeWin32(monitor *Monitor, desired *GLFWvidmode) error {
+	var current GLFWvidmode
+	var best *GLFWvidmode
 	var dm DEVMODEW
 	var result int
 
@@ -1078,8 +1078,8 @@ func glfwSetVideoModeWin32(monitor *Monitor, desired *_GLFWvidmode) error {
 	dm.dmFields = DM_PELSWIDTH | DM_PELSHEIGHT | DM_BITSPERPEL | DM_DISPLAYFREQUENCY
 	dm.dmPelsWidth = int32(best.Width)
 	dm.dmPelsHeight = int32(best.Height)
-	dm.dmBitsPerPel = uint32(best.redBits + best.greenBits + best.blueBits)
-	dm.dmDisplayFrequency = uint32(best.refreshRate)
+	dm.dmBitsPerPel = uint32(best.RedBits + best.GreenBits + best.BlueBits)
+	dm.dmDisplayFrequency = uint32(best.RefreshRate)
 
 	if dm.dmBitsPerPel < 15 || dm.dmBitsPerPel >= 24 {
 		dm.dmBitsPerPel = 32
