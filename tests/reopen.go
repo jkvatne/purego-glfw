@@ -43,12 +43,12 @@ func window_close_callback(window *glfw.Window) {
 }
 
 func key_callback(window *glfw.Window, key glfw.Key, scancode int, action glfw.Action, mods glfw.ModifierKey) {
-	if action != glfw.GLFW_PRESS {
+	if action != glfw.Press {
 		return
 	}
 	switch key {
-	case glfw.GLFW_KEY_Q:
-	case glfw.GLFW_KEY_ESCAPE:
+	case glfw.KeyQ:
+	case glfw.KeyEscape:
 		window.SetWindowShouldClose(true)
 	}
 }
@@ -79,8 +79,8 @@ func reopen() {
 	if err != nil {
 		panic("glfwInit err: " + err.Error())
 	}
-	glfw.WindowHint(glfw.GLFW_CONTEXT_VERSION_MAJOR, 2)
-	glfw.WindowHint(glfw.GLFW_CONTEXT_VERSION_MINOR, 0)
+	glfw.WindowHint(glfw.ContextVersionMajor, 2)
+	glfw.WindowHint(glfw.ContextVersionMinor, 0)
 	for {
 		monitor = nil
 		if count&1 == 0 {

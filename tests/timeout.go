@@ -15,7 +15,7 @@ func error_callback(error int, description string) {
 }
 
 func key_callback3(window *glfw.Window, key glfw.Key, scancode int, action glfw.Action, mods glfw.ModifierKey) {
-	if key == glfw.GLFW_KEY_ESCAPE && action == glfw.GLFW_PRESS {
+	if key == glfw.KeyEscape && action == glfw.Press {
 		window.SetWindowShouldClose(true)
 	}
 }

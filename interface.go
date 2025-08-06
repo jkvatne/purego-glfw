@@ -33,22 +33,24 @@ const (
 
 // Exported hints
 const (
-	True                    = 1
-	False                   = 0
-	OpenGLForwardCompatible = GLFW_OPENGL_FORWARD_COMPAT
-	Focused                 = GLFW_FOCUSED
-	Resizable               = GLFW_RESIZABLE
-	Visible                 = GLFW_VISIBLE
-	Decorated               = GLFW_DECORATED
-	AutoIconify             = GLFW_AUTO_ICONIFY
-	Floating                = GLFW_FLOATING
-	Maximized               = GLFW_OPENGL_PROFILE
-	Samples                 = GLFW_SAMPLES
-	ContextVersionMajor     = GLFW_CONTEXT_VERSION_MAJOR
-	ForwardCompatible       = GLFW_OPENGL_FORWARD_COMPAT
-	OpenGLProfile           = GLFW_OPENGL_PROFILE
-	OpenGLCoreProfile       = GLFW_OPENGL_CORE_PROFILE
-	ContextVersionMinor     = GLFW_CONTEXT_VERSION_MINOR
+	OpenGLForwardCompatible = glfw_OPENGL_FORWARD_COMPAT
+	Focused                 = glfw_FOCUSED
+	Resizable               = glfw_RESIZABLE
+	Visible                 = glfw_VISIBLE
+	Decorated               = glfw_DECORATED
+	AutoIconify             = glfw_AUTO_ICONIFY
+	Floating                = glfw_FLOATING
+	Maximized               = glfw_OPENGL_PROFILE
+	Samples                 = glfw_SAMPLES
+	ContextVersionMajor     = glfw_CONTEXT_VERSION_MAJOR
+	ForwardCompatible       = glfw_OPENGL_FORWARD_COMPAT
+	OpenGLProfile           = glfw_OPENGL_PROFILE
+	OpenGLCoreProfile       = glfw_OPENGL_CORE_PROFILE
+	ContextVersionMinor     = glfw_CONTEXT_VERSION_MINOR
+	RefreshRate             = glfw_REFRESH_RATE
+	RedBits                 = glfw_RED_BITS
+	GreenBits               = glfw_GREEN_BITS
+	BlueBits                = glfw_BLUE_BITS
 )
 
 type Action int
@@ -81,91 +83,91 @@ func WaitEventsTimeout(timeout float64) {
 	if timeout < 0.0 {
 		panic("Wait time must be positive")
 	}
-	MsgWaitForMultipleObjects(0, nil, 0, uint32(timeout*1e3), QS_ALLINPUT)
+	MsgWaitForMultipleObjects(0, nil, 0, uint32(timeout*1e3), qs_ALLINPUT)
 	glfwPollEvents()
 }
 
 func WindowHint(hint int, value int32) error {
 	switch hint {
-	case GLFW_RED_BITS:
+	case glfw_RED_BITS:
 		_glfw.hints.framebuffer.redBits = value
-	case GLFW_GREEN_BITS:
+	case glfw_GREEN_BITS:
 		_glfw.hints.framebuffer.greenBits = value
-	case GLFW_BLUE_BITS:
+	case glfw_BLUE_BITS:
 		_glfw.hints.framebuffer.blueBits = value
-	case GLFW_ALPHA_BITS:
+	case glfw_ALPHA_BITS:
 		_glfw.hints.framebuffer.alphaBits = value
-	case GLFW_DEPTH_BITS:
+	case glfw_DEPTH_BITS:
 		_glfw.hints.framebuffer.depthBits = value
-	case GLFW_STENCIL_BITS:
-	case GLFW_ACCUM_RED_BITS:
+	case glfw_STENCIL_BITS:
+	case glfw_ACCUM_RED_BITS:
 		_glfw.hints.framebuffer.accumRedBits = value
-	case GLFW_ACCUM_GREEN_BITS:
+	case glfw_ACCUM_GREEN_BITS:
 		_glfw.hints.framebuffer.accumGreenBits = value
-	case GLFW_ACCUM_BLUE_BITS:
+	case glfw_ACCUM_BLUE_BITS:
 		_glfw.hints.framebuffer.accumBlueBits = value
-	case GLFW_ACCUM_ALPHA_BITS:
+	case glfw_ACCUM_ALPHA_BITS:
 		_glfw.hints.framebuffer.accumAlphaBits = value
-	case GLFW_AUX_BUFFERS:
+	case glfw_AUX_BUFFERS:
 		_glfw.hints.framebuffer.auxBuffers = value
-	case GLFW_DOUBLEBUFFER:
+	case glfw_DOUBLEBUFFER:
 		_glfw.hints.framebuffer.doublebuffer = value != 0
-	case GLFW_TRANSPARENT_FRAMEBUFFER:
+	case glfw_TRANSPARENT_FRAMEBUFFER:
 		_glfw.hints.framebuffer.transparent = value != 0
-	case GLFW_SAMPLES:
+	case glfw_SAMPLES:
 		_glfw.hints.framebuffer.samples = value
-	case GLFW_SRGB_CAPABLE:
+	case glfw_SRGB_CAPABLE:
 		_glfw.hints.framebuffer.sRGB = value != 0
-	case GLFW_RESIZABLE:
+	case glfw_RESIZABLE:
 		_glfw.hints.window.resizable = value != 0
-	case GLFW_DECORATED:
+	case glfw_DECORATED:
 		_glfw.hints.window.decorated = value != 0
-	case GLFW_FOCUSED:
+	case glfw_FOCUSED:
 		_glfw.hints.window.focused = value != 0
-	case GLFW_AUTO_ICONIFY:
+	case glfw_AUTO_ICONIFY:
 		_glfw.hints.window.autoIconify = value != 0
-	case GLFW_FLOATING:
+	case glfw_FLOATING:
 		_glfw.hints.window.floating = value != 0
-	case GLFW_MAXIMIZED:
+	case glfw_MAXIMIZED:
 		_glfw.hints.window.maximized = value != 0
-	case GLFW_VISIBLE:
+	case glfw_VISIBLE:
 		_glfw.hints.window.visible = value != 0
-	case GLFW_POSITION_X:
+	case glfw_POSITION_X:
 		_glfw.hints.window.xpos = value
-	case GLFW_POSITION_Y:
+	case glfw_POSITION_Y:
 		_glfw.hints.window.ypos = value
-	case GLFW_SCALE_TO_MONITOR:
+	case glfw_SCALE_TO_MONITOR:
 		_glfw.hints.window.scaleToMonitor = value != 0
-	case GLFW_SCALE_FRAMEBUFFER:
-	case GLFW_COCOA_RETINA_FRAMEBUFFER:
+	case glfw_SCALE_FRAMEBUFFER:
+	case glfw_COCOA_RETINA_FRAMEBUFFER:
 		_glfw.hints.window.scaleFramebuffer = value != 0
-	case GLFW_CENTER_CURSOR:
+	case glfw_CENTER_CURSOR:
 		_glfw.hints.window.centerCursor = value != 0
-	case GLFW_FOCUS_ON_SHOW:
+	case glfw_FOCUS_ON_SHOW:
 		_glfw.hints.window.focusOnShow = value != 0
-	case GLFW_MOUSE_PASSTHROUGH:
+	case glfw_MOUSE_PASSTHROUGH:
 		_glfw.hints.window.mousePassthrough = value != 0
-	case GLFW_CLIENT_API:
+	case glfw_CLIENT_API:
 		_glfw.hints.context.client = value
-	case GLFW_CONTEXT_CREATION_API:
+	case glfw_CONTEXT_CREATION_API:
 		_glfw.hints.context.source = value
-	case GLFW_CONTEXT_VERSION_MAJOR:
+	case glfw_CONTEXT_VERSION_MAJOR:
 		_glfw.hints.context.major = value
-	case GLFW_CONTEXT_VERSION_MINOR:
+	case glfw_CONTEXT_VERSION_MINOR:
 		_glfw.hints.context.minor = value
-	case GLFW_CONTEXT_ROBUSTNESS:
+	case glfw_CONTEXT_ROBUSTNESS:
 		_glfw.hints.context.robustness = value
-	case GLFW_OPENGL_FORWARD_COMPAT:
+	case glfw_OPENGL_FORWARD_COMPAT:
 		_glfw.hints.context.forward = value != 0
-	case GLFW_CONTEXT_DEBUG:
+	case glfw_CONTEXT_DEBUG:
 		_glfw.hints.context.debug = value != 0
-	case GLFW_CONTEXT_NO_ERROR:
+	case glfw_CONTEXT_NO_ERROR:
 		_glfw.hints.context.noerror = value != 0
-	case GLFW_OPENGL_PROFILE:
+	case glfw_OPENGL_PROFILE:
 		_glfw.hints.context.profile = value
-	case GLFW_CONTEXT_RELEASE_BEHAVIOR:
+	case glfw_CONTEXT_RELEASE_BEHAVIOR:
 		_glfw.hints.context.release = value
-	case GLFW_REFRESH_RATE:
+	case glfw_REFRESH_RATE:
 		_glfw.hints.refreshRate = value
 	default:
 		return fmt.Errorf("Invalid window hint %d with value %d", hint, value)

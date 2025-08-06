@@ -120,14 +120,14 @@ func (m *Monitor) GetWorkarea() (x, y, width, height int) {
 func (m *Monitor) GetContentScale() (float32, float32) {
 	var dpiX, dpiY int
 	if IsWindows8Point1OrGreater() {
-		dpiX, dpiY = GetDpiForMonitor(m.hMonitor, MDT_EFFECTIVE_DPI)
+		dpiX, dpiY = GetDpiForMonitor(m.hMonitor, mdt_EFFECTIVE_DPI)
 	} else {
 		dc := getDC(0)
-		dpiX = GetDeviceCaps(dc, LOGPIXELSX)
-		dpiX = GetDeviceCaps(dc, LOGPIXELSY)
+		dpiX = GetDeviceCaps(dc, _LOGPIXELSX)
+		dpiX = GetDeviceCaps(dc, _LOGPIXELSY)
 		releaseDC(0, dc)
 	}
-	return float32(dpiX) / USER_DEFAULT_SCREEN_DPI, float32(dpiY) / USER_DEFAULT_SCREEN_DPI
+	return float32(dpiX) / _USER_DEFAULT_SCREEN_DPI, float32(dpiY) / _USER_DEFAULT_SCREEN_DPI
 }
 
 func (m *Monitor) GetMonitorName() string {

@@ -236,18 +236,18 @@ func _glfwInitWGL() error {
 	_glfw.wgl.SwapIntervalEXT = wglGetProcAddress("wglSwapIntervalEXT")
 	_glfw.wgl.GetPixelFormatAttribivARB = wglGetProcAddress("wglGetPixelFormatAttribivARB")
 
-	_glfw.wgl.ARB_multisample = extensionSupportedWGL("WGL_ARB_multisample")
-	_glfw.wgl.ARB_framebuffer_sRGB = extensionSupportedWGL("WGL_ARB_framebuffer_sRGB")
-	_glfw.wgl.EXT_framebuffer_sRGB = extensionSupportedWGL("WGL_EXT_framebuffer_sRGB")
-	_glfw.wgl.ARB_create_context = extensionSupportedWGL("WGL_ARB_create_context")
-	_glfw.wgl.ARB_create_context_profile = extensionSupportedWGL("WGL_ARB_create_context_profile")
-	_glfw.wgl.EXT_create_context_es2_profile = extensionSupportedWGL("WGL_EXT_create_context_es2_profile")
-	_glfw.wgl.ARB_create_context_robustness = extensionSupportedWGL("WGL_ARB_create_context_robustness")
-	_glfw.wgl.ARB_create_context_no_error = extensionSupportedWGL("WGL_ARB_create_context_no_error")
-	_glfw.wgl.EXT_swap_control = extensionSupportedWGL("WGL_EXT_swap_control")
-	_glfw.wgl.EXT_colorspace = extensionSupportedWGL("WGL_EXT_colorspace")
-	_glfw.wgl.ARB_pixel_format = extensionSupportedWGL("WGL_ARB_pixel_format")
-	_glfw.wgl.ARB_context_flush_control = extensionSupportedWGL("WGL_ARB_context_flush_control")
+	_glfw.wgl.ARB_multisample = extensionSupportedWGL("wgl_ARB_multisample")
+	_glfw.wgl.ARB_framebuffer_sRGB = extensionSupportedWGL("wgl_ARB_framebuffer_sRGB")
+	_glfw.wgl.EXT_framebuffer_sRGB = extensionSupportedWGL("wgl_EXT_framebuffer_sRGB")
+	_glfw.wgl.ARB_create_context = extensionSupportedWGL("wgl_ARB_create_context")
+	_glfw.wgl.ARB_create_context_profile = extensionSupportedWGL("wgl_ARB_create_context_profile")
+	_glfw.wgl.EXT_create_context_es2_profile = extensionSupportedWGL("wgl_EXT_create_context_es2_profile")
+	_glfw.wgl.ARB_create_context_robustness = extensionSupportedWGL("wgl_ARB_create_context_robustness")
+	_glfw.wgl.ARB_create_context_no_error = extensionSupportedWGL("wgl_ARB_create_context_no_error")
+	_glfw.wgl.EXT_swap_control = extensionSupportedWGL("wgl_EXT_swap_control")
+	_glfw.wgl.EXT_colorspace = extensionSupportedWGL("wgl_EXT_colorspace")
+	_glfw.wgl.ARB_pixel_format = extensionSupportedWGL("wgl_ARB_pixel_format")
+	_glfw.wgl.ARB_context_flush_control = extensionSupportedWGL("wgl_ARB_context_flush_control")
 	makeCurrent(pdc, prc)
 	deleteContext(HANDLE(rc))
 	return nil
@@ -317,70 +317,70 @@ func glfwCreateContextWGL(window *_GLFWwindow, ctxconfig *_GLFWctxconfig, fbconf
 	if setPixelFormat(window.context.wgl.dc, pixelFormat, &pfd) == 0 {
 		return fmt.Errorf("WGL: Failed to set selected pixel format")
 	}
-	if ctxconfig.client == GLFW_OPENGL_API {
+	if ctxconfig.client == glfw_OPENGL_API {
 		if ctxconfig.forward && !_glfw.wgl.ARB_create_context {
-			return fmt.Errorf("WGL: A forward compatible OpenGL context requested but WGL_ARB_create_context is unavailable")
+			return fmt.Errorf("WGL: A forward compatible OpenGL context requested but wgl_ARB_create_context is unavailable")
 		}
 		if (ctxconfig.profile != 0) && !_glfw.wgl.ARB_create_context_profile {
-			return fmt.Errorf("WGL: OpenGL profile requested but WGL_ARB_create_context_profile is unavailable")
+			return fmt.Errorf("WGL: OpenGL profile requested but wgl_ARB_create_context_profile is unavailable")
 		}
 	} else {
 		if !_glfw.wgl.ARB_create_context || !_glfw.wgl.ARB_create_context_profile || !_glfw.wgl.EXT_create_context_es2_profile {
-			return fmt.Errorf("WGL: OpenGL ES requested but WGL_ARB_create_context_es2_profile is unavailable")
+			return fmt.Errorf("WGL: OpenGL ES requested but wgl_ARB_create_context_es2_profile is unavailable")
 		}
 	}
 	if _glfw.wgl.ARB_create_context {
 		mask := 0
 		flags := 0
-		if ctxconfig.client == GLFW_OPENGL_API {
+		if ctxconfig.client == glfw_OPENGL_API {
 			if ctxconfig.forward {
-				flags |= WGL_CONTEXT_FORWARD_COMPATIBLE_BIT_ARB
+				flags |= wgl_CONTEXT_FORWARD_COMPATIBLE_BIT_ARB
 			}
-			if ctxconfig.profile == GLFW_OPENGL_CORE_PROFILE {
-				mask |= WGL_CONTEXT_CORE_PROFILE_BIT_ARB
-			} else if ctxconfig.profile == GLFW_OPENGL_COMPAT_PROFILE {
-				mask |= WGL_CONTEXT_COMPATIBILITY_PROFILE_BIT_ARB
+			if ctxconfig.profile == glfw_OPENGL_CORE_PROFILE {
+				mask |= wgl_CONTEXT_CORE_PROFILE_BIT_ARB
+			} else if ctxconfig.profile == glfw_OPENGL_COMPAT_PROFILE {
+				mask |= wgl_CONTEXT_COMPATIBILITY_PROFILE_BIT_ARB
 			}
 		} else {
-			mask |= WGL_CONTEXT_ES2_PROFILE_BIT_EXT
+			mask |= wgl_CONTEXT_ES2_PROFILE_BIT_EXT
 		}
 		if ctxconfig.debug {
-			flags |= WGL_CONTEXT_DEBUG_BIT_ARB
+			flags |= wgl_CONTEXT_DEBUG_BIT_ARB
 		}
 		if ctxconfig.robustness != 0 {
 			if _glfw.wgl.ARB_create_context_robustness {
-				if ctxconfig.robustness == GLFW_NO_RESET_NOTIFICATION {
-					attribList = append(attribList, WGL_CONTEXT_RESET_NOTIFICATION_STRATEGY_ARB, WGL_NO_RESET_NOTIFICATION_ARB)
+				if ctxconfig.robustness == glfw_NO_RESET_NOTIFICATION {
+					attribList = append(attribList, wgl_CONTEXT_RESET_NOTIFICATION_STRATEGY_ARB, wgl_NO_RESET_NOTIFICATION_ARB)
 				}
-			} else if ctxconfig.robustness == GLFW_LOSE_CONTEXT_ON_RESET {
-				attribList = append(attribList, WGL_CONTEXT_RESET_NOTIFICATION_STRATEGY_ARB, WGL_LOSE_CONTEXT_ON_RESET_ARB)
+			} else if ctxconfig.robustness == glfw_LOSE_CONTEXT_ON_RESET {
+				attribList = append(attribList, wgl_CONTEXT_RESET_NOTIFICATION_STRATEGY_ARB, wgl_LOSE_CONTEXT_ON_RESET_ARB)
 			}
-			flags |= WGL_CONTEXT_ROBUST_ACCESS_BIT_ARB
+			flags |= wgl_CONTEXT_ROBUST_ACCESS_BIT_ARB
 		}
 		if ctxconfig.release != 0 {
 			if _glfw.wgl.ARB_context_flush_control {
-				if ctxconfig.release == GLFW_RELEASE_BEHAVIOR_NONE {
-					attribList = append(attribList, WGL_CONTEXT_RELEASE_BEHAVIOR_ARB, WGL_CONTEXT_RELEASE_BEHAVIOR_NONE_ARB)
-				} else if ctxconfig.release == GLFW_RELEASE_BEHAVIOR_FLUSH {
-					attribList = append(attribList, WGL_CONTEXT_RELEASE_BEHAVIOR_ARB, WGL_CONTEXT_RELEASE_BEHAVIOR_FLUSH_ARB)
+				if ctxconfig.release == glfw_RELEASE_BEHAVIOR_NONE {
+					attribList = append(attribList, wgl_CONTEXT_RELEASE_BEHAVIOR_ARB, wgl_CONTEXT_RELEASE_BEHAVIOR_NONE_ARB)
+				} else if ctxconfig.release == glfw_RELEASE_BEHAVIOR_FLUSH {
+					attribList = append(attribList, wgl_CONTEXT_RELEASE_BEHAVIOR_ARB, wgl_CONTEXT_RELEASE_BEHAVIOR_FLUSH_ARB)
 				}
 			}
 		}
 		if ctxconfig.noerror {
 			if _glfw.wgl.ARB_create_context_no_error {
-				attribList = append(attribList, WGL_CONTEXT_OPENGL_NO_ERROR_ARB, 1)
+				attribList = append(attribList, wgl_CONTEXT_OPENGL_NO_ERROR_ARB, 1)
 			}
 		}
 		// Only request an explicitly versioned context when necessary,
 		if ctxconfig.major != 1 || ctxconfig.minor != 0 {
-			attribList = append(attribList, WGL_CONTEXT_MAJOR_VERSION_ARB, int32(ctxconfig.major))
-			attribList = append(attribList, WGL_CONTEXT_MINOR_VERSION_ARB, int32(ctxconfig.minor))
+			attribList = append(attribList, wgl_CONTEXT_MAJOR_VERSION_ARB, int32(ctxconfig.major))
+			attribList = append(attribList, wgl_CONTEXT_MINOR_VERSION_ARB, int32(ctxconfig.minor))
 		}
 		if flags != 0 {
-			attribList = append(attribList, WGL_CONTEXT_FLAGS_ARB, int32(flags))
+			attribList = append(attribList, wgl_CONTEXT_FLAGS_ARB, int32(flags))
 		}
 		if mask != 0 {
-			attribList = append(attribList, WGL_CONTEXT_PROFILE_MASK_ARB, int32(mask))
+			attribList = append(attribList, wgl_CONTEXT_PROFILE_MASK_ARB, int32(mask))
 		}
 		// Add sentinel for end-of-list
 		attribList = append(attribList, 0, 0)
@@ -426,42 +426,42 @@ func choosePixelFormatWGL(window *_GLFWwindow, ctxconfig *_GLFWctxconfig, fbconf
 	nativeCount = describePixelFormat(window.context.wgl.dc, 1, int(unsafe.Sizeof(pfd)), nil)
 	attribCount = 0
 	if _glfw.wgl.ARB_pixel_format {
-		ADD_ATTRIB(WGL_SUPPORT_OPENGL_ARB)
-		ADD_ATTRIB(WGL_DRAW_TO_WINDOW_ARB)
-		ADD_ATTRIB(WGL_PIXEL_TYPE_ARB)
-		ADD_ATTRIB(WGL_ACCELERATION_ARB)
-		ADD_ATTRIB(WGL_RED_BITS_ARB)
-		ADD_ATTRIB(WGL_RED_SHIFT_ARB)
-		ADD_ATTRIB(WGL_GREEN_BITS_ARB)
-		ADD_ATTRIB(WGL_GREEN_SHIFT_ARB)
-		ADD_ATTRIB(WGL_BLUE_BITS_ARB)
-		ADD_ATTRIB(WGL_BLUE_SHIFT_ARB)
-		ADD_ATTRIB(WGL_ALPHA_BITS_ARB)
-		ADD_ATTRIB(WGL_ALPHA_SHIFT_ARB)
-		ADD_ATTRIB(WGL_DEPTH_BITS_ARB)
-		ADD_ATTRIB(WGL_STENCIL_BITS_ARB)
-		ADD_ATTRIB(WGL_ACCUM_BITS_ARB)
-		ADD_ATTRIB(WGL_ACCUM_RED_BITS_ARB)
-		ADD_ATTRIB(WGL_ACCUM_GREEN_BITS_ARB)
-		ADD_ATTRIB(WGL_ACCUM_BLUE_BITS_ARB)
-		ADD_ATTRIB(WGL_ACCUM_ALPHA_BITS_ARB)
-		ADD_ATTRIB(WGL_AUX_BUFFERS_ARB)
-		ADD_ATTRIB(WGL_STEREO_ARB)
-		ADD_ATTRIB(WGL_DOUBLE_BUFFER_ARB)
+		ADD_ATTRIB(wgl_SUPPORT_OPENGL_ARB)
+		ADD_ATTRIB(wgl_DRAW_TO_WINDOW_ARB)
+		ADD_ATTRIB(wgl_PIXEL_TYPE_ARB)
+		ADD_ATTRIB(wgl_ACCELERATION_ARB)
+		ADD_ATTRIB(wgl_RED_BITS_ARB)
+		ADD_ATTRIB(wgl_RED_SHIFT_ARB)
+		ADD_ATTRIB(wgl_GREEN_BITS_ARB)
+		ADD_ATTRIB(wgl_GREEN_SHIFT_ARB)
+		ADD_ATTRIB(wgl_BLUE_BITS_ARB)
+		ADD_ATTRIB(wgl_BLUE_SHIFT_ARB)
+		ADD_ATTRIB(wgl_ALPHA_BITS_ARB)
+		ADD_ATTRIB(wgl_ALPHA_SHIFT_ARB)
+		ADD_ATTRIB(wgl_DEPTH_BITS_ARB)
+		ADD_ATTRIB(wgl_STENCIL_BITS_ARB)
+		ADD_ATTRIB(wgl_ACCUM_BITS_ARB)
+		ADD_ATTRIB(wgl_ACCUM_RED_BITS_ARB)
+		ADD_ATTRIB(wgl_ACCUM_GREEN_BITS_ARB)
+		ADD_ATTRIB(wgl_ACCUM_BLUE_BITS_ARB)
+		ADD_ATTRIB(wgl_ACCUM_ALPHA_BITS_ARB)
+		ADD_ATTRIB(wgl_AUX_BUFFERS_ARB)
+		ADD_ATTRIB(wgl_STEREO_ARB)
+		ADD_ATTRIB(wgl_DOUBLE_BUFFER_ARB)
 
 		if _glfw.wgl.ARB_multisample {
-			ADD_ATTRIB(WGL_SAMPLES_ARB)
+			ADD_ATTRIB(wgl_SAMPLES_ARB)
 		}
-		if ctxconfig.client == GLFW_OPENGL_API {
+		if ctxconfig.client == glfw_OPENGL_API {
 			if _glfw.wgl.ARB_framebuffer_sRGB || _glfw.wgl.EXT_framebuffer_sRGB {
-				ADD_ATTRIB(WGL_FRAMEBUFFER_SRGB_CAPABLE_ARB)
+				ADD_ATTRIB(wgl_FRAMEBUFFER_SRGB_CAPABLE_ARB)
 			}
 		} else {
 			if _glfw.wgl.EXT_colorspace {
-				ADD_ATTRIB(WGL_COLORSPACE_EXT)
+				ADD_ATTRIB(wgl_COLORSPACE_EXT)
 			}
 		}
-		attrib := int32(WGL_NUMBER_PIXEL_FORMATS_ARB)
+		attrib := int32(wgl_NUMBER_PIXEL_FORMATS_ARB)
 		var extensionCount int32
 		wglGetPixelFormatAttribivARB(window.context.wgl.dc, 1, 0, 1, &attrib, &extensionCount)
 		nativeCount = min(nativeCount, extensionCount)
@@ -477,41 +477,41 @@ func choosePixelFormatWGL(window *_GLFWwindow, ctxconfig *_GLFWctxconfig, fbconf
 			for j := 0; j < attribCount; j++ {
 				wglGetPixelFormatAttribivARB(window.context.wgl.dc, pixelFormat, 0, 1 /*attribCount*/, &attribs[j], &values[j])
 			}
-			if FIND_ATTRIB_VALUE(WGL_SUPPORT_OPENGL_ARB) == 0 || FIND_ATTRIB_VALUE(WGL_DRAW_TO_WINDOW_ARB) == 0 {
+			if FIND_ATTRIB_VALUE(wgl_SUPPORT_OPENGL_ARB) == 0 || FIND_ATTRIB_VALUE(wgl_DRAW_TO_WINDOW_ARB) == 0 {
 				continue
 			}
-			if FIND_ATTRIB_VALUE(WGL_PIXEL_TYPE_ARB) != WGL_TYPE_RGBA_ARB {
+			if FIND_ATTRIB_VALUE(wgl_PIXEL_TYPE_ARB) != wgl_TYPE_RGBA_ARB {
 				continue
 			}
-			if FIND_ATTRIB_VALUE(WGL_ACCELERATION_ARB) == WGL_NO_ACCELERATION_ARB {
+			if FIND_ATTRIB_VALUE(wgl_ACCELERATION_ARB) == wgl_NO_ACCELERATION_ARB {
 				continue
 			}
-			if (FIND_ATTRIB_VALUE(WGL_DOUBLE_BUFFER_ARB) != 0) != fbconfig.doublebuffer {
+			if (FIND_ATTRIB_VALUE(wgl_DOUBLE_BUFFER_ARB) != 0) != fbconfig.doublebuffer {
 				continue
 			}
-			u.redBits = FIND_ATTRIB_VALUE(WGL_RED_BITS_ARB)
-			u.greenBits = FIND_ATTRIB_VALUE(WGL_GREEN_BITS_ARB)
-			u.blueBits = FIND_ATTRIB_VALUE(WGL_BLUE_BITS_ARB)
-			u.alphaBits = FIND_ATTRIB_VALUE(WGL_ALPHA_BITS_ARB)
-			u.depthBits = FIND_ATTRIB_VALUE(WGL_DEPTH_BITS_ARB)
-			u.stencilBits = FIND_ATTRIB_VALUE(WGL_STENCIL_BITS_ARB)
-			u.accumRedBits = FIND_ATTRIB_VALUE(WGL_ACCUM_RED_BITS_ARB)
-			u.accumGreenBits = FIND_ATTRIB_VALUE(WGL_ACCUM_GREEN_BITS_ARB)
-			u.accumBlueBits = FIND_ATTRIB_VALUE(WGL_ACCUM_BLUE_BITS_ARB)
-			u.accumAlphaBits = FIND_ATTRIB_VALUE(WGL_ACCUM_ALPHA_BITS_ARB)
-			u.auxBuffers = FIND_ATTRIB_VALUE(WGL_AUX_BUFFERS_ARB)
+			u.redBits = FIND_ATTRIB_VALUE(wgl_RED_BITS_ARB)
+			u.greenBits = FIND_ATTRIB_VALUE(wgl_GREEN_BITS_ARB)
+			u.blueBits = FIND_ATTRIB_VALUE(wgl_BLUE_BITS_ARB)
+			u.alphaBits = FIND_ATTRIB_VALUE(wgl_ALPHA_BITS_ARB)
+			u.depthBits = FIND_ATTRIB_VALUE(wgl_DEPTH_BITS_ARB)
+			u.stencilBits = FIND_ATTRIB_VALUE(wgl_STENCIL_BITS_ARB)
+			u.accumRedBits = FIND_ATTRIB_VALUE(wgl_ACCUM_RED_BITS_ARB)
+			u.accumGreenBits = FIND_ATTRIB_VALUE(wgl_ACCUM_GREEN_BITS_ARB)
+			u.accumBlueBits = FIND_ATTRIB_VALUE(wgl_ACCUM_BLUE_BITS_ARB)
+			u.accumAlphaBits = FIND_ATTRIB_VALUE(wgl_ACCUM_ALPHA_BITS_ARB)
+			u.auxBuffers = FIND_ATTRIB_VALUE(wgl_AUX_BUFFERS_ARB)
 			if _glfw.wgl.ARB_multisample {
-				u.samples = FIND_ATTRIB_VALUE(WGL_SAMPLES_ARB)
+				u.samples = FIND_ATTRIB_VALUE(wgl_SAMPLES_ARB)
 			}
-			if ctxconfig.client == GLFW_OPENGL_API {
+			if ctxconfig.client == glfw_OPENGL_API {
 				if _glfw.wgl.ARB_framebuffer_sRGB || _glfw.wgl.EXT_framebuffer_sRGB {
-					if FIND_ATTRIB_VALUE(WGL_FRAMEBUFFER_SRGB_CAPABLE_ARB) != 0 {
+					if FIND_ATTRIB_VALUE(wgl_FRAMEBUFFER_SRGB_CAPABLE_ARB) != 0 {
 						u.sRGB = true
 					}
 				}
 			} else {
 				if _glfw.wgl.EXT_colorspace {
-					if FIND_ATTRIB_VALUE(WGL_COLORSPACE_EXT) == WGL_COLORSPACE_SRGB_EXT {
+					if FIND_ATTRIB_VALUE(wgl_COLORSPACE_EXT) == wgl_COLORSPACE_SRGB_EXT {
 						u.sRGB = true
 					}
 				}

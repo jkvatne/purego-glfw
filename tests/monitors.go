@@ -36,7 +36,7 @@ func framebuffer_size_callback(window *glfw.Window, width int32, height int32) {
 }
 
 func key_callback4(window *glfw.Window, key glfw.Key, scancode int, action glfw.Action, mods glfw.ModifierKey) {
-	if key == glfw.GLFW_KEY_ESCAPE {
+	if key == glfw.KeyEscape {
 		window.SetWindowShouldClose(true)
 	}
 }
@@ -74,11 +74,11 @@ func test_modes(monitor *glfw.Monitor) {
 	modes := glfw.GetVideoModes(monitor)
 	for i := 0; i < len(modes); i++ {
 		mode := modes[i]
-		// TODO _ = glfw.WindowHint(glfw.GLFW_RED_BITS, mode.Samples)
-		_ = glfw.WindowHint(glfw.GLFW_RED_BITS, mode.RedBits)
-		_ = glfw.WindowHint(glfw.GLFW_GREEN_BITS, mode.GreenBits)
-		_ = glfw.WindowHint(glfw.GLFW_BLUE_BITS, mode.BlueBits)
-		_ = glfw.WindowHint(glfw.GLFW_REFRESH_RATE, mode.RefreshRate)
+		// TODO _ = glfw.WindowHint(glfw.Samples, mode.Samples)
+		_ = glfw.WindowHint(glfw.RedBits, mode.RedBits)
+		_ = glfw.WindowHint(glfw.GreenBits, mode.GreenBits)
+		_ = glfw.WindowHint(glfw.BlueBits, mode.BlueBits)
+		_ = glfw.WindowHint(glfw.RefreshRate, mode.RefreshRate)
 
 		fmt.Printf("Testing mode %d on monitor %s: %s\n", i, monitor.GetMonitorName(), format_mode(&mode))
 		window, err := glfw.CreateWindow(mode.Width, mode.Height, "Video Mode Test", monitor, nil)

@@ -17,7 +17,7 @@ func glfwIsValidContextConfig(ctxconfig *_GLFWctxconfig) error {
 	}
 
 	if ctxconfig.profile != 0 {
-		if ctxconfig.profile != GLFW_OPENGL_CORE_PROFILE && ctxconfig.profile != GLFW_OPENGL_COMPAT_PROFILE {
+		if ctxconfig.profile != glfw_OPENGL_CORE_PROFILE && ctxconfig.profile != glfw_OPENGL_COMPAT_PROFILE {
 			return fmt.Errorf("Invalid OpenGL profile 0x%08X", ctxconfig.profile)
 		}
 		if ctxconfig.major <= 2 || (ctxconfig.major == 3 && ctxconfig.minor < 2) {
@@ -62,40 +62,40 @@ func glfwChooseFBConfig(desired *_GLFWfbconfig, alternatives []_GLFWfbconfig, co
 			missing++
 		}
 		colorDiff = 0
-		if desired.redBits != GLFW_DONT_CARE {
+		if desired.redBits != glfw_DONT_CARE {
 			colorDiff += (desired.redBits - current.redBits) * (desired.redBits - current.redBits)
 		}
-		if desired.greenBits != GLFW_DONT_CARE {
+		if desired.greenBits != glfw_DONT_CARE {
 			colorDiff += (desired.greenBits - current.greenBits) * (desired.greenBits - current.greenBits)
 		}
-		if desired.blueBits != GLFW_DONT_CARE {
+		if desired.blueBits != glfw_DONT_CARE {
 			colorDiff += (desired.blueBits - current.blueBits) * (desired.blueBits - current.blueBits)
 		}
 
 		// Calculate non-color channel size difference value
 		extraDiff = 0
-		if desired.alphaBits != GLFW_DONT_CARE {
+		if desired.alphaBits != glfw_DONT_CARE {
 			extraDiff += (desired.alphaBits - current.alphaBits) * (desired.alphaBits - current.alphaBits)
 		}
-		if desired.depthBits != GLFW_DONT_CARE {
+		if desired.depthBits != glfw_DONT_CARE {
 			extraDiff += (desired.depthBits - current.depthBits) * (desired.depthBits - current.depthBits)
 		}
-		if desired.stencilBits != GLFW_DONT_CARE {
+		if desired.stencilBits != glfw_DONT_CARE {
 			extraDiff += (desired.stencilBits - current.stencilBits) * (desired.stencilBits - current.stencilBits)
 		}
-		if desired.accumRedBits != GLFW_DONT_CARE {
+		if desired.accumRedBits != glfw_DONT_CARE {
 			extraDiff += (desired.accumRedBits - current.accumRedBits) * (desired.accumRedBits - current.accumRedBits)
 		}
-		if desired.accumGreenBits != GLFW_DONT_CARE {
+		if desired.accumGreenBits != glfw_DONT_CARE {
 			extraDiff += (desired.accumGreenBits - current.accumGreenBits) * (desired.accumGreenBits - current.accumGreenBits)
 		}
-		if desired.accumBlueBits != GLFW_DONT_CARE {
+		if desired.accumBlueBits != glfw_DONT_CARE {
 			extraDiff += (desired.accumBlueBits - current.accumBlueBits) * (desired.accumBlueBits - current.accumBlueBits)
 		}
-		if desired.accumAlphaBits != GLFW_DONT_CARE {
+		if desired.accumAlphaBits != glfw_DONT_CARE {
 			extraDiff += (desired.accumAlphaBits - current.accumAlphaBits) * (desired.accumAlphaBits - current.accumAlphaBits)
 		}
-		if desired.samples != GLFW_DONT_CARE {
+		if desired.samples != glfw_DONT_CARE {
 			extraDiff += (desired.samples - current.samples) * (desired.samples - current.samples)
 		}
 		if desired.sRGB && !current.sRGB {
@@ -124,7 +124,7 @@ func glfwChooseFBConfig(desired *_GLFWfbconfig, alternatives []_GLFWfbconfig, co
 
 func _glfwRefreshContextAttribs(window *_GLFWwindow, ctxconfig *_GLFWctxconfig) error {
 	window.context.source = ctxconfig.source
-	window.context.client = GLFW_OPENGL_API
+	window.context.client = glfw_OPENGL_API
 	previous := (*Window)(unsafe.Pointer(glfwPlatformGetTls(&_glfw.contextSlot)))
 	_ = glfwMakeContextCurrent(window)
 	if glfwPlatformGetTls(&_glfw.contextSlot) != uintptr(unsafe.Pointer(window)) {
@@ -136,7 +136,7 @@ func _glfwRefreshContextAttribs(window *_GLFWwindow, ctxconfig *_GLFWctxconfig) 
 	if window.context.GetIntegerv == 0 || window.context.GetString == 0 {
 		return fmt.Errorf("_glfwRefreshContextAttribs: Entry point retrieval is broken")
 	}
-	r, _, err := syscall.SyscallN(window.context.GetString, uintptr(GL_VERSION))
+	r, _, err := syscall.SyscallN(window.context.GetString, uintptr(_GL_VERSION))
 	if !errors.Is(err, syscall.Errno(0)) {
 		return fmt.Errorf("String retrieval is broken, " + err.Error())
 	}
@@ -169,7 +169,7 @@ func _glfwRefreshContextAttribs(window *_GLFWwindow, ctxconfig *_GLFWctxconfig) 
 		// The desired OpenGL version is greater than the actual version
 		// This only happens if the machine lacks {GLX|WGL}_ARB_create_context
 		// /and/ the user has requested an OpenGL version greater than 1.0
-		if window.context.client == GLFW_OPENGL_API {
+		if window.context.client == glfw_OPENGL_API {
 			return fmt.Errorf("Requested OpenGL version %d.%d, got version %d.%d", ctxconfig.major, ctxconfig.minor, window.context.major, window.context.minor)
 		} else {
 			return fmt.Errorf("Requested OpenGL ES version %d.%d, got version %d.%d", ctxconfig.major, ctxconfig.minor, window.context.major, window.context.minor)
@@ -185,15 +185,15 @@ func _glfwRefreshContextAttribs(window *_GLFWwindow, ctxconfig *_GLFWctxconfig) 
 			return fmt.Errorf("Entry point retrieval is broken for glGetStringi")
 		}
 	}
-	if window.context.client == GLFW_OPENGL_API {
+	if window.context.client == glfw_OPENGL_API {
 		// Read back context flags (OpenGL 3.0 and above)
 		if window.context.major >= 3 {
 			var flags int
-			GetIntegerv(window, GL_CONTEXT_FLAGS, &flags)
-			if flags&GL_CONTEXT_FLAG_FORWARD_COMPATIBLE_BIT != 0 {
+			GetIntegerv(window, _GL_CONTEXT_FLAGS, &flags)
+			if flags&_GL_CONTEXT_FLAG_FORWARD_COMPATIBLE_BIT != 0 {
 				window.context.forward = true
 			}
-			if (flags & GL_CONTEXT_FLAG_DEBUG_BIT) != 0 {
+			if (flags & _GL_CONTEXT_FLAG_DEBUG_BIT) != 0 {
 				window.context.debug = true
 			} else if ExtensionSupported("GL_ARB_debug_output") && ctxconfig.debug {
 				// HACK: This is a workaround for older drivers (pre KHR_debug)
@@ -201,24 +201,24 @@ func _glfwRefreshContextAttribs(window *_GLFWwindow, ctxconfig *_GLFWctxconfig) 
 				//       debug contexts
 				window.context.debug = true
 			}
-			if flags&GL_CONTEXT_FLAG_NO_ERROR_BIT_KHR != 0 {
+			if flags&_GL_CONTEXT_FLAG_NO_ERROR_BIT_KHR != 0 {
 				window.context.noerror = true
 			}
 		}
 		// Read back OpenGL context profile (OpenGL 3.2 and above)
 		if window.context.major >= 4 || window.context.major == 3 && window.context.minor >= 2 {
 			var mask int
-			GetIntegerv(window, GL_CONTEXT_PROFILE_MASK, &mask)
-			if (mask & GL_CONTEXT_COMPATIBILITY_PROFILE_BIT) != 0 {
-				window.context.profile = GLFW_OPENGL_COMPAT_PROFILE
-			} else if (mask & GL_CONTEXT_CORE_PROFILE_BIT) != 0 {
-				window.context.profile = GLFW_OPENGL_CORE_PROFILE
+			GetIntegerv(window, _GL_CONTEXT_PROFILE_MASK, &mask)
+			if (mask & _GL_CONTEXT_COMPATIBILITY_PROFILE_BIT) != 0 {
+				window.context.profile = glfw_OPENGL_COMPAT_PROFILE
+			} else if (mask & _GL_CONTEXT_CORE_PROFILE_BIT) != 0 {
+				window.context.profile = glfw_OPENGL_CORE_PROFILE
 			} else if ExtensionSupported("GL_ARB_compatibility") {
 				// HACK: This is a workaround for the compatibility profile bit
 				//       not being set in the context flags if an OpenGL 3.2+
 				//       context was created without having requested a specific
 				//       version
-				window.context.profile = GLFW_OPENGL_COMPAT_PROFILE
+				window.context.profile = glfw_OPENGL_COMPAT_PROFILE
 			}
 		}
 		// Read back robustness strategy
@@ -226,11 +226,11 @@ func _glfwRefreshContextAttribs(window *_GLFWwindow, ctxconfig *_GLFWctxconfig) 
 			// NOTE: We avoid using the context flags for detection, as they are
 			//       only present from 3.0 while the extension applies from 1.1
 			var strategy int
-			GetIntegerv(window, GL_RESET_NOTIFICATION_STRATEGY_ARB, &strategy)
-			if strategy == GL_LOSE_CONTEXT_ON_RESET_ARB {
-				window.context.robustness = GLFW_LOSE_CONTEXT_ON_RESET
-			} else if strategy == GL_NO_RESET_NOTIFICATION_ARB {
-				window.context.robustness = GLFW_NO_RESET_NOTIFICATION
+			GetIntegerv(window, _GL_RESET_NOTIFICATION_STRATEGY_ARB, &strategy)
+			if strategy == _GL_LOSE_CONTEXT_ON_RESET_ARB {
+				window.context.robustness = glfw_LOSE_CONTEXT_ON_RESET
+			} else if strategy == _GL_NO_RESET_NOTIFICATION_ARB {
+				window.context.robustness = glfw_NO_RESET_NOTIFICATION
 			}
 		}
 	} else {
@@ -238,29 +238,29 @@ func _glfwRefreshContextAttribs(window *_GLFWwindow, ctxconfig *_GLFWctxconfig) 
 		if ExtensionSupported("GL_EXT_robustness") {
 			// NOTE: The values of these constants match those of the OpenGL ARB one, so we can reuse them here
 			var strategy int
-			GetIntegerv(window, GL_RESET_NOTIFICATION_STRATEGY_ARB, &strategy)
-			if strategy == GL_LOSE_CONTEXT_ON_RESET_ARB {
-				window.context.robustness = GLFW_LOSE_CONTEXT_ON_RESET
-			} else if strategy == GL_NO_RESET_NOTIFICATION_ARB {
-				window.context.robustness = GLFW_NO_RESET_NOTIFICATION
+			GetIntegerv(window, _GL_RESET_NOTIFICATION_STRATEGY_ARB, &strategy)
+			if strategy == _GL_LOSE_CONTEXT_ON_RESET_ARB {
+				window.context.robustness = glfw_LOSE_CONTEXT_ON_RESET
+			} else if strategy == _GL_NO_RESET_NOTIFICATION_ARB {
+				window.context.robustness = glfw_NO_RESET_NOTIFICATION
 			}
 		}
 	}
 
 	if ExtensionSupported("GL_KHR_context_flush_control") {
 		var behavior int
-		GetIntegerv(window, GL_CONTEXT_RELEASE_BEHAVIOR, &behavior)
+		GetIntegerv(window, _GL_CONTEXT_RELEASE_BEHAVIOR, &behavior)
 		if behavior == 0 {
-			window.context.release = GLFW_RELEASE_BEHAVIOR_NONE
-		} else if behavior == GL_CONTEXT_RELEASE_BEHAVIOR_FLUSH {
-			window.context.release = GLFW_RELEASE_BEHAVIOR_FLUSH
+			window.context.release = glfw_RELEASE_BEHAVIOR_NONE
+		} else if behavior == _GL_CONTEXT_RELEASE_BEHAVIOR_FLUSH {
+			window.context.release = glfw_RELEASE_BEHAVIOR_FLUSH
 		}
 	}
 
 	// Clearing the front buffer to black to avoid garbage pixels left over from
 	// previous uses of our bit of VRAM
 	glClear := window.context.getProcAddress("glClear")
-	syscall.SyscallN(glClear, GL_COLOR_BUFFER_BIT)
+	syscall.SyscallN(glClear, _GL_COLOR_BUFFER_BIT)
 	if window.doublebuffer {
 		window.context.swapBuffers(window)
 	}
@@ -277,7 +277,7 @@ func GetIntegerv(window *Window, name int, value *int) {
 
 func glfwMakeContextCurrent(window *_GLFWwindow) error {
 	previous := (*Window)(unsafe.Pointer(glfwPlatformGetTls(&_glfw.contextSlot)))
-	if window != nil && window.context.client == GLFW_NO_API {
+	if window != nil && window.context.client == glfw_NO_API {
 		return fmt.Errorf("glfwMakeContextCurrent failed: Cannot make current with a window that has no OpenGL or OpenGL ES context")
 	}
 	if previous != nil && (window == nil || window.context.source != previous.context.source) {
@@ -320,12 +320,12 @@ func ExtensionSupported(extension string) bool {
 	window := (*_GLFWwindow)(unsafe.Pointer(p))
 	if window.context.major >= 3 {
 		// Check if extension is in the modern OpenGL extensions string list
-		// count := window.context.GetIntegerv(GL_NUM_EXTENSIONS)
-		r, _, _ := syscall.SyscallN(window.context.GetIntegerv, uintptr(GL_NUM_EXTENSIONS))
+		// count := window.context.GetIntegerv(_GL_NUM_EXTENSIONS)
+		r, _, _ := syscall.SyscallN(window.context.GetIntegerv, uintptr(_GL_NUM_EXTENSIONS))
 		count := int(r)
 		for i := 0; i < count; i++ {
-			// en := window.context.GetStringi(GL_EXTENSIONS, i)
-			r, _, _ := syscall.SyscallN(window.context.GetStringi, uintptr(GL_EXTENSIONS), uintptr(i))
+			// en := window.context.GetStringi(_GL_EXTENSIONS, i)
+			r, _, _ := syscall.SyscallN(window.context.GetStringi, uintptr(_GL_EXTENSIONS), uintptr(i))
 			en := GoStr((*uint8)(unsafe.Pointer(r)))
 			if en == extension {
 				return true
@@ -333,8 +333,8 @@ func ExtensionSupported(extension string) bool {
 		}
 	} else {
 		// Check if extension is in the old style OpenGL extensions string
-		// extensions := window.context.GetString(GL_EXTENSIONS)
-		r, _, _ := syscall.SyscallN(window.context.GetStringi, uintptr(GL_EXTENSIONS))
+		// extensions := window.context.GetString(_GL_EXTENSIONS)
+		r, _, _ := syscall.SyscallN(window.context.GetStringi, uintptr(_GL_EXTENSIONS))
 		extensions := GoStr((*uint8)(unsafe.Pointer(r)))
 		if strings.Contains(extensions, extension) {
 			return true

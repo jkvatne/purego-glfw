@@ -23,12 +23,12 @@ func title() {
 	window.MakeContextCurrent()
 	gl.Init()
 	glfw.SwapInterval(1)
-
-	for !window.ShouldClose() {
+	glfw.SetTime(0)
+	for !window.ShouldClose() && glfw.GetTime() < 2.0 {
 		gl.ClearColor(100, 100, 0, 256)
 		gl.Clear(gl.COLOR_BUFFER_BIT)
 		window.SwapBuffers()
-		glfw.WaitEvents()
+		glfw.PollEvents()
 	}
 	glfw.Terminate()
 }

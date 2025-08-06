@@ -38,13 +38,13 @@ void main()
 ` + "\x00"
 
 func key_callback2(window *glfw.Window, key glfw.Key, scancode int, action glfw.Action, mods glfw.ModifierKey) {
-	if action != glfw.GLFW_PRESS {
+	if action != glfw.Press {
 		return
 	}
 	switch key {
-	case glfw.GLFW_KEY_SPACE:
+	case glfw.KeySpace:
 		glfw.SetTime(0.0)
-	case glfw.GLFW_KEY_ESCAPE:
+	case glfw.KeyEscape:
 		window.SetWindowShouldClose(true)
 	}
 }
@@ -77,9 +77,9 @@ func msaa() {
 	}
 	fmt.Printf("Requesting MSAA with %d samples\n", samples)
 
-	_ = glfw.WindowHint(glfw.GLFW_SAMPLES, samples)
-	_ = glfw.WindowHint(glfw.GLFW_CONTEXT_VERSION_MAJOR, 2)
-	_ = glfw.WindowHint(glfw.GLFW_CONTEXT_VERSION_MINOR, 0)
+	_ = glfw.WindowHint(glfw.Samples, samples)
+	_ = glfw.WindowHint(glfw.ContextVersionMajor, 2)
+	_ = glfw.WindowHint(glfw.ContextVersionMinor, 0)
 
 	window, err = glfw.CreateWindow(800, 400, "Aliasing Detector", nil, nil)
 	window.SetPos(100, 100)
