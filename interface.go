@@ -14,6 +14,10 @@ import (
 type MouseButton int
 
 const (
+	True  = 1
+	False = 0
+)
+const (
 	MouseButtonFirst  MouseButton = 0
 	MouseButtonLeft   MouseButton = 0
 	MouseButtonRight  MouseButton = 1
@@ -57,7 +61,7 @@ type Action int
 
 type StandardCursor uint16
 
-type Hint uint32
+type Hint uint
 
 // Window represents a Window.
 type Window = _GLFWwindow
@@ -87,7 +91,7 @@ func WaitEventsTimeout(timeout float64) {
 	glfwPollEvents()
 }
 
-func WindowHint(hint int, value int32) error {
+func WindowHint(hint int32, value int32) error {
 	switch hint {
 	case glfw_RED_BITS:
 		_glfw.hints.framebuffer.redBits = value
@@ -244,16 +248,16 @@ func (w *Window) SetPos(xPos, yPos int32) {
 }
 
 // SetSize sets the size, in screen coordinates, of the client area of the Window.
-func (w *Window) SetSize(width, height int) {
+func (w *Window) SetSize(width, height int32) {
 	if w.monitor != nil {
 		if w.monitor.window == w {
 			acquireMonitor(w)
 			fitToMonitor(w)
 		}
 	} else {
-		rect := RECT{0, 0, int32(width), int32(height)}
+		rect := RECT{0, 0, width, height}
 		AdjustWindowRect(&rect, getWindowStyle(w), 0, getWindowExStyle(w), GetDpiForWindow(w.Win32.handle), "glfwSetWindowSize")
-		SetWindowPos(w.Win32.handle, 0, 0, 0, int32(width), int32(height), SWP_NOACTIVATE|SWP_NOOWNERZORDER|SWP_NOMOVE|SWP_NOZORDER)
+		SetWindowPos(w.Win32.handle, 0, 0, 0, width, height, SWP_NOACTIVATE|SWP_NOOWNERZORDER|SWP_NOMOVE|SWP_NOZORDER)
 	}
 }
 
@@ -382,6 +386,7 @@ func Init() error {
 	if _glfw.initialized {
 		return nil
 	}
+	_glfw.initialized = true
 	_glfw.hints.init = _GLFWinitconfig{}
 	err := clipboard.Init()
 	if err != nil {

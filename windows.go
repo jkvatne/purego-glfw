@@ -391,6 +391,9 @@ func glfwDefaultWindowHints() {
 	_glfw.hints.window.autoIconify = true
 	_glfw.hints.window.centerCursor = true
 	_glfw.hints.window.focusOnShow = true
+	_glfw.hints.window.xpos = glfw_ANY_POSISTION
+	_glfw.hints.window.ypos = glfw_ANY_POSISTION
+	_glfw.hints.window.scaleFramebuffer = true
 	// The default is 24 bits of color, 24 bits of depth and 8 bits of stencil, double buffered
 	_glfw.hints.framebuffer.redBits = 8
 	_glfw.hints.framebuffer.greenBits = 8
@@ -457,8 +460,8 @@ func createHelperWindow() error {
 		CreateWindowEx(ws_OVERLAPPED,
 			_glfw.win32.helperWindowClass,
 			"Helper window",
-			ws_OVERLAPPED|ws_CLIPSIBLINGS|ws_CLIPCHILDREN,
-			0, 0, 500, 500,
+			ws_CLIPSIBLINGS|ws_CLIPCHILDREN,
+			0, 0, 1, 1,
 			0, 0,
 			resources.handle,
 			0)
@@ -744,8 +747,8 @@ func LoadCursor(cursorID uint16) HANDLE {
 	return HANDLE(h)
 }
 
-func glfwSetWindowSize(window *Window, width, height int) {
-	rect := RECT{0, 0, int32(width), int32(height)}
+func glfwSetWindowSize(window *Window, width, height int32) {
+	rect := RECT{0, 0, width, height}
 	AdjustWindowRect(&rect, getWindowStyle(window), 0, getWindowExStyle(window), GetDpiForWindow(window.Win32.handle), "glfwSetWindowSize")
 	SetWindowPos(window.Win32.handle, 0, 0, 0, rect.Right-rect.Left, rect.Bottom-rect.Top, SWP_NOACTIVATE|SWP_NOOWNERZORDER|SWP_NOMOVE|SWP_NOZORDER)
 }

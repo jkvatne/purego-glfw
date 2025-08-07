@@ -17,7 +17,6 @@ func title() {
 		panic(err)
 	}
 	window, err := glfw.CreateWindow(800, 400, "English 日本語 русский язык 官話", nil, nil)
-	window.SetPos(100, 100)
 	if err != nil {
 		glfw.Terminate()
 		os.Exit(1)

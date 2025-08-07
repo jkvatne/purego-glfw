@@ -388,7 +388,7 @@ func GetWindowLongW(hWnd syscall.Handle, index int32) uint32 {
 	return uint32(r1)
 }
 
-func SetWindowLongW(hWnd syscall.Handle, index int32, newValue uint32) {
+func SetWindowLongW(hWnd syscall.Handle, index int, newValue uint32) {
 	_, _, err := _SetWindowLongW.Call(uintptr(hWnd), uintptr(index), uintptr(newValue))
 	if err != nil && !errors.Is(err, syscall.Errno(0)) {
 		panic("GetWindowLongW failed, " + err.Error())

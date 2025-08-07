@@ -1168,8 +1168,8 @@ func releaseMonitor(window *Window) {
 	// TODO _glfwRestoreVideoModeWin32(window.monitor)
 }
 
-func glfwSetPos(w *Window, xPos, yPos int) {
-	rect := RECT{Left: int32(xPos), Top: int32(yPos), Right: int32(xPos), Bottom: int32(yPos)}
+func glfwSetPos(w *Window, xPos, yPos int32) {
+	rect := RECT{Left: xPos, Top: yPos, Right: xPos, Bottom: yPos}
 	AdjustWindowRect(&rect, getWindowStyle(w), 0, getWindowExStyle(w), GetDpiForWindow(w.Win32.handle), "glfwSetWindowPos")
 	SetWindowPos(w.Win32.handle, 0, rect.Left, rect.Top, 0, 0, SWP_NOACTIVATE|SWP_NOZORDER|SWP_NOSIZE)
 }

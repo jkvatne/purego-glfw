@@ -110,7 +110,6 @@ func reopen() {
 				monitor.GetMonitorName(),
 				glfw.GetTime()-base)
 		} else {
-			window.SetPos(100, 100)
 			fmt.Printf("Opening regular window took %0.3f seconds\n", glfw.GetTime()-base)
 		}
 		window.MakeContextCurrent()

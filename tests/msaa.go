@@ -85,7 +85,6 @@ func msaa() {
 	_ = glfw.WindowHint(glfw.ContextVersionMinor, 0)
 
 	window, err = glfw.CreateWindow(800, 400, "Aliasing Detector", nil, nil)
-	window.SetPos(100, 100)
 	if err != nil {
 		glfw.Terminate()
 		fmt.Printf("CreateWindow error, " + err.Error())
