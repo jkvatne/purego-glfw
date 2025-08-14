@@ -3,11 +3,12 @@ package glfw
 import (
 	"errors"
 	"fmt"
-	"golang.org/x/sys/windows"
 	"log/slog"
 	"strings"
 	"syscall"
 	"unsafe"
+
+	"golang.org/x/sys/windows"
 )
 
 var (
@@ -43,10 +44,8 @@ func swapBuffersWGL(window *_GLFWwindow) {
 			}
 		}*/
 	}
-	_, _, err := _SwapBuffers.Call(uintptr(window.context.wgl.dc))
-	if !errors.Is(err, syscall.Errno(0)) {
-		panic(err)
-	}
+	_, _, _ = _SwapBuffers.Call(uintptr(window.context.wgl.dc))
+	// Ignore errors becaus it
 }
 
 func swapIntervalWGL(interval int) {

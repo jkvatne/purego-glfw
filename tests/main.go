@@ -20,11 +20,14 @@ func main() {
 		timeout()
 	case "monitor":
 		monitor()
+	case "threads":
+		threads()
 	default:
 		title()
 		monitor()
 		msaa()
 		timeout()
 		reopen()
+		threads()
 	}
 }

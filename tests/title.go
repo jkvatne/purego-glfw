@@ -11,7 +11,7 @@ import (
 // UTF-8 window title test
 
 func title() {
-	fmt.Printf("Windows title shouls show utf characters\n")
+	fmt.Printf("Windows title should show non-latin utf characters\n")
 	runtime.LockOSThread()
 	if err := glfw.Init(); err != nil {
 		panic(err)

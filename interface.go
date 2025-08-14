@@ -4,10 +4,11 @@ import "C"
 import (
 	"errors"
 	"fmt"
-	"golang.design/x/clipboard"
 	"syscall"
 	"time"
 	"unsafe"
+
+	"golang.design/x/clipboard"
 )
 
 // MouseButton definitions
@@ -55,6 +56,8 @@ const (
 	RedBits                 = glfw_RED_BITS
 	GreenBits               = glfw_GREEN_BITS
 	BlueBits                = glfw_BLUE_BITS
+	POSITION_X              = glfw_POSITION_X
+	POSITION_Y              = glfw_POSITION_Y
 )
 
 type Action int
@@ -333,6 +336,15 @@ func (w *Window) MakeContextCurrent() {
 	_ = w.context.makeCurrent(w)
 }
 
+// DetachCurrentContext detaches the current context.
+func DetachCurrentContext() {
+	makeContextCurrentWGL(nil)
+}
+
+// GetCurrentContext returns the window whose context is current.
+func GetCurrentContext() *Window {
+	return glfwGetCurrentContext()
+}
 func (w *Window) Iconify() {
 	w.Win32.maximized = false
 	w.Win32.iconified = true

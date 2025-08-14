@@ -2,12 +2,13 @@ package glfw
 
 import (
 	"errors"
-	"golang.org/x/sys/windows"
 	"sync"
 	"syscall"
 	"unicode"
 	"unicode/utf16"
 	"unsafe"
+
+	"golang.org/x/sys/windows"
 )
 
 type GLFWvidmode struct {
@@ -402,7 +403,9 @@ func windowProc(hwnd syscall.Handle, msg uint32, wParam, lParam uintptr) uintptr
 		fallthrough
 	case wm_CHAR, wm_SYSCHAR:
 		if r := rune(wParam); unicode.IsPrint(r) {
-			window.charCallback(nil, r)
+			if window.charCallback != nil {
+				window.charCallback(nil, r)
+			}
 		}
 		return _TRUE
 	case wm_DPICHANGED:
@@ -503,7 +506,6 @@ func windowProc(hwnd syscall.Handle, msg uint32, wParam, lParam uintptr) uintptr
 		// if i > MouseButtonLast {
 		// TODO SetCapture(hWnd);
 		// }
-
 		glfwInputMouseClick(window, button, action, getKeyMods())
 		for i = MouseButtonFirst; i <= MouseButtonLast; i++ {
 			if window.mouseButtons[i] == glfw_PRESS {

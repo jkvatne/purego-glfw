@@ -256,7 +256,6 @@ func _glfwRefreshContextAttribs(window *_GLFWwindow, ctxconfig *_GLFWctxconfig) 
 			window.context.release = glfw_RELEASE_BEHAVIOR_FLUSH
 		}
 	}
-
 	// Clearing the front buffer to black to avoid garbage pixels left over from
 	// previous uses of our bit of VRAM
 	glClear := window.context.getProcAddress("glClear")

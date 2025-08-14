@@ -3,9 +3,10 @@ package glfw
 import (
 	"errors"
 	"fmt"
-	"golang.org/x/sys/windows"
 	"syscall"
 	"unsafe"
+
+	"golang.org/x/sys/windows"
 )
 
 var (
@@ -31,6 +32,7 @@ var (
 	_TlsAlloc                = kernel32.NewProc("TlsAlloc")
 	_TlsGetValue             = kernel32.NewProc("TlsGetValue")
 	_TlsSetValue             = kernel32.NewProc("TlsSetValue")
+	_GetCurrentThreadId      = kernel32.NewProc("GetCurrentThreadId")
 )
 
 var (
@@ -538,6 +540,14 @@ func MsgWaitForMultipleObjects(nCount uint32, pHandles *HANDLE, fWaitAll uint32,
 		uintptr(dwMilliseconds), uintptr(dwWakeMask))
 	if !errors.Is(err, syscall.Errno(0)) {
 		panic("MsgWaitForMultipleObjects failed, " + err.Error())
+	}
+	return uint32(r)
+}
+
+func GetCurrentThreadId() uint32 {
+	r, _, err := _GetCurrentThreadId.Call()
+	if !errors.Is(err, syscall.Errno(0)) {
+		panic("GetCurrentThreadId failed, " + err.Error())
 	}
 	return uint32(r)
 }
