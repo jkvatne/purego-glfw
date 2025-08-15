@@ -4,6 +4,8 @@ import "C"
 import (
 	"errors"
 	"fmt"
+	"image"
+	"image/draw"
 	"syscall"
 	"time"
 	"unsafe"
@@ -236,6 +238,59 @@ func CreateWindow(width, height int32, title string, monitor *Monitor, share *Wi
 // SwapBuffers swaps the front and back buffers of the Window.
 func (w *Window) SwapBuffers() {
 	glfwSwapBuffers(w)
+}
+
+func bytes(origin []byte) (pointer *uint8, free func()) {
+	n := len(origin)
+	if n == 0 {
+		return nil, func() {}
+	}
+	ptr := unsafe.Pointer(&origin)
+	return (*uint8)(ptr), func() {}
+}
+
+// imageToGLFW converts img to be compatible with C.GLFWimage.
+func imageToGLFW(img image.Image) (r GLFWimage) {
+	b := img.Bounds()
+	r.width = int32(b.Dx())
+	r.height = int32(b.Dy())
+	var pixels *[]uint8
+	if m, ok := img.(*image.NRGBA); ok && m.Stride == b.Dx()*4 {
+		p := m.Pix[:m.PixOffset(m.Rect.Min.X, m.Rect.Max.Y)]
+		pixels = &p
+	} else {
+		m := image.NewNRGBA(image.Rect(0, 0, b.Dx(), b.Dy()))
+		draw.Draw(m, m.Bounds(), img, b.Min, draw.Src)
+		pixels = &m.Pix
+	}
+	r.pixels = pixels
+	return r
+}
+
+// SetIcon sets the icon of the specified window. If passed an array of candidate images,
+// those of or closest to the sizes desired by the system are selected. If no images are
+// specified, the window reverts to its default icon.
+// The image is ideally provided in the form of *image.NRGBA.
+// The pixels are 32-bit, little-endian, non-premultiplied RGBA, i.e. eight
+// bits per channel with the red channel first. They are arranged canonically
+// as packed sequential rows, starting from the top-left corner. If the image
+// type is not *image.NRGBA, it will be converted to it.
+// The desired image sizes varies depending on platform and system settings. The selected
+// images will be rescaled as needed. Good sizes include 16x16, 32x32 and 48x48.
+func (w *Window) SetIcon(images []image.Image) {
+	count := int32(len(images))
+	cImages := make([]*GLFWimage, count)
+	for i, img := range images {
+		im := imageToGLFW(img)
+		cImages[i] = &im
+	}
+	glfwSetWindowIcon(w, count, cImages)
+}
+
+type GLFWimage struct {
+	width  int32    // The width, in pixels, of this image.
+	height int32    // The height, in pixels, of this image.
+	pixels *[]uint8 // The pixel data of this image, arranged left-to-right, top-to-bottom.
 }
 
 // SetCursor sets the cursor image to be used when the cursor is over the client area

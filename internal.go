@@ -1175,3 +1175,101 @@ func glfwSetPos(w *Window, xPos, yPos int32) {
 	AdjustWindowRect(&rect, getWindowStyle(w), 0, getWindowExStyle(w), GetDpiForWindow(w.Win32.handle), "glfwSetWindowPos")
 	SetWindowPos(w.Win32.handle, 0, rect.Left, rect.Top, 0, 0, SWP_NOACTIVATE|SWP_NOZORDER|SWP_NOSIZE)
 }
+
+// Returns the image whose area most closely matches the desired one
+//
+func chooseImage(count int32, images []*GLFWimage, width int32, height int32) *GLFWimage {
+	var leastDiff = int32(INT_MAX)
+	var closest int32
+
+	for i := int32(0); i < count; i++ {
+		currDiff := abs(images[i].width*images[i].height - width*height)
+		if currDiff < leastDiff {
+			closest = i
+			leastDiff = currDiff
+		}
+	}
+	return images[closest]
+}
+
+// Creates an RGBA icon or cursor
+//
+func createIcon(image *GLFWimage, xhot, yhot int32, icon bool) syscall.Handle {
+	var handle syscall.Handle
+	var bi BITMAPV5HEADER
+	var ii ICONINFO
+	var target *[32000]uint8
+	source := image.pixels
+
+	bi.bV5Size = uint32(unsafe.Sizeof(bi))
+	bi.bV5Width = image.width
+	bi.bV5Height = -image.height
+	bi.bV5Planes = 1
+	bi.bV5BitCount = 32
+	bi.bV5Compression = BI_BITFIELDS
+	bi.bV5RedMask = 0x00ff0000
+	bi.bV5GreenMask = 0x0000ff00
+	bi.bV5BlueMask = 0x000000ff
+	bi.bV5AlphaMask = 0xff000000
+
+	dc := getDC(0)
+	color := CreateDIBSection(dc, &bi, DIB_RGB_COLORS, &target, 0, 0)
+	releaseDC(0, dc)
+
+	if color == 0 {
+		panic("Failed to create RGBA bitmap")
+	}
+
+	mask := CreateBitmap(image.width, image.height, 1, 1, nil)
+	if mask == 0 {
+		panic("Failed to create mask bitmap")
+	}
+
+	for i := int32(0); i < image.width*image.height; i++ {
+		(*target)[i*4+0] = (*source)[i*4+2]
+		(*target)[i*4+1] = (*source)[i*4+1]
+		(*target)[i*4+2] = (*source)[i*4+0]
+		(*target)[i*4+3] = (*source)[i*4+3]
+	}
+
+	ii.fIcon = icon
+	ii.xHotspot = xhot
+	ii.yHotspot = yhot
+	ii.hbmMask = mask
+	ii.hbmColor = color
+
+	handle = CreateIconIndirect(&ii)
+
+	DeleteObject(color)
+	DeleteObject(mask)
+
+	return handle
+}
+
+func glfwSetWindowIcon(window *Window, count int32, images []*GLFWimage) {
+	var bigIcon, smallIcon syscall.Handle
+	if count > 0 {
+		bigImage := chooseImage(count, images, GetSystemMetrics(SM_CXICON), GetSystemMetrics(SM_CYICON))
+		smallImage := chooseImage(count, images, GetSystemMetrics(SM_CXSMICON), GetSystemMetrics(SM_CYSMICON))
+		bigIcon = createIcon(bigImage, 0, 0, true)
+		smallIcon = createIcon(smallImage, 0, 0, true)
+	} else {
+		bigIcon = GetClassLongPtrW(window.Win32.handle, GCLP_HICON)
+		smallIcon = GetClassLongPtrW(window.Win32.handle, GCLP_HICONSM)
+	}
+
+	_ = SendMessage(window.Win32.handle, WM_SETICON, ICON_BIG, uint32(bigIcon))
+	_ = SendMessage(window.Win32.handle, WM_SETICON, ICON_SMALL, uint32(smallIcon))
+
+	if window.Win32.bigIcon != 0 {
+		DestroyIcon(window.Win32.bigIcon)
+	}
+
+	if window.Win32.smallIcon != 0 {
+		DestroyIcon(window.Win32.smallIcon)
+	}
+	if count > 0 {
+		window.Win32.bigIcon = bigIcon
+		window.Win32.smallIcon = smallIcon
+	}
+}

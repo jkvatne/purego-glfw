@@ -22,12 +22,15 @@ func main() {
 		monitor()
 	case "threads":
 		threads()
+	case "icon":
+		icon()
 	default:
 		title()
 		monitor()
 		msaa()
 		timeout()
 		reopen()
+		icon()
 		threads()
 	}
 }

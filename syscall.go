@@ -18,6 +18,9 @@ var (
 	_SetPixelFormat      = gdi32.NewProc("SetPixelFormat")
 	_ChoosePixelFormat   = gdi32.NewProc("ChoosePixelFormat")
 	_DescribePixelFormat = gdi32.NewProc("DescribePixelFormat")
+	_CreateDIBSection    = gdi32.NewProc("CreateDIBSection")
+	_CreateBitmap        = gdi32.NewProc("CreateBitmap")
+	_DeleteObject        = gdi32.NewProc("DeleteObject")
 )
 
 var (
@@ -58,7 +61,7 @@ var (
 	_PeekMessage                   = user32.NewProc("PeekMessageW")
 	_WaitMessage                   = user32.NewProc("WaitMessage")
 	_RegisterClassExW              = user32.NewProc("RegisterClassExW")
-	_ReleaseDC                     = user32.NewProc("releaseDC")
+	_ReleaseDC                     = user32.NewProc("ReleaseDC")
 	_ScreenToClient                = user32.NewProc("ScreenToClient")
 	_ShowWindow                    = user32.NewProc("ShowWindow")
 	_SetCursor                     = user32.NewProc("SetCursor")
@@ -77,6 +80,12 @@ var (
 	_GetPropA                      = user32.NewProc("GetPropA")
 	_SetPropA                      = user32.NewProc("SetPropA")
 	_MsgWaitForMultipleObjects     = user32.NewProc("MsgWaitForMultipleObjects")
+	_GetSystemMetrics              = user32.NewProc("GetSystemMetrics")
+	_CreateIcon                    = user32.NewProc("CreateIcon")
+	_DestroyIcon                   = user32.NewProc("DestroyIcon")
+	_CreateIconIndirect            = user32.NewProc("CreateIconIndirect")
+	_GetClassLongPtrW              = user32.NewProc("GetClassLongPtrW")
+	_SendMessage                   = user32.NewProc("SendMessageW")
 )
 
 var (
@@ -550,4 +559,144 @@ func GetCurrentThreadId() uint32 {
 		panic("GetCurrentThreadId failed, " + err.Error())
 	}
 	return uint32(r)
+}
+
+func GetSystemMetrics(index uint32) int32 {
+	r, _, err := _GetSystemMetrics.Call()
+	if !errors.Is(err, syscall.Errno(0)) {
+		panic("GetSystemMetrics failed, " + err.Error())
+	}
+	return int32(r)
+}
+
+func wincreateIcon(hInstance, nWidth, nHeight int, cPlanes int, cBitsPixel, AndBits *uint8, XorBits *uint8) syscall.Handle {
+	r, _, err := _CreateIcon.Call(uintptr(hInstance), uintptr(nWidth), uintptr(nHeight), uintptr(cPlanes),
+		uintptr(unsafe.Pointer(AndBits)), uintptr(unsafe.Pointer(XorBits)))
+	if !errors.Is(err, syscall.Errno(0)) {
+		panic("CreateIcon failed, " + err.Error())
+	}
+	return syscall.Handle(r)
+}
+
+const SM_CXICON = 11
+const SM_CXSMICON = 49
+
+type CIEXYZTRIPLE struct {
+	ciexyzX int32
+	ciexyzY int32
+	ciexyzZ int32
+}
+type BITMAPV5HEADER struct {
+	bV5Size          uint32
+	bV5Width         int32
+	bV5Height        int32
+	bV5Planes        uint16
+	bV5BitCount      uint16
+	bV5Compression   uint32
+	bV5SizeImage     uint32
+	bV5XPelsPerMeter int32
+	bV5YPelsPerMeter int32
+	bV5ClrUsed       uint32
+	bV5ClrImportant  uint32
+	bV5RedMask       uint32
+	bV5GreenMask     uint32
+	bV5BlueMask      uint32
+	bV5AlphaMask     uint32
+	bV5CSType        uint32
+	bV5Endpoints     CIEXYZTRIPLE
+	bV5GammaRed      uint32
+	bV5GammaGreen    uint32
+	bV5GammaBlue     uint32
+	bV5Intent        uint32
+	bV5ProfileData   uint32
+	bV5ProfileSize   uint32
+	bV5Reserved      uint32
+}
+
+const (
+	BI_BITFIELDS   = 3
+	DIB_RGB_COLORS = 0
+	SM_CYICON      = 12
+	SM_CYSMICON    = 50
+	GCLP_HICON     = -14
+	GCLP_HICONSM   = -34
+	WM_SETICON     = 0x0080
+	ICON_BIG       = 1
+	ICON_SMALL     = 0
+)
+
+type BITMAPINFO struct {
+	biSize          uint32
+	biWidth         uint32
+	biHeight        uint32
+	biPlanes        uint16
+	biBitCount      uint16
+	biCompression   uint32
+	biSizeImage     uint32
+	biXPelsPerMeter int32
+	biYPelsPerMeter int32
+	biClrUsed       uint32
+	biClrImportant  uint32
+	bmiColors       []uint32
+}
+type ICONINFO struct {
+	fIcon    bool
+	xHotspot int32
+	yHotspot int32
+	hbmMask  syscall.Handle
+	hbmColor syscall.Handle
+}
+
+func CreateDIBSection(hdc HDC, pbmi *BITMAPV5HEADER, usage uint32, ppvBits **[32000]uint8, hSection syscall.Handle, offset uint32) syscall.Handle {
+	r, _, err := _CreateDIBSection.Call(uintptr(hdc), uintptr(unsafe.Pointer(pbmi)), uintptr(usage), uintptr(unsafe.Pointer(ppvBits)),
+		uintptr(hSection), uintptr(offset))
+	if !errors.Is(err, syscall.Errno(0)) {
+		panic("CreateDIBSection failed, " + err.Error())
+	}
+	return syscall.Handle(r)
+}
+
+func CreateBitmap(nWidth int32, nHeight int32, nPlanes uint32, nBitCount uint32, lpBits *uint8) syscall.Handle {
+	r, _, err := _CreateBitmap.Call(uintptr(nWidth), uintptr(nHeight), uintptr(nPlanes), uintptr(nBitCount), uintptr(unsafe.Pointer(lpBits)))
+	if !errors.Is(err, syscall.Errno(0)) {
+		panic("CreateBitmap failed, " + err.Error())
+	}
+	return syscall.Handle(r)
+}
+
+func CreateIconIndirect(piconinfo *ICONINFO) syscall.Handle {
+	r, _, err := _CreateIconIndirect.Call(uintptr(unsafe.Pointer(piconinfo)))
+	if !errors.Is(err, syscall.Errno(0)) {
+		panic("CreateIconIndirect failed, " + err.Error())
+	}
+	return syscall.Handle(r)
+}
+
+func DestroyIcon(h syscall.Handle) bool {
+	r, _, _ := _DestroyIcon.Call(uintptr(h))
+	return r != 0
+}
+
+func DeleteObject(h syscall.Handle) bool {
+	r, _, err := _DeleteObject.Call(uintptr(h))
+	if !errors.Is(err, syscall.Errno(0)) {
+		panic("DeleteObject failed, " + err.Error())
+	}
+	return r != 0
+}
+
+func GetClassLongPtrW(hWnd syscall.Handle, nIndex int32) syscall.Handle {
+	r, _, err := _GetClassLongPtrW.Call(uintptr(hWnd), uintptr(nIndex))
+	if !errors.Is(err, syscall.Errno(0)) {
+		panic("GetClassLongPtrW failed, " + err.Error())
+	}
+	return syscall.Handle(r)
+}
+
+func SendMessage(hWnd syscall.Handle, Msg uint32, wParam uint16, Lparam uint32) uintptr {
+	r, _, err := _SendMessage.Call(uintptr(hWnd), uintptr(Msg), uintptr(wParam), uintptr(Lparam))
+	if !errors.Is(err, syscall.Errno(0)) {
+		panic("SendMessage failed, " + err.Error())
+	}
+	return r
 }
