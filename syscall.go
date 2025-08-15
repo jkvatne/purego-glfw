@@ -86,6 +86,10 @@ var (
 	_CreateIconIndirect            = user32.NewProc("CreateIconIndirect")
 	_GetClassLongPtrW              = user32.NewProc("GetClassLongPtrW")
 	_SendMessage                   = user32.NewProc("SendMessageW")
+	_RegisterRawInputDevices       = user32.NewProc("RegisterRawInputDevices")
+	_ClientToScreen                = user32.NewProc("ClientToScreen")
+	_ClipCursor                    = user32.NewProc("_ClipCursor")
+	_SetCursorPos                  = user32.NewProc("SetCursorPos")
 )
 
 var (
@@ -214,15 +218,22 @@ type POINTL = struct {
 	X, Y int32
 }
 
-func GetActiveWindow() HANDLE {
+type RAWINPUTDEVICE struct {
+	usUsagePage uint16
+	usUsage     uint16
+	dwFlags     uint32
+	hwndTarget  syscall.Handle
+}
+
+func GetActiveWindow() syscall.Handle {
 	r, _, err := _GetActiveWindow.Call()
 	if !errors.Is(err, syscall.Errno(0)) {
 		panic("GetActiveWindow failed, " + err.Error())
 	}
-	return HANDLE(r)
+	return syscall.Handle(r)
 }
 
-func GetProp(handle HANDLE, key string) uintptr {
+func GetProp(handle syscall.Handle, key string) uintptr {
 	// widestr, _ := syscall.UTF16PtrFromString(key)
 	cstr, _ := windows.BytePtrFromString(key)
 	r, _, err := _GetPropA.Call(uintptr(handle), uintptr(unsafe.Pointer(cstr)))
@@ -232,7 +243,7 @@ func GetProp(handle HANDLE, key string) uintptr {
 	return r
 }
 
-func SetProp(handle HANDLE, key string, data uintptr) {
+func SetProp(handle syscall.Handle, key string, data uintptr) {
 	// widestr, _ := syscall.UTF16PtrFromString(key)
 	cstr, _ := windows.BytePtrFromString(key)
 	_, _, err := _SetPropA.Call(uintptr(handle), uintptr(unsafe.Pointer(cstr)), data)
@@ -647,7 +658,7 @@ type ICONINFO struct {
 	hbmColor syscall.Handle
 }
 
-func CreateDIBSection(hdc HDC, pbmi *BITMAPV5HEADER, usage uint32, ppvBits **[32000]uint8, hSection syscall.Handle, offset uint32) syscall.Handle {
+func CreateDIBSection(hdc HDC, pbmi *BITMAPV5HEADER, usage uint32, ppvBits **uint8, hSection syscall.Handle, offset uint32) syscall.Handle {
 	r, _, err := _CreateDIBSection.Call(uintptr(hdc), uintptr(unsafe.Pointer(pbmi)), uintptr(usage), uintptr(unsafe.Pointer(ppvBits)),
 		uintptr(hSection), uintptr(offset))
 	if !errors.Is(err, syscall.Errno(0)) {
@@ -699,4 +710,43 @@ func SendMessage(hWnd syscall.Handle, Msg uint32, wParam uint16, Lparam uint32) 
 		panic("SendMessage failed, " + err.Error())
 	}
 	return r
+}
+
+func RegisterRawInputDevices(pRawInputDevices *RAWINPUTDEVICE, uiNumDevices uint32, cbSize uint32) bool {
+	r, _, err := _RegisterRawInputDevices.Call(uintptr(unsafe.Pointer(pRawInputDevices)), uintptr(uiNumDevices), uintptr(cbSize))
+	if !errors.Is(err, syscall.Errno(0)) {
+		panic("RegisterRawInputDevices failed, " + err.Error())
+	}
+	return r != 0
+}
+
+func GetClientRect(window *Window) RECT {
+	var area RECT
+	_, _, err := _GetClientRect.Call(uintptr(unsafe.Pointer(window.Win32.handle)), uintptr(unsafe.Pointer(&area)))
+	if !errors.Is(err, syscall.Errno(0)) {
+		panic("GetClientRect failed, " + err.Error())
+	}
+	return area
+}
+
+func ClientToScreen(window *Window, p POINT) POINT {
+	_, _, err := _ClientToScreen.Call(uintptr(unsafe.Pointer(window.Win32.handle)), uintptr(unsafe.Pointer(&p)))
+	if !errors.Is(err, syscall.Errno(0)) {
+		panic("ClientToScreen failed, " + err.Error())
+	}
+	return p
+}
+
+func ClipCursor(rect *RECT) {
+	_, _, err := _ClipCursor.Call(uintptr(unsafe.Pointer(rect)))
+	if !errors.Is(err, syscall.Errno(0)) {
+		panic("ClipCursor failed, " + err.Error())
+	}
+}
+
+func SetCursorPos(x, y int32) {
+	_, _, err := _SetCursorPos.Call(uintptr(x), uintptr(y))
+	if !errors.Is(err, syscall.Errno(0)) {
+		panic("SetCursorPos failed, " + err.Error())
+	}
 }

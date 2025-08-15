@@ -3,10 +3,11 @@ package glfw
 import (
 	"errors"
 	"fmt"
-	"golang.design/x/clipboard"
-	"golang.org/x/sys/windows"
 	"syscall"
 	"unsafe"
+
+	"golang.design/x/clipboard"
+	"golang.org/x/sys/windows"
 )
 
 type PIXELFORMATDESCRIPTOR = struct {
@@ -229,7 +230,7 @@ func createNativeWindow(window *_GLFWwindow, wndconfig *_GLFWwndconfig, fbconfig
 		_glfw.win32.instance,
 		uintptr(unsafe.Pointer(wndconfig)))
 
-	SetProp(HANDLE(window.Win32.handle), "GLFW", uintptr(unsafe.Pointer(window)))
+	SetProp(window.Win32.handle, "GLFW", uintptr(unsafe.Pointer(window)))
 	return err
 }
 
@@ -362,7 +363,7 @@ func glfwCreateWindow(width, height int32, title string, monitor *Monitor, share
 	window.autoIconify = wndconfig.autoIconify
 	window.floating = wndconfig.floating
 	window.focusOnShow = wndconfig.focusOnShow
-	window.cursorMode = glfw_CURSOR_NORMAL
+	window.cursorMode = CURSOR_NORMAL
 	window.doublebuffer = fbconfig.doublebuffer
 	window.minwidth = glfw_DONT_CARE
 	window.minheight = glfw_DONT_CARE
@@ -513,7 +514,7 @@ func screenToClient(handle syscall.Handle, p *POINT) {
 }
 
 func glfwGetCursorPos(w *_GLFWwindow, x *int32, y *int32) {
-	if w.cursorMode == glfw_CURSOR_DISABLED {
+	if w.cursorMode == CURSOR_DISABLED {
 		*x = int32(w.virtualCursorPosX)
 		*y = int32(w.virtualCursorPosY)
 	} else {
@@ -736,7 +737,7 @@ func glfwPollMonitors() {
 	}
 }
 
-func LoadCursor(cursorID uint16) HANDLE {
+func LoadCursor(cursorID uint16) syscall.Handle {
 	h, err := LoadImage(0, uint32(cursorID), _IMAGE_CURSOR, 0, 0, lr_DEFAULTSIZE|lr_SHARED)
 	if err != nil && !errors.Is(err, syscall.Errno(0)) {
 		panic("LoadCursor failed, " + err.Error())
@@ -744,7 +745,7 @@ func LoadCursor(cursorID uint16) HANDLE {
 	if h == 0 {
 		panic("LoadCursor failed")
 	}
-	return HANDLE(h)
+	return syscall.Handle(h)
 }
 
 func glfwSetWindowSize(window *Window, width, height int32) {

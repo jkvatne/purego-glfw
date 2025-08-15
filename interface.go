@@ -13,6 +13,41 @@ import (
 	"golang.design/x/clipboard"
 )
 
+// InputMode corresponds to an input mode.
+type InputMode int
+
+// Cursor modes
+const (
+	CURSOR_NORMAL   = 0x00034001
+	CURSOR_CAPTURED = 0x00034004
+	CURSOR_HIDDEN   = 0x00034002
+	CURSOR_DISABLED = 0x00034003
+)
+
+const (
+	CURSOR_MODE             = 0x00033001
+	STICKY_KEYS             = 0x00033002
+	STICKY_MOUSE_BUTTONS    = 0x00033003
+	LOCK_KEY_MODS           = 0x00033004
+	RAW_MOUSE_MOTION        = 0x00033005
+	UNLIMITED_MOUSE_BUTTONS = 0x00033006
+)
+
+// Input modes.
+const (
+	CursorMode             InputMode = CURSOR_MODE          // See Cursor mode values
+	StickyKeysMode         InputMode = STICKY_KEYS          // Value can be either 1 or 0
+	StickyMouseButtonsMode InputMode = STICKY_MOUSE_BUTTONS // Value can be either 1 or 0
+	LockKeyMods            InputMode = LOCK_KEY_MODS        // Value can be either 1 or 0
+	RawMouseMotion         InputMode = RAW_MOUSE_MOTION     // Value can be either 1 or 0
+)
+const (
+	CursorNormal   = 0x00034001
+	CursorHidden   = 0x00034002
+	CursorDisabled = 0x00034003
+	CursorCaptured = 0x00034004
+)
+
 // MouseButton definitions
 type MouseButton int
 
@@ -73,7 +108,7 @@ type Window = _GLFWwindow
 
 type Cursor struct {
 	next   *Cursor
-	handle HANDLE
+	handle syscall.Handle
 }
 
 // PollEvents processes only those events that have already been received and
@@ -197,6 +232,17 @@ func SetClipboardString(str string) {
 	glfwSetClipboardString(str)
 }
 
+func CreateCursor(image *GLFWimage, xhot int32, yhot int32) *Cursor {
+	if image == nil || image.Width <= 0 || image.Height <= 0 {
+		panic("CreateCursor: image is nil or invalid")
+	}
+	var cursor Cursor
+	cursor.next = _glfw.cursorListHead
+	_glfw.cursorListHead = &cursor
+	cursor.handle = createIcon(image, xhot, yhot, false)
+	return &cursor
+}
+
 // CreateStandardCursor returns a cursor with a standard shape,
 // that can be set for a Window with SetCursor.
 func CreateStandardCursor(shape int) *Cursor {
@@ -252,18 +298,18 @@ func bytes(origin []byte) (pointer *uint8, free func()) {
 // imageToGLFW converts img to be compatible with C.GLFWimage.
 func imageToGLFW(img image.Image) (r GLFWimage) {
 	b := img.Bounds()
-	r.width = int32(b.Dx())
-	r.height = int32(b.Dy())
-	var pixels *[]uint8
+	r.Width = int32(b.Dx())
+	r.Height = int32(b.Dy())
+	var pixels *[16384]uint8
 	if m, ok := img.(*image.NRGBA); ok && m.Stride == b.Dx()*4 {
 		p := m.Pix[:m.PixOffset(m.Rect.Min.X, m.Rect.Max.Y)]
-		pixels = &p
+		pixels = (*[16384]uint8)(unsafe.Pointer(&p[0]))
 	} else {
 		m := image.NewNRGBA(image.Rect(0, 0, b.Dx(), b.Dy()))
 		draw.Draw(m, m.Bounds(), img, b.Min, draw.Src)
-		pixels = &m.Pix
+		pixels = (*[16384]uint8)(unsafe.Pointer(&m.Pix[0]))
 	}
-	r.pixels = pixels
+	r.Pixels = &pixels[0]
 	return r
 }
 
@@ -288,9 +334,9 @@ func (w *Window) SetIcon(images []image.Image) {
 }
 
 type GLFWimage struct {
-	width  int32    // The width, in pixels, of this image.
-	height int32    // The height, in pixels, of this image.
-	pixels *[]uint8 // The pixel data of this image, arranged left-to-right, top-to-bottom.
+	Width  int32  // The width, in pixels, of this image.
+	Height int32  // The height, in pixels, of this image.
+	Pixels *uint8 // The pixel data of this image, arranged left-to-right, top-to-bottom.
 }
 
 // SetCursor sets the cursor image to be used when the cursor is over the client area
@@ -471,4 +517,158 @@ func Init() error {
 		return err
 	}
 	return nil
+}
+
+func (window *Window) GetInputMode(mode InputMode) int {
+	switch mode {
+	case CURSOR_MODE:
+		return window.cursorMode
+	case STICKY_KEYS:
+		return window.stickyKeys
+	case STICKY_MOUSE_BUTTONS:
+		return window.stickyMouseButtons
+	case LOCK_KEY_MODS:
+		return window.lockKeyMods
+	case RAW_MOUSE_MOTION:
+		return window.rawMouseMotion
+	}
+	// _glfwInputError(GLFW_INVALID_ENUM, "Invalid input mode 0x%08X", mode);
+	return 0
+}
+
+func (window *Window) Focused() bool {
+	return window.Win32.handle == GetActiveWindow()
+}
+
+func (window *Window) SetCursorMode(mode int) {
+	if window.Focused() {
+		if mode == CursorDisabled {
+			_glfw.win32.restoreCursorPosX, _glfw.win32.restoreCursorPosY = window.GetCursorPos()
+			// TODO glfwCenterCursorInContentArea(window);
+			if window.rawMouseMotion != 0 {
+				enableRawMouseMotion(window)
+			} else if _glfw.win32.disabledCursorWindow == window {
+				if window.rawMouseMotion != 0 {
+					disableRawMouseMotion(window)
+				}
+			}
+			if mode == CursorDisabled || mode == CursorCaptured {
+				captureCursor(window)
+			} else {
+				releaseCursor()
+			}
+			if mode == CursorDisabled {
+				_glfw.win32.disabledCursorWindow = window
+			} else if _glfw.win32.disabledCursorWindow == window {
+				_glfw.win32.disabledCursorWindow = nil
+				window.SetCursorPos(_glfw.win32.restoreCursorPosX, _glfw.win32.restoreCursorPosY)
+			}
+		}
+	}
+	if cursorInContentArea(window) {
+		updateCursorImage(window)
+	}
+}
+
+func (window *Window) SetInputMode(mode int, value int) {
+	switch mode {
+	case CURSOR_MODE:
+		if value != CursorNormal &&
+			value != CursorHidden &&
+			value != CursorDisabled &&
+			value != CursorCaptured {
+			// "Invalid cursor mode 0x%08X",
+		}
+		if window.cursorMode == value {
+			return
+		}
+		window.cursorMode = value
+		window.virtualCursorPosX, window.virtualCursorPosY = window.GetCursorPos()
+		window.SetCursorMode(value)
+	case STICKY_KEYS:
+		value = min(1, max(0, value))
+		if window.stickyKeys == value {
+			return
+		}
+		if value == 0 {
+			// Release all sticky keys
+			for i := 0; i <= KeyLast; i++ {
+				if window.keys[i] == glfw_STICK {
+					window.keys[i] = glfw_RELEASE
+				}
+			}
+			window.stickyKeys = value
+		}
+	case STICKY_MOUSE_BUTTONS:
+		value = min(1, max(0, value))
+		if window.stickyMouseButtons == value {
+			return
+		}
+		if value == 0 {
+			// Release all sticky mouse buttons
+			for i := MouseButton(0); i <= MouseButtonLast; i++ {
+				if window.mouseButtons[i] == glfw_STICK {
+					window.mouseButtons[i] = glfw_RELEASE
+				}
+			}
+			window.stickyMouseButtons = value
+		}
+	case LOCK_KEY_MODS:
+		value = min(1, max(0, value))
+		window.lockKeyMods = value
+	case RAW_MOUSE_MOTION:
+		value = min(1, max(0, value))
+		if window.rawMouseMotion == value {
+			return
+		}
+		window.rawMouseMotion = value
+		setRawMouseMotion(window, value != 0)
+		// TODO case GLFW_UNLIMITED_MOUSE_BUTTONS:
+		// value = min(1, max(0, value))
+		// window.disableMouseButtonLimit = value
+	}
+	panic(fmt.Sprintf("Invalid input mode 0x%08X", mode))
+}
+
+func (window *Window) SetCursorPos(x, y float64) {
+	pos := POINT{int32(x), int32(y)}
+	// Store the new position so it can be recognized later
+	window.lastCursorPosX = float64(pos.X)
+	window.lastCursorPosY = float64(pos.Y)
+	pos = ClientToScreen(window, pos)
+	SetCursorPos(pos.X, pos.Y)
+}
+
+func setRawMouseMotion(window *Window, enabled bool) {
+	if _glfw.win32.disabledCursorWindow != window {
+		return
+	}
+	if enabled {
+		enableRawMouseMotion(window)
+	} else {
+		disableRawMouseMotion(window)
+	}
+}
+
+func RawMouseMotionSupported() bool {
+	return true
+}
+
+func DestroyCursor(cursor *Cursor) {
+	if cursor == nil {
+		return
+	}
+	// Make sure the cursor is not being used by any window
+	for window := _glfw.windowListHead; window != nil; window = window.next {
+		if window.cursor == cursor {
+			window.SetCursor(nil)
+		}
+		destroyCursor(cursor)
+		// Unlink cursor from global linked list
+		prev := &_glfw.cursorListHead
+		for *prev != cursor {
+			prev = &((*prev).next)
+			*prev = cursor.next
+		}
+	}
 }

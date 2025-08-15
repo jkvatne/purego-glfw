@@ -75,10 +75,11 @@ type _GLFWwindow struct {
 	maxheight              int
 	numer                  int
 	denom                  int
-	stickyKeys             bool
-	stickyMouseButtons     bool
-	lockKeyMods            bool
+	stickyKeys             int
+	stickyMouseButtons     int
+	lockKeyMods            int
 	cursorMode             int
+	rawMouseMotion         int
 	mouseButtons           [MouseButtonLast + 1]byte
 	keys                   [KeyLast + 1]byte
 	virtualCursorPosX      float64 // Virtual cursor position when cursor is disabled
@@ -231,12 +232,16 @@ var _glfw struct {
 		helperWindowHandle   syscall.Handle
 		helperWindowClass    uint16
 		mainWindowClass      uint16
-		blankCursor          HANDLE
+		blankCursor          syscall.Handle
 		keycodes             [512]Key
 		scancodes            [512]int16
 		instance             syscall.Handle
 		acquiredMonitorCount int
 		mouseTrailSize       uint32
+		restoreCursorPosX    float64
+		restoreCursorPosY    float64
+		disabledCursorWindow *Window
+		capturedCursorWindow *Window
 	}
 	wgl struct {
 		dc       HDC
@@ -284,7 +289,7 @@ func glfwInputKey(window *_GLFWwindow, key Key, scancode int, action int, mods M
 			repeated = true
 		}
 
-		if action == glfw_RELEASE && window.stickyKeys {
+		if action == glfw_RELEASE && window.stickyKeys == 1 {
 			window.keys[key] = glfw_STICK
 		} else {
 			window.keys[key] = uint8(action)
@@ -293,7 +298,7 @@ func glfwInputKey(window *_GLFWwindow, key Key, scancode int, action int, mods M
 			action = glfw_REPEAT
 		}
 	}
-	if !window.lockKeyMods {
+	if window.lockKeyMods == 0 {
 		mods &= ^(glfw_MOD_CAPS_LOCK | glfw_MOD_NUM_LOCK)
 	}
 
@@ -386,7 +391,7 @@ func getKeyMods() ModifierKey {
 }
 
 func windowProc(hwnd syscall.Handle, msg uint32, wParam, lParam uintptr) uintptr {
-	window := (*Window)(unsafe.Pointer(GetProp(HANDLE(hwnd), "GLFW")))
+	window := (*Window)(unsafe.Pointer(GetProp(hwnd, "GLFW")))
 	if window == nil {
 		r1, _, _ := _DefWindowProc.Call(uintptr(hwnd), uintptr(msg), wParam, lParam)
 		return r1
@@ -543,7 +548,7 @@ func windowProc(hwnd syscall.Handle, msg uint32, wParam, lParam uintptr) uintptr
 			// glfwInputCursorEnter(window, glfw_TRUE);
 		}
 
-		if window.cursorMode == glfw_CURSOR_DISABLED {
+		if window.cursorMode == CURSOR_DISABLED {
 			dx := float64(x) - window.lastCursorPosX
 			dy := float64(y) - window.lastCursorPosY
 			// TODO if _glfw.Win32.disabledCursorWindow != window {			break			}
@@ -672,7 +677,7 @@ func cursorInContentArea(w *_GLFWwindow) bool {
 	return x >= 0 && y >= 0 && x < width && y < height // PtInRect(&area, pos);
 }
 
-func setCursorWin32(handle HANDLE) {
+func setCursorWin32(handle syscall.Handle) {
 	_, _, err := _SetCursor.Call(uintptr(handle))
 	if !errors.Is(err, syscall.Errno(0)) {
 		panic("_SetCursor failed, " + err.Error())
@@ -686,7 +691,7 @@ func updateCursorImage(window *_GLFWwindow) {
 func glfwSetCursor(window *_GLFWwindow, cursor *Cursor) {
 	window.cursor = cursor
 	if cursorInContentArea(window) {
-		if window.cursorMode == glfw_CURSOR_NORMAL || window.cursorMode == glfw_CURSOR_CAPTURED {
+		if window.cursorMode == CURSOR_NORMAL || window.cursorMode == CURSOR_CAPTURED {
 			if window.cursor != nil {
 				setCursorWin32(window.cursor.handle)
 			} else {
@@ -1183,7 +1188,7 @@ func chooseImage(count int32, images []*GLFWimage, width int32, height int32) *G
 	var closest int32
 
 	for i := int32(0); i < count; i++ {
-		currDiff := abs(images[i].width*images[i].height - width*height)
+		currDiff := abs(images[i].Width*images[i].Height - width*height)
 		if currDiff < leastDiff {
 			closest = i
 			leastDiff = currDiff
@@ -1198,12 +1203,12 @@ func createIcon(image *GLFWimage, xhot, yhot int32, icon bool) syscall.Handle {
 	var handle syscall.Handle
 	var bi BITMAPV5HEADER
 	var ii ICONINFO
-	var target *[32000]uint8
-	source := image.pixels
+	var target *uint8
+	source := (*[16384]uint8)(unsafe.Pointer(image.Pixels))
 
 	bi.bV5Size = uint32(unsafe.Sizeof(bi))
-	bi.bV5Width = image.width
-	bi.bV5Height = -image.height
+	bi.bV5Width = image.Width
+	bi.bV5Height = -image.Height
 	bi.bV5Planes = 1
 	bi.bV5BitCount = 32
 	bi.bV5Compression = BI_BITFIELDS
@@ -1220,16 +1225,16 @@ func createIcon(image *GLFWimage, xhot, yhot int32, icon bool) syscall.Handle {
 		panic("Failed to create RGBA bitmap")
 	}
 
-	mask := CreateBitmap(image.width, image.height, 1, 1, nil)
+	mask := CreateBitmap(image.Width, image.Height, 1, 1, nil)
 	if mask == 0 {
 		panic("Failed to create mask bitmap")
 	}
-
-	for i := int32(0); i < image.width*image.height; i++ {
-		(*target)[i*4+0] = (*source)[i*4+2]
-		(*target)[i*4+1] = (*source)[i*4+1]
-		(*target)[i*4+2] = (*source)[i*4+0]
-		(*target)[i*4+3] = (*source)[i*4+3]
+	targetArr := (*[16384]uint8)(unsafe.Pointer(target))
+	for i := int32(0); i < image.Width*image.Height; i++ {
+		(*targetArr)[i*4+0] = (*source)[i*4+2]
+		(*targetArr)[i*4+1] = (*source)[i*4+1]
+		(*targetArr)[i*4+2] = (*source)[i*4+0]
+		(*targetArr)[i*4+3] = (*source)[i*4+3]
 	}
 
 	ii.fIcon = icon
@@ -1271,5 +1276,59 @@ func glfwSetWindowIcon(window *Window, count int32, images []*GLFWimage) {
 	if count > 0 {
 		window.Win32.bigIcon = bigIcon
 		window.Win32.smallIcon = smallIcon
+	}
+}
+
+// enableRawMouseMotion enables WM_INPUT messages for the mouse for the specified window
+func enableRawMouseMotion(window *Window) {
+	rid := RAWINPUTDEVICE{0x01, 0x02, 0, window.Win32.handle}
+	if !RegisterRawInputDevices(&rid, 1, uint32(unsafe.Sizeof(rid))) {
+		panic("Win32: Failed to register raw input device")
+	}
+}
+
+// Disables WM_INPUT messages for the mouse
+//
+func disableRawMouseMotion(window *Window) {
+	rid := RAWINPUTDEVICE{0x01, 0x02, _RIDEV_REMOVE, 0}
+	if !RegisterRawInputDevices(&rid, 1, uint32(unsafe.Sizeof(rid))) {
+		panic("Failed to remove raw input device")
+	}
+}
+
+// Sets the cursor clip rect to the window content area
+//
+func captureCursor(window *Window) {
+	clipRect := GetClientRect(window)
+	p1 := POINT{clipRect.Left, clipRect.Top}
+	p2 := POINT{clipRect.Right, clipRect.Bottom}
+	p1 = ClientToScreen(window, p1)
+	p2 = ClientToScreen(window, p2)
+	r := RECT{p1.X, p1.Y, p2.X, p2.Y}
+	ClipCursor(&r)
+	_glfw.win32.capturedCursorWindow = window
+}
+
+// Disabled clip cursor
+//
+func releaseCursor() {
+	ClipCursor(nil)
+	_glfw.win32.capturedCursorWindow = nil
+}
+
+func SetRawMouseMotion(window *Window, enabled bool) {
+	if _glfw.win32.disabledCursorWindow != window {
+		return
+	}
+	if enabled {
+		enableRawMouseMotion(window)
+	} else {
+		disableRawMouseMotion(window)
+	}
+}
+
+func destroyCursor(cursor *Cursor) {
+	if cursor.handle != 0 {
+		DestroyIcon(cursor.handle)
 	}
 }

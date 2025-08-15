@@ -222,6 +222,7 @@ const (
 	qs_ALLINPUT                    = qs_SENDMESSAGE | qs_PAINT | qs_TIMER | qs_POSTMESSAGE | qs_MOUSEBUTTON | qs_MOUSEMOVE | qs_HOTKEY | qs_KEY
 	qs_ALLPOSTMESSAGE              = 0x100
 	qs_RAWINPUT                    = 0x400
+	_RIDEV_REMOVE                  = 1
 )
 
 const (
@@ -267,14 +268,6 @@ const (
 	_GL_CONTEXT_RELEASE_BEHAVIOR            = 0x82fb
 	_GL_CONTEXT_RELEASE_BEHAVIOR_FLUSH      = 0x82fc
 	_GL_COLOR_BUFFER_BIT                    = 0x00004000
-)
-
-// Cursor modes
-const (
-	glfw_CURSOR_NORMAL   = 0x00034001
-	glfw_CURSOR_CAPTURED = 0x00034004
-	glfw_CURSOR_HIDDEN   = 0x00034002
-	glfw_CURSOR_DISABLED = 0x00034003
 )
 
 // Hints

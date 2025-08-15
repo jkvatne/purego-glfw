@@ -24,6 +24,8 @@ func main() {
 		threads()
 	case "icon":
 		icon()
+	case "cursor":
+		cursor()
 	default:
 		title()
 		monitor()
