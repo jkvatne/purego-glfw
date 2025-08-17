@@ -101,8 +101,8 @@ func threads() {
 		panic(err.Error())
 	}
 	for i := 0; i < count; i++ {
-		glfw.WindowHint(glfw.POSITION_X, threadDefs[i].x)
-		glfw.WindowHint(glfw.POSITION_Y, threadDefs[i].y)
+		glfw.WindowHint(glfw.PositionX, threadDefs[i].x)
+		glfw.WindowHint(glfw.PositionY, threadDefs[i].y)
 		threadDefs[i].window, err = glfw.CreateWindow(400, 120, threadDefs[i].title, nil, nil)
 		if threadDefs[i].done {
 			glfw.Terminate()

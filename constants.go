@@ -272,45 +272,13 @@ const (
 
 // Hints
 const (
-	glfw_FOCUSED                  = 0x00020001
-	glfw_RESIZABLE                = 0x00020003
-	glfw_VISIBLE                  = 0x00020004
-	glfw_DECORATED                = 0x00020005
-	glfw_AUTO_ICONIFY             = 0x00020006
-	glfw_FLOATING                 = 0x00020007
 	glfw_MAXIMIZED                = 0x00020008
-	glfw_CENTER_CURSOR            = 0x00020009
-	glfw_TRANSPARENT_FRAMEBUFFER  = 0x0002000A
-	glfw_FOCUS_ON_SHOW            = 0x0002000C
 	glfw_MOUSE_PASSTHROUGH        = 0x0002000D
-	glfw_POSITION_X               = 0x0002000E
-	glfw_POSITION_Y               = 0x0002000F
-	glfw_RED_BITS                 = 0x00021001
-	glfw_GREEN_BITS               = 0x00021002
-	glfw_BLUE_BITS                = 0x00021003
-	glfw_ALPHA_BITS               = 0x00021004
-	glfw_DEPTH_BITS               = 0x00021005
-	glfw_STENCIL_BITS             = 0x00021006
-	glfw_ACCUM_RED_BITS           = 0x00021007
-	glfw_ACCUM_GREEN_BITS         = 0x00021008
-	glfw_ACCUM_BLUE_BITS          = 0x00021009
-	glfw_ACCUM_ALPHA_BITS         = 0x0002100A
 	glfw_AUX_BUFFERS              = 0x0002100B
-	glfw_SAMPLES                  = 0x0002100D
-	glfw_SRGB_CAPABLE             = 0x0002100E
 	glfw_REFRESH_RATE             = 0x0002100F
 	glfw_DOUBLEBUFFER             = 0x00021010
-	glfw_CLIENT_API               = 0x00022001
-	glfw_CONTEXT_VERSION_MAJOR    = 0x00022002
-	glfw_CONTEXT_VERSION_MINOR    = 0x00022003
-	glfw_CONTEXT_ROBUSTNESS       = 0x00022005
-	glfw_OPENGL_FORWARD_COMPAT    = 0x00022006
-	glfw_CONTEXT_DEBUG            = 0x00022007
-	glfw_OPENGL_PROFILE           = 0x00022008
 	glfw_CONTEXT_RELEASE_BEHAVIOR = 0x00022009
 	glfw_CONTEXT_NO_ERROR         = 0x0002200A
-	glfw_CONTEXT_CREATION_API     = 0x0002200B
-	glfw_SCALE_TO_MONITOR         = 0x0002200C
 	glfw_SCALE_FRAMEBUFFER        = 0x0002200D
 	glfw_COCOA_RETINA_FRAMEBUFFER = 0x00023001
 	glfw_WIN32_KEYBOARD_MENU      = 0x00025001

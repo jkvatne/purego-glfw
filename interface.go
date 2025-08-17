@@ -13,6 +13,111 @@ import (
 	"golang.design/x/clipboard"
 )
 
+// Window related hints/attributes.
+const (
+	Focused                Hint = 0x00020001 // Specifies whether the window will be given input focus when created. This hint is ignored for full screen and initially hidden windows.
+	Iconified              Hint = 0x00020002 // Specifies whether the window will be minimized.
+	Maximized              Hint = 0x00020008 // Specifies whether the window is maximized.
+	Visible                Hint = 0x00020004 // Specifies whether the window will be initially visible.
+	Hovered                Hint = 0x0002000B // Specifies whether the cursor is currently directly over the content area of the window, with no other windows between. See Cursor enter/leave events for details.
+	Resizable              Hint = 0x00020003 // Specifies whether the window will be resizable by the user.
+	Decorated              Hint = 0x00020005 // Specifies whether the window will have window decorations such as a border, a close widget, et
+	Floating               Hint = 0x00020007 // Specifies whether the window will be always-on-top.
+	AutoIconify            Hint = 0x00020006 // Specifies whether fullscreen windows automatically iconify (and restore the previous video mode) on focus loss.
+	CenterCursor           Hint = 0x00020009 // Specifies whether the cursor should be centered over newly created full screen windows. This hint is ignored for windowed mode windows.
+	TransparentFramebuffer Hint = 0x0002000A // Specifies whether the framebuffer should be transparent.
+	FocusOnShow            Hint = 0x0002000C // Specifies whether the window will be given input focus when glfwShowWindow is called.
+	ScaleToMonitor         Hint = 0x0002200C // Specified whether the window content area should be resized based on the monitor content scale of any monitor it is placed on. This includes the initial placement when the window is created.
+	PositionX              Hint = 0x0002000E
+	PositionY              Hint = 0x0002000F
+)
+
+// Context related hints.
+const (
+	ClientAPI               Hint = 0x00022001 // Specifies which client API to create the context for. Hard constraint.
+	ContextVersionMajor     Hint = 0x00022002 // Specifies the client API version that the created context must be compatible with.
+	ContextVersionMinor     Hint = 0x00022003 // Specifies the client API version that the created context must be compatible with.
+	ContextRobustness       Hint = 0x00022005 // Specifies the robustness strategy to be used by the context.
+	ContextReleaseBehavior  Hint = 0x00022009 // Specifies the release behavior to be used by the context.
+	OpenGLForwardCompatible Hint = 0x00022006 // Specifies whether the OpenGL context should be forward-compatible. Hard constraint.
+	OpenGLDebugContext      Hint = 0x00022007 // Specifies whether to create a debug OpenGL context, which may have additional error and performance issue reporting functionality. If OpenGL ES is requested, this hint is ignored.
+	OpenGLProfile           Hint = 0x00022008 // Specifies which OpenGL profile to create the context for. Hard constraint.
+	ContextCreationAPI      Hint = 0x0002200B // Specifies which context creation API to use to create the context.
+	ContextNoError          Hint = 0x0002200A
+)
+
+// Framebuffer related hints.
+const (
+	ContextRevision        Hint = 0x00022004
+	RedBits                Hint = 0x00021001 // Specifies the desired bit depth of the default framebuffer.
+	GreenBits              Hint = 0x00021002 // Specifies the desired bit depth of the default framebuffer.
+	BlueBits               Hint = 0x00021003 // Specifies the desired bit depth of the default framebuffer.
+	AlphaBits              Hint = 0x00021004 // Specifies the desired bit depth of the default framebuffer.
+	DepthBits              Hint = 0x00021005 // Specifies the desired bit depth of the default framebuffer.
+	StencilBits            Hint = 0x00021006 // Specifies the desired bit depth of the default framebuffer.
+	AccumRedBits           Hint = 0x00021007 // Specifies the desired bit depth of the accumulation buffer.
+	AccumGreenBits         Hint = 0x00021008 // Specifies the desired bit depth of the accumulation buffer.
+	AccumBlueBits          Hint = 0x00021009 // Specifies the desired bit depth of the accumulation buffer.
+	AccumAlphaBits         Hint = 0x0002100A // Specifies the desired bit depth of the accumulation buffer.
+	AuxBuffers             Hint = 0x0002100B // Specifies the desired number of auxiliary buffers.
+	Stereo                 Hint = 0x0002100C // Specifies whether to use stereoscopic rendering. Hard constraint.
+	Samples                Hint = 0x0002100D // Specifies the desired number of samples to use for multisampling. Zero disables multisampling.
+	SRGBCapable            Hint = 0x0002100E // Specifies whether the framebuffer should be sRGB capable.
+	RefreshRate            Hint = 0x0002100F // Specifies the desired refresh rate for full screen windows. If set to zero, the highest available refresh rate will be used. This hint is ignored for windowed mode windows.
+	DoubleBuffer           Hint = 0x00021010 // Specifies whether the framebuffer should be double buffered. You nearly always want to use double buffering. This is a hard constraint.
+	CocoaGraphicsSwitching Hint = 0x00023003 // Specifies whether to in Automatic Graphics Switching, i.e. to allow the system to choose the integrated GPU for the OpenGL context and move it between GPUs if necessary or whether to force it to always run on the discrete GPU.
+	CocoaRetinaFramebuffer Hint = 0x00023001 // Specifies whether to use full resolution framebuffers on Retina displays.
+)
+
+// Naming related hints. (Use with glfw.WindowHintString)
+const (
+	CocoaFrameNAME  Hint = 0x00023002 // Specifies the UTF-8 encoded name to use for autosaving the window frame, or if empty disables frame autosaving for the window.
+	X11ClassName    Hint = 0x00024001 // Specifies the desired ASCII encoded class parts of the ICCCM WM_CLASS window property.nd instance parts of the ICCCM WM_CLASS window property.
+	X11InstanceName Hint = 0x00024002 // Specifies the desired ASCII encoded instance parts of the ICCCM WM_CLASS window property.nd instance parts of the ICCCM WM_CLASS window property.
+)
+
+// Values for the ClientAPI hint.
+const (
+	OpenGLAPI   int = 0x00030001
+	OpenGLESAPI int = 0x00030002
+	NoAPI       int = 0
+)
+
+// Values for ContextCreationAPI hint.
+const (
+	NativeContextAPI int = 0x00036001
+	EGLContextAPI    int = 0x00036002
+	OSMesaContextAPI int = 0x00036003
+)
+
+// Values for the ContextRobustness hint.
+const (
+	NoRobustness        int = 0
+	NoResetNotification int = 0x00031001
+	LoseContextOnReset  int = 0x00031002
+)
+
+// Values for ContextReleaseBehavior hint.
+const (
+	AnyReleaseBehavior   int = 0
+	ReleaseBehaviorFlush int = 0x00035001
+	ReleaseBehaviorNone  int = 0x00035002
+)
+
+// Values for the OpenGLProfile hint.
+const (
+	OpenGLAnyProfile    int = 0
+	OpenGLCoreProfile   int = 0x00032001
+	OpenGLCompatProfile int = 0x00032002
+)
+
+// Other values.
+const (
+	True     int = 1 // GL_TRUE
+	False    int = 0 // GL_FALSE
+	DontCare int = -1
+)
+
 // InputMode corresponds to an input mode.
 type InputMode int
 
@@ -52,10 +157,6 @@ const (
 type MouseButton int
 
 const (
-	True  = 1
-	False = 0
-)
-const (
 	MouseButtonFirst  MouseButton = 0
 	MouseButtonLeft   MouseButton = 0
 	MouseButtonRight  MouseButton = 1
@@ -65,36 +166,16 @@ const (
 
 // Exported cursor types
 const (
-	ArrowCursor     = 0x00036001
-	IBeamCursor     = 0x00036002
-	CrosshairCursor = 0x00036003
-	HandCursor      = 0x00036004
-	HResizeCursor   = 0x00036005
-	VResizeCursor   = 0x00036006
-)
-
-// Exported hints
-const (
-	OpenGLForwardCompatible = glfw_OPENGL_FORWARD_COMPAT
-	Focused                 = glfw_FOCUSED
-	Resizable               = glfw_RESIZABLE
-	Visible                 = glfw_VISIBLE
-	Decorated               = glfw_DECORATED
-	AutoIconify             = glfw_AUTO_ICONIFY
-	Floating                = glfw_FLOATING
-	Maximized               = glfw_OPENGL_PROFILE
-	Samples                 = glfw_SAMPLES
-	ContextVersionMajor     = glfw_CONTEXT_VERSION_MAJOR
-	ForwardCompatible       = glfw_OPENGL_FORWARD_COMPAT
-	OpenGLProfile           = glfw_OPENGL_PROFILE
-	OpenGLCoreProfile       = glfw_OPENGL_CORE_PROFILE
-	ContextVersionMinor     = glfw_CONTEXT_VERSION_MINOR
-	RefreshRate             = glfw_REFRESH_RATE
-	RedBits                 = glfw_RED_BITS
-	GreenBits               = glfw_GREEN_BITS
-	BlueBits                = glfw_BLUE_BITS
-	POSITION_X              = glfw_POSITION_X
-	POSITION_Y              = glfw_POSITION_Y
+	ArrowCursor      = 0x00036001
+	IBeamCursor      = 0x00036002
+	CrosshairCursor  = 0x00036003
+	HandCursor       = 0x00036004
+	HResizeCursor    = 0x00036005
+	VResizeCursor    = 0x00036006
+	ResizeNwseCursor = 0x00036007
+	ResizeNeswCursor = 0x00036008
+	ResizeAllCursor  = 0x00036009
+	NotAllowedCursor = 0x0003600A
 )
 
 type Action int
@@ -131,87 +212,87 @@ func WaitEventsTimeout(timeout float64) {
 	glfwPollEvents()
 }
 
-func WindowHint(hint int32, value int32) error {
+func WindowHint(hint Hint, value int32) error {
 	switch hint {
-	case glfw_RED_BITS:
+	case RedBits:
 		_glfw.hints.framebuffer.redBits = value
-	case glfw_GREEN_BITS:
+	case GreenBits:
 		_glfw.hints.framebuffer.greenBits = value
-	case glfw_BLUE_BITS:
+	case BlueBits:
 		_glfw.hints.framebuffer.blueBits = value
-	case glfw_ALPHA_BITS:
+	case AlphaBits:
 		_glfw.hints.framebuffer.alphaBits = value
-	case glfw_DEPTH_BITS:
+	case DepthBits:
 		_glfw.hints.framebuffer.depthBits = value
-	case glfw_STENCIL_BITS:
-	case glfw_ACCUM_RED_BITS:
+	case StencilBits:
+	case AccumRedBits:
 		_glfw.hints.framebuffer.accumRedBits = value
-	case glfw_ACCUM_GREEN_BITS:
+	case AccumGreenBits:
 		_glfw.hints.framebuffer.accumGreenBits = value
-	case glfw_ACCUM_BLUE_BITS:
+	case AccumBlueBits:
 		_glfw.hints.framebuffer.accumBlueBits = value
-	case glfw_ACCUM_ALPHA_BITS:
+	case AccumAlphaBits:
 		_glfw.hints.framebuffer.accumAlphaBits = value
-	case glfw_AUX_BUFFERS:
+	case AuxBuffers:
 		_glfw.hints.framebuffer.auxBuffers = value
-	case glfw_DOUBLEBUFFER:
+	case DoubleBuffer:
 		_glfw.hints.framebuffer.doublebuffer = value != 0
-	case glfw_TRANSPARENT_FRAMEBUFFER:
+	case TransparentFramebuffer:
 		_glfw.hints.framebuffer.transparent = value != 0
-	case glfw_SAMPLES:
+	case Samples:
 		_glfw.hints.framebuffer.samples = value
-	case glfw_SRGB_CAPABLE:
+	case SRGBCapable:
 		_glfw.hints.framebuffer.sRGB = value != 0
-	case glfw_RESIZABLE:
+	case Resizable:
 		_glfw.hints.window.resizable = value != 0
-	case glfw_DECORATED:
+	case Decorated:
 		_glfw.hints.window.decorated = value != 0
-	case glfw_FOCUSED:
+	case Focused:
 		_glfw.hints.window.focused = value != 0
-	case glfw_AUTO_ICONIFY:
+	case AutoIconify:
 		_glfw.hints.window.autoIconify = value != 0
-	case glfw_FLOATING:
+	case Floating:
 		_glfw.hints.window.floating = value != 0
-	case glfw_MAXIMIZED:
+	case Maximized:
 		_glfw.hints.window.maximized = value != 0
-	case glfw_VISIBLE:
+	case Visible:
 		_glfw.hints.window.visible = value != 0
-	case glfw_POSITION_X:
+	case PositionX:
 		_glfw.hints.window.xpos = value
-	case glfw_POSITION_Y:
+	case PositionY:
 		_glfw.hints.window.ypos = value
-	case glfw_SCALE_TO_MONITOR:
+	case ScaleToMonitor:
 		_glfw.hints.window.scaleToMonitor = value != 0
 	case glfw_SCALE_FRAMEBUFFER:
 	case glfw_COCOA_RETINA_FRAMEBUFFER:
 		_glfw.hints.window.scaleFramebuffer = value != 0
-	case glfw_CENTER_CURSOR:
+	case CenterCursor:
 		_glfw.hints.window.centerCursor = value != 0
-	case glfw_FOCUS_ON_SHOW:
+	case FocusOnShow:
 		_glfw.hints.window.focusOnShow = value != 0
 	case glfw_MOUSE_PASSTHROUGH:
 		_glfw.hints.window.mousePassthrough = value != 0
-	case glfw_CLIENT_API:
+	case ClientAPI:
 		_glfw.hints.context.client = value
-	case glfw_CONTEXT_CREATION_API:
+	case ContextCreationAPI:
 		_glfw.hints.context.source = value
-	case glfw_CONTEXT_VERSION_MAJOR:
+	case ContextVersionMajor:
 		_glfw.hints.context.major = value
-	case glfw_CONTEXT_VERSION_MINOR:
+	case ContextVersionMinor:
 		_glfw.hints.context.minor = value
-	case glfw_CONTEXT_ROBUSTNESS:
+	case ContextRobustness:
 		_glfw.hints.context.robustness = value
-	case glfw_OPENGL_FORWARD_COMPAT:
+	case OpenGLForwardCompatible:
 		_glfw.hints.context.forward = value != 0
-	case glfw_CONTEXT_DEBUG:
+	case OpenGLDebugContext:
 		_glfw.hints.context.debug = value != 0
-	case glfw_CONTEXT_NO_ERROR:
+	case ContextNoError:
 		_glfw.hints.context.noerror = value != 0
-	case glfw_OPENGL_PROFILE:
+	case OpenGLProfile:
 		_glfw.hints.context.profile = value
-	case glfw_CONTEXT_RELEASE_BEHAVIOR:
+	case ContextReleaseBehavior:
 		_glfw.hints.context.release = value
-	case glfw_REFRESH_RATE:
+	case RefreshRate:
 		_glfw.hints.refreshRate = value
 	default:
 		return fmt.Errorf("Invalid window hint %d with value %d", hint, value)
@@ -263,6 +344,14 @@ func CreateStandardCursor(shape int) *Cursor {
 		id = IDC_SIZENS
 	case HandCursor:
 		id = IDC_HAND
+	case ResizeAllCursor:
+		id = IDC_SIZEALL
+	case ResizeNeswCursor:
+		id = IDC_SIZENESW
+	case ResizeNwseCursor:
+		id = IDC_SIZENWSE
+	case NotAllowedCursor:
+		id = IDC_NO
 	default:
 		panic("Win32: Unknown or unsupported standard cursor")
 	}
@@ -577,7 +666,7 @@ func (window *Window) SetInputMode(mode int, value int) {
 			value != CursorHidden &&
 			value != CursorDisabled &&
 			value != CursorCaptured {
-			// "Invalid cursor mode 0x%08X",
+			fmt.Printf("Invalid cursor mode 0x%08X", value)
 		}
 		if window.cursorMode == value {
 			return
@@ -626,8 +715,9 @@ func (window *Window) SetInputMode(mode int, value int) {
 		// TODO case GLFW_UNLIMITED_MOUSE_BUTTONS:
 		// value = min(1, max(0, value))
 		// window.disableMouseButtonLimit = value
+	default:
+		panic(fmt.Sprintf("Invalid input mode 0x%08X", mode))
 	}
-	panic(fmt.Sprintf("Invalid input mode 0x%08X", mode))
 }
 
 func (window *Window) SetCursorPos(x, y float64) {

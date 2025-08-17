@@ -191,16 +191,8 @@ func key_callback9(window *glfw.Window, key glfw.Key, scancode int, action glfw.
 		width, height := window.GetSize()
 		window.SetCursorPos(float64(width-1), float64(height-1))
 		cursor_x, cursor_y = window.GetCursorPos()
-	case glfw.Key1:
-	case glfw.Key2:
-	case glfw.Key3:
-	case glfw.Key4:
-	case glfw.Key5:
-	case glfw.Key6:
-	case glfw.Key7:
-	case glfw.Key8:
-	case glfw.Key9:
-		index := int(key - glfw.Key1)
+	case glfw.Key0, glfw.Key1, glfw.Key2, glfw.Key3, glfw.Key4, glfw.Key5, glfw.Key6, glfw.Key7, glfw.Key8, glfw.Key9:
+		index := int(key - glfw.Key0)
 		if mods&glfw.ModShift != 0 {
 			index += 9
 		}
@@ -233,12 +225,12 @@ func key_callback9(window *glfw.Window, key glfw.Key, scancode int, action glfw.
 type vec4 [4]float32
 
 func cursor() {
-	type mat4x4 [4]vec4
+	// type mat4x4 [4]vec4
 	var (
 		star_cursors                                           [CURSOR_FRAME_COUNT]*glfw.Cursor
 		current_frame                                          *glfw.Cursor
 		vertex_buffer, vertex_shader, fragment_shader, program uint32
-		mvp                                                    mat4x4
+		mvp                                                    Mat4
 	)
 
 	fmt.Println("Cursor test")
@@ -258,6 +250,11 @@ func cursor() {
 		glfw.CrosshairCursor,
 		glfw.HResizeCursor,
 		glfw.VResizeCursor,
+		glfw.HandCursor,
+		glfw.ResizeNwseCursor,
+		glfw.ResizeNeswCursor,
+		glfw.ResizeAllCursor,
+		glfw.NotAllowedCursor,
 	}
 
 	for i := 0; i < len(shapes); i++ {
@@ -304,7 +301,7 @@ func cursor() {
 	cursor_x, cursor_y = window.GetCursorPos()
 	fmt.Printf("Cursor position: %f %f\n", cursor_x, cursor_y)
 	window.SetCursorPosCallback(cursor_position_callback)
-	window.SetKeyCallback(key_callback)
+	window.SetKeyCallback(key_callback9)
 	for !window.ShouldClose() {
 		gl.Clear(gl.COLOR_BUFFER_BIT)
 		if track_cursor {
@@ -322,8 +319,8 @@ func cursor() {
 			vertices[3][1] = float32(fb_height) + 0.5
 
 			gl.BufferData(gl.ARRAY_BUFFER, int(unsafe.Sizeof(vertices)), unsafe.Pointer(&vertices), gl.STREAM_DRAW)
-			// mat4x4_ortho(mvp, 0.0, float32(fb_width), 0.0, float32(fb_height), 0.0, 1.0);
-			gl.UniformMatrix4fv(mvp_location, 1, false, &mvp[0][0])
+			mvp = mat4x4_ortho(0.0, float32(fb_width), 0.0, float32(fb_height), 0.0, 1.0)
+			gl.UniformMatrix4fv(mvp_location, 1, false, &mvp[0])
 			gl.DrawArrays(gl.LINES, 0, 4)
 		}
 

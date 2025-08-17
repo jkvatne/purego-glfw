@@ -88,7 +88,7 @@ var (
 	_SendMessage                   = user32.NewProc("SendMessageW")
 	_RegisterRawInputDevices       = user32.NewProc("RegisterRawInputDevices")
 	_ClientToScreen                = user32.NewProc("ClientToScreen")
-	_ClipCursor                    = user32.NewProc("_ClipCursor")
+	_ClipCursor                    = user32.NewProc("ClipCursor")
 	_SetCursorPos                  = user32.NewProc("SetCursorPos")
 )
 
