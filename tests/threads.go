@@ -32,7 +32,7 @@ func key_callback5(window *glfw.Window, key glfw.Key, scancode int, action glfw.
 	}
 	switch key {
 	case glfw.KeyEscape:
-		window.SetWindowShouldClose(true)
+		window.SetShouldClose(true)
 	}
 }
 

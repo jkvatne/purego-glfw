@@ -6,12 +6,13 @@ package main
 
 import (
 	"fmt"
-	"github.com/jkvatne/jkvgui/gl"
-	glfw "github.com/jkvatne/purego-glfw"
 	"os"
 	"runtime"
 	"strings"
 	"unsafe"
+
+	"github.com/jkvatne/jkvgui/gl"
+	glfw "github.com/jkvatne/purego-glfw"
 )
 
 // static const vec2 vertices[4] = {{ -0.6f, -0.6f },{  0.6f, -0.6f },{  0.6f,  0.6f },{ -0.6f,  0.6f }};
@@ -45,7 +46,7 @@ func key_callback2(window *glfw.Window, key glfw.Key, scancode int, action glfw.
 	case glfw.KeySpace:
 		glfw.SetTime(0.0)
 	case glfw.KeyEscape:
-		window.SetWindowShouldClose(true)
+		window.SetShouldClose(true)
 	}
 }
 

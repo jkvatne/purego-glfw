@@ -143,7 +143,7 @@ func key_callback9(window *glfw.Window, key glfw.Key, scancode int, action glfw.
 	case glfw.KeyEscape:
 		mode := window.GetInputMode(glfw.CursorMode)
 		if mode != glfw.CursorDisabled && mode != glfw.CursorCaptured {
-			window.SetWindowShouldClose(true)
+			window.SetShouldClose(true)
 		}
 	case glfw.KeyN:
 		window.SetInputMode(glfw.CursorMode, glfw.CursorNormal)

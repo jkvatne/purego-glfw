@@ -3,13 +3,14 @@ package main
 
 import (
 	"fmt"
-	"github.com/jkvatne/jkvgui/gl"
-	glfw "github.com/jkvatne/purego-glfw"
 	"math/rand/v2"
 	"os"
 	"runtime"
 	"strings"
 	"unsafe"
+
+	"github.com/jkvatne/jkvgui/gl"
+	glfw "github.com/jkvatne/purego-glfw"
 )
 
 // It closes and re-opens the GLFW window every five seconds, alternating
@@ -48,7 +49,7 @@ func key_callback(window *glfw.Window, key glfw.Key, scancode int, action glfw.A
 	switch key {
 	case glfw.KeyQ:
 	case glfw.KeyEscape:
-		window.SetWindowShouldClose(true)
+		window.SetShouldClose(true)
 	}
 }
 

@@ -38,7 +38,7 @@ func framebuffer_size_callback(window *glfw.Window, width int32, height int32) {
 
 func key_callback4(window *glfw.Window, key glfw.Key, scancode int, action glfw.Action, mods glfw.ModifierKey) {
 	if key == glfw.KeyEscape {
-		window.SetWindowShouldClose(true)
+		window.SetShouldClose(true)
 	}
 }
 

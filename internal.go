@@ -1534,3 +1534,27 @@ func glfwSetWindowMousePassthrough(window *Window, enabled bool) {
 		SetLayeredWindowAttributes(window.Win32.handle, key, alpha, flags)
 	}
 }
+
+func glfwSetTitle(w *Window, title string) {
+	SetWindowTextW(w.Win32.handle, title)
+}
+
+func glfwGetPos(w *Window) (x, y int32) {
+	p := ClientToScreen(w.Win32.handle, POINT{0, 0})
+	return p.X, p.Y
+}
+
+func glfwGetFramebufferSize(w *Window) (width int32, height int32) {
+	var area RECT
+	_, _, err := _GetClientRect.Call(uintptr(unsafe.Pointer(w.Win32.handle)), uintptr(unsafe.Pointer(&area)))
+	if !errors.Is(err, syscall.Errno(0)) {
+		panic(err)
+	}
+	width = area.Right
+	height = area.Bottom
+	return width, height
+}
+
+func glfwDetachCurrentContext() {
+	makeContextCurrentWGL(nil)
+}

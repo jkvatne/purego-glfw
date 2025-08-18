@@ -4,10 +4,11 @@ package main
 
 import (
 	"fmt"
+	"runtime"
+
 	"github.com/jkvatne/jkvgui/gl"
 	glfw "github.com/jkvatne/purego-glfw"
 	"golang.org/x/exp/rand"
-	"runtime"
 )
 
 func error_callback(error int, description string) {
@@ -16,7 +17,7 @@ func error_callback(error int, description string) {
 
 func key_callback3(window *glfw.Window, key glfw.Key, scancode int, action glfw.Action, mods glfw.ModifierKey) {
 	if key == glfw.KeyEscape && action == glfw.Press {
-		window.SetWindowShouldClose(true)
+		window.SetShouldClose(true)
 	}
 }
 

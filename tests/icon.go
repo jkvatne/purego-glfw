@@ -66,7 +66,7 @@ func key_callback8(window *glfw.Window, key glfw.Key, scancode int, action glfw.
 	}
 	switch key {
 	case glfw.KeyEscape:
-		window.SetWindowShouldClose(true)
+		window.SetShouldClose(true)
 	case glfw.KeySpace:
 		cur_icon_color = (cur_icon_color + 1) % 5
 		set_icon(window, cur_icon_color)

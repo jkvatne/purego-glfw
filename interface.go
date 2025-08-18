@@ -1,7 +1,7 @@
 package glfw
 
+import "C"
 import (
-	"errors"
 	"fmt"
 	"image"
 	"image/draw"
@@ -359,7 +359,7 @@ func CreateStandardCursor(shape int) *Cursor {
 	}
 	cursor.handle = LoadCursor(id)
 	if cursor.handle == 0 {
-		panic("Win32: Failed to create standard cursor")
+		panic("Failed to create standard cursor")
 	}
 	return &cursor
 }
@@ -367,7 +367,7 @@ func CreateStandardCursor(shape int) *Cursor {
 func CreateWindow(width, height int32, title string, monitor *Monitor, share *Window) (*Window, error) {
 	wnd, err := glfwCreateWindow(width, height, title, monitor, share)
 	if err != nil {
-		return nil, fmt.Errorf("glfwCreateWindow failed: %v", err)
+		return nil, fmt.Errorf("CreateWindow failed: %v", err)
 	}
 	return wnd, nil
 }
@@ -386,22 +386,15 @@ func (w *Window) ShouldClose() bool {
 // used to override the user's attempt to close the window, or to signal that it
 // should be closed.
 func (w *Window) SetShouldClose(value bool) {
-	if !value {
-		// glfwSetWindowShouldClose(w.data, C.int(False))
-	} else {
-		// glfwSetWindowShouldClose(w.data, C.int(True))
-	}
-}
-
-func (w *Window) SetWindowShouldClose(close bool) {
-	w.shouldClose = close
+	w.shouldClose = value
 }
 
 // SetTitle sets the window title, encoded as UTF-8, of the window.
 //
 // This function may only be called from the main thread.
 func (w *Window) SetTitle(title string) {
-	SetWindowTextW(w.Win32.handle, title)
+	glfwSetTitle(w, title)
+
 }
 
 // SetIcon sets the icon of the specified window. If passed an array of candidate images,
@@ -427,15 +420,12 @@ func (w *Window) SetIcon(images []image.Image) {
 // GetPos returns the position, in screen coordinates, of the upper-left
 // corner of the client area of the window.
 func (w *Window) GetPos() (x, y int32) {
-	p := ClientToScreen(w.Win32.handle, POINT{0, 0})
-	return p.X, p.Y
+	return glfwGetPos(w)
 }
 
 // SetPos sets the position, in screen coordinates, of the Window's upper-left corner
 func (w *Window) SetPos(xPos, yPos int32) {
-	rect := RECT{Left: xPos, Top: yPos, Right: xPos, Bottom: yPos}
-	AdjustWindowRect(&rect, getWindowStyle(w), 0, getWindowExStyle(w), GetDpiForWindow(w.Win32.handle), "glfwSetWindowPos")
-	SetWindowPos(w.Win32.handle, 0, rect.Left, rect.Top, 0, 0, SWP_NOACTIVATE|SWP_NOZORDER|SWP_NOSIZE)
+	glfwSetPos(w, xPos, yPos)
 }
 
 // GetSize returns the size, in screen coordinates, of the client area of the
@@ -474,14 +464,7 @@ func (w *Window) SetAspectRatio(numer, denom int32) {
 }
 
 func (w *Window) GetFramebufferSize() (width int32, height int32) {
-	var area RECT
-	_, _, err := _GetClientRect.Call(uintptr(unsafe.Pointer(w.Win32.handle)), uintptr(unsafe.Pointer(&area)))
-	if !errors.Is(err, syscall.Errno(0)) {
-		panic(err)
-	}
-	width = area.Right
-	height = area.Bottom
-	return width, height
+	return glfwGetFramebufferSize(w)
 }
 
 // GetFrameSize retrieves the size, in screen coordinates, of each edge of the frame
@@ -623,7 +606,7 @@ func (w *Window) MakeContextCurrent() {
 
 // DetachCurrentContext detaches the current context.
 func DetachCurrentContext() {
-	makeContextCurrentWGL(nil)
+	glfwDetachCurrentContext()
 }
 
 // GetCurrentContext returns the window whose context is current.
