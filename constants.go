@@ -76,7 +76,6 @@ const (
 
 // Windows constants
 const (
-	_TRUE                   = 1
 	pm_REMOVE               = 0x0001
 	pm_NOREMOVE             = 0x0000
 	wm_CANCELMODE           = 0x001F
@@ -239,24 +238,13 @@ const (
 	glfw_DONT_CARE = -1
 	INT_MAX        = 0x7FFFFFFF
 
-	glfw_RELEASE            = 0
-	glfw_PRESS              = 1
-	glfw_REPEAT             = 2
-	glfw_OPENGL_API         = 0x00030001
-	glfw_NATIVE_CONTEXT_API = 0x00036001
-	glfw_OPENGL_ES_API      = 0x00030002
-	glfw_EGL_CONTEXT_API    = 0x00036002
-	glfw_OSMESA_CONTEXT_API = 0x00036003
-	glfw_NO_API             = 0
-	glfw_OPENGL_ANY_PROFILE = 0
-	glfw_ANY_POSISTION      = -2147483648
-	glfw_MOD_CAPS_LOCK      = 0x0010
-	glfw_MOD_NUM_LOCK       = 0x0020
-	glfw_CONNECTED          = 0x00040001
-	glfw_DISCONNECTED       = 0x00040002
-	glfw_STICK              = 3
-	glfw_INSERT_FIRST       = 0
-	glfw_INSERT_LAST        = 1
+	glfw_MOD_CAPS_LOCK = 0x0010
+	glfw_MOD_NUM_LOCK  = 0x0020
+	glfw_CONNECTED     = 0x00040001
+	glfw_DISCONNECTED  = 0x00040002
+	Stick              = 3
+	InsertFirst        = 0
+	InsertLast         = 1
 
 	glfw_NO_RESET_NOTIFICATION  = 0x00031001
 	glfw_LOSE_CONTEXT_ON_RESET  = 0x00031002
@@ -278,10 +266,4 @@ const (
 	_GL_CONTEXT_RELEASE_BEHAVIOR            = 0x82fb
 	_GL_CONTEXT_RELEASE_BEHAVIOR_FLUSH      = 0x82fc
 	_GL_COLOR_BUFFER_BIT                    = 0x00004000
-)
-
-// Hints
-const (
-	glfw_OPENGL_CORE_PROFILE   = 0x00032001
-	glfw_OPENGL_COMPAT_PROFILE = 0x00032002
 )

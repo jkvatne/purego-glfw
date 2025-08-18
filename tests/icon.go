@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"image"
 	"runtime"
+	"time"
 
 	"github.com/jkvatne/jkvgui/gl"
 	glfw "github.com/jkvatne/purego-glfw"
@@ -75,7 +76,7 @@ func key_callback8(window *glfw.Window, key glfw.Key, scancode int, action glfw.
 }
 
 func icon() {
-	fmt.Println("Windows icon test. Changes the icon in the upper left corner of the window")
+	fmt.Println("\nWindows icon test. Changes the icon in the upper left corner of the window")
 	fmt.Println("and the icon on the task bar. Press space to change color, escape to exit, X to clear icon.")
 	runtime.LockOSThread()
 	err := glfw.Init()
@@ -93,11 +94,14 @@ func icon() {
 	window.SetKeyCallback(key_callback8)
 	set_icon(window, cur_icon_color)
 
-	for !window.ShouldClose() && glfw.GetTime() < 33.0 {
-		gl.ClearColor(100, 100, 0, 256)
+	for !window.ShouldClose() && glfw.GetTime() < 5.0 {
+		gl.ClearColor(1, 0.5, 1, 1)
 		gl.Clear(gl.COLOR_BUFFER_BIT)
 		window.SwapBuffers()
+		time.Sleep(time.Second)
 		glfw.PollEvents()
+		cur_icon_color = (cur_icon_color + 1) % 5
+		set_icon(window, cur_icon_color)
 	}
 
 	window.Destroy()

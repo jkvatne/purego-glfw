@@ -316,7 +316,7 @@ func glfwCreateContextWGL(window *_GLFWwindow, ctxconfig *_GLFWctxconfig, fbconf
 	if setPixelFormat(window.context.wgl.dc, pixelFormat, &pfd) == 0 {
 		return fmt.Errorf("WGL: Failed to set selected pixel format")
 	}
-	if ctxconfig.client == glfw_OPENGL_API {
+	if ctxconfig.client == OpenGLAPI {
 		if ctxconfig.forward && !_glfw.wgl.ARB_create_context {
 			return fmt.Errorf("WGL: A forward compatible OpenGL context requested but wgl_ARB_create_context is unavailable")
 		}
@@ -331,13 +331,13 @@ func glfwCreateContextWGL(window *_GLFWwindow, ctxconfig *_GLFWctxconfig, fbconf
 	if _glfw.wgl.ARB_create_context {
 		mask := 0
 		flags := 0
-		if ctxconfig.client == glfw_OPENGL_API {
+		if ctxconfig.client == int32(OpenGLAPI) {
 			if ctxconfig.forward {
 				flags |= wgl_CONTEXT_FORWARD_COMPATIBLE_BIT_ARB
 			}
-			if ctxconfig.profile == glfw_OPENGL_CORE_PROFILE {
+			if ctxconfig.profile == OpenGLCoreProfile {
 				mask |= wgl_CONTEXT_CORE_PROFILE_BIT_ARB
-			} else if ctxconfig.profile == glfw_OPENGL_COMPAT_PROFILE {
+			} else if ctxconfig.profile == OpenGLCompatProfile {
 				mask |= wgl_CONTEXT_COMPATIBILITY_PROFILE_BIT_ARB
 			}
 		} else {
@@ -348,10 +348,10 @@ func glfwCreateContextWGL(window *_GLFWwindow, ctxconfig *_GLFWctxconfig, fbconf
 		}
 		if ctxconfig.robustness != 0 {
 			if _glfw.wgl.ARB_create_context_robustness {
-				if ctxconfig.robustness == glfw_NO_RESET_NOTIFICATION {
+				if ctxconfig.robustness == int32(NoResetNotification) {
 					attribList = append(attribList, wgl_CONTEXT_RESET_NOTIFICATION_STRATEGY_ARB, wgl_NO_RESET_NOTIFICATION_ARB)
 				}
-			} else if ctxconfig.robustness == glfw_LOSE_CONTEXT_ON_RESET {
+			} else if ctxconfig.robustness == int32(LoseContextOnReset) {
 				attribList = append(attribList, wgl_CONTEXT_RESET_NOTIFICATION_STRATEGY_ARB, wgl_LOSE_CONTEXT_ON_RESET_ARB)
 			}
 			flags |= wgl_CONTEXT_ROBUST_ACCESS_BIT_ARB
@@ -451,7 +451,7 @@ func choosePixelFormatWGL(window *_GLFWwindow, ctxconfig *_GLFWctxconfig, fbconf
 		if _glfw.wgl.ARB_multisample {
 			ADD_ATTRIB(wgl_SAMPLES_ARB)
 		}
-		if ctxconfig.client == glfw_OPENGL_API {
+		if ctxconfig.client == OpenGLAPI {
 			if _glfw.wgl.ARB_framebuffer_sRGB || _glfw.wgl.EXT_framebuffer_sRGB {
 				ADD_ATTRIB(wgl_FRAMEBUFFER_SRGB_CAPABLE_ARB)
 			}
@@ -502,7 +502,7 @@ func choosePixelFormatWGL(window *_GLFWwindow, ctxconfig *_GLFWctxconfig, fbconf
 			if _glfw.wgl.ARB_multisample {
 				u.samples = FIND_ATTRIB_VALUE(wgl_SAMPLES_ARB)
 			}
-			if ctxconfig.client == glfw_OPENGL_API {
+			if ctxconfig.client == OpenGLAPI {
 				if _glfw.wgl.ARB_framebuffer_sRGB || _glfw.wgl.EXT_framebuffer_sRGB {
 					if FIND_ATTRIB_VALUE(wgl_FRAMEBUFFER_SRGB_CAPABLE_ARB) != 0 {
 						u.sRGB = true

@@ -81,8 +81,8 @@ type _GLFWwindow struct {
 	lockKeyMods            int
 	cursorMode             int
 	rawMouseMotion         int
-	mouseButtons           [MouseButtonLast + 1]byte
-	keys                   [KeyLast + 1]byte
+	mouseButtons           [MouseButtonLast + 1]Action
+	keys                   [KeyLast + 1]Action
 	virtualCursorPosX      float64 // Virtual cursor position when cursor is disabled
 	virtualCursorPosY      float64 // Virtual cursor position when cursor is disabled
 	context                *_GLFWcontext
@@ -277,26 +277,26 @@ var _glfw struct {
 	}
 }
 
-func glfwInputKey(window *_GLFWwindow, key Key, scancode int, action int, mods ModifierKey) {
+func glfwInputKey(window *_GLFWwindow, key Key, scancode int, action Action, mods ModifierKey) {
 	var repeated bool
 	if key >= 0 && key <= KeyLast {
 		repeated = false
 
-		if action == glfw_RELEASE && window.keys[key] == glfw_RELEASE {
+		if action == Release && window.keys[key] == Release {
 			return
 		}
 
-		if action == glfw_PRESS && window.keys[key] == glfw_PRESS {
+		if action == Press && window.keys[key] == Press {
 			repeated = true
 		}
 
-		if action == glfw_RELEASE && window.stickyKeys == 1 {
-			window.keys[key] = glfw_STICK
+		if action == Release && window.stickyKeys == 1 {
+			window.keys[key] = Stick
 		} else {
-			window.keys[key] = uint8(action)
+			window.keys[key] = action
 		}
 		if repeated {
-			action = glfw_REPEAT
+			action = Repeat
 		}
 	}
 	if window.lockKeyMods == 0 {
@@ -334,8 +334,8 @@ func glfwInputWindowFocus(window *_GLFWwindow, focused bool) {
 			}
 		}*/
 		for button := MouseButton(0); button <= MouseButtonLast; button++ {
-			if window.mouseButtons[button] == glfw_PRESS {
-				glfwInputMouseClick(window, button, glfw_RELEASE, 0)
+			if window.mouseButtons[button] == Press {
+				glfwInputMouseClick(window, button, Release, 0)
 			}
 		}
 	}
@@ -404,7 +404,7 @@ func windowProc(hwnd syscall.Handle, msg uint32, wParam, lParam uintptr) uintptr
 	case wm_UNICHAR:
 		if wParam == _UNICODE_NOCHAR {
 			// Tell the system that we accept wm_UNICHAR messages.
-			return _TRUE
+			return True
 		}
 		fallthrough
 	case wm_CHAR, wm_SYSCHAR:
@@ -413,18 +413,18 @@ func windowProc(hwnd syscall.Handle, msg uint32, wParam, lParam uintptr) uintptr
 				window.charCallback(nil, r)
 			}
 		}
-		return _TRUE
+		return True
 	case wm_DPICHANGED:
 		// Let Windows know we're prepared for runtime DPI changes.
-		return _TRUE
+		return True
 	case wm_ERASEBKGND:
 		// Avoid flickering between GPU content and background color.
-		return _TRUE
+		return True
 	case wm_KEYDOWN, wm_KEYUP, wm_SYSKEYDOWN, wm_SYSKEYUP:
 		var key Key
-		action := glfw_PRESS
+		action := Press
 		if (lParam>>16)&0x8000 != 0 {
-			action = glfw_RELEASE
+			action = Release
 		}
 		mods := getKeyMods()
 		scancode := int((lParam >> 16) & 0x1ff)
@@ -473,7 +473,7 @@ func windowProc(hwnd syscall.Handle, msg uint32, wParam, lParam uintptr) uintptr
 			}
 		}
 
-		if action == glfw_RELEASE && wParam == VK_SHIFT {
+		if action == Release && wParam == VK_SHIFT {
 			// HACK: Release both Shift keys on Shift up event, as when both
 			//       are pressed the first release does not emit any event
 			// NOTE: The other half of this is in _glfwPlatformPollEvents
@@ -481,8 +481,8 @@ func windowProc(hwnd syscall.Handle, msg uint32, wParam, lParam uintptr) uintptr
 			glfwInputKey(window, KeyRightShift, scancode, action, mods)
 		} else if wParam == VK_SNAPSHOT {
 			// HACK: Key down is not reported for the Print Screen key
-			glfwInputKey(window, key, scancode, glfw_PRESS, mods)
-			glfwInputKey(window, key, scancode, glfw_RELEASE, mods)
+			glfwInputKey(window, key, scancode, Press, mods)
+			glfwInputKey(window, key, scancode, Release, mods)
 		} else {
 			glfwInputKey(window, key, scancode, action, mods)
 		}
@@ -499,13 +499,13 @@ func windowProc(hwnd syscall.Handle, msg uint32, wParam, lParam uintptr) uintptr
 		}
 		var action Action
 		if msg == wm_LBUTTONDOWN || msg == wm_RBUTTONDOWN || msg == wm_MBUTTONDOWN {
-			action = glfw_PRESS
+			action = Press
 		} else {
-			action = glfw_RELEASE
+			action = Release
 		}
 		var i MouseButton
 		for i = MouseButtonFirst; i <= MouseButtonLast; i++ {
-			if window.mouseButtons[i] == glfw_PRESS {
+			if window.mouseButtons[i] == Press {
 				break
 			}
 		}
@@ -514,7 +514,7 @@ func windowProc(hwnd syscall.Handle, msg uint32, wParam, lParam uintptr) uintptr
 		// }
 		glfwInputMouseClick(window, button, action, getKeyMods())
 		for i = MouseButtonFirst; i <= MouseButtonLast; i++ {
-			if window.mouseButtons[i] == glfw_PRESS {
+			if window.mouseButtons[i] == Press {
 				break
 			}
 		}
@@ -549,7 +549,7 @@ func windowProc(hwnd syscall.Handle, msg uint32, wParam, lParam uintptr) uintptr
 			// glfwInputCursorEnter(window, glfw_TRUE);
 		}
 
-		if window.cursorMode == CURSOR_DISABLED {
+		if window.cursorMode == CursorDisabled {
 			dx := float64(x) - window.lastCursorPosX
 			dy := float64(y) - window.lastCursorPosY
 			// TODO if _glfw.Win32.disabledCursorWindow != window {			break			}
@@ -692,7 +692,7 @@ func updateCursorImage(window *_GLFWwindow) {
 func glfwSetCursor(window *_GLFWwindow, cursor *Cursor) {
 	window.cursor = cursor
 	if cursorInContentArea(window) {
-		if window.cursorMode == CURSOR_NORMAL || window.cursorMode == CURSOR_CAPTURED {
+		if window.cursorMode == CursorNormal || window.cursorMode == CursorCaptured {
 			if window.cursor != nil {
 				setCursorWin32(window.cursor.handle)
 			} else {
@@ -962,7 +962,7 @@ func glfwUpdateKeyNamesWin32() {
 func glfwInputMonitor(monitor *Monitor, action int, placement int) {
 	if action == glfw_CONNECTED {
 		_glfw.monitorCount++
-		if placement == glfw_INSERT_FIRST {
+		if placement == InsertFirst {
 			_glfw.monitors = append([]*Monitor{monitor}, _glfw.monitors...)
 		} else {
 			_glfw.monitors = append(_glfw.monitors, monitor)
@@ -1300,11 +1300,11 @@ func disableRawMouseMotion(window *Window) {
 // Sets the cursor clip rect to the window content area
 //
 func captureCursor(window *Window) {
-	clipRect := GetClientRect(window)
+	clipRect := GetClientRect(window.Win32.handle)
 	p1 := POINT{clipRect.Left, clipRect.Top}
 	p2 := POINT{clipRect.Right, clipRect.Bottom}
-	p1 = ClientToScreen(window, p1)
-	p2 = ClientToScreen(window, p2)
+	p1 = ClientToScreen(window.Win32.handle, p1)
+	p2 = ClientToScreen(window.Win32.handle, p2)
 	r := RECT{p1.X, p1.Y, p2.X, p2.Y}
 	ClipCursor(&r)
 	_glfw.win32.capturedCursorWindow = window
@@ -1467,14 +1467,14 @@ func updateWindowStyles(window *Window) {
 	style := GetWindowLongW(window.Win32.handle, _GWL_STYLE)
 	style &= ^uint32(ws_OVERLAPPEDWINDOW | ws_POPUP)
 	style |= getWindowStyle(window)
-	rect := GetClientRect(window)
+	rect := GetClientRect(window.Win32.handle)
 	if IsWindows10Version1607OrGreater() {
 		AdjustWindowRectExForDpi(&rect, style, 0, getWindowExStyle(window), GetDpiForWindow(window.Win32.handle))
 	} else {
 		AdjustWindowRectEx(&rect, style, 0, getWindowExStyle(window))
 	}
-	ClientToScreen(window, POINT{rect.Left, rect.Top})
-	ClientToScreen(window, POINT{rect.Right, rect.Bottom})
+	ClientToScreen(window.Win32.handle, POINT{rect.Left, rect.Top})
+	ClientToScreen(window.Win32.handle, POINT{rect.Right, rect.Bottom})
 	SetWindowLongW(window.Win32.handle, _GWL_STYLE, style)
 	SetWindowPos(window.Win32.handle, hwnd_TOPMOST, rect.Left, rect.Top, rect.Right-rect.Left, rect.Bottom-rect.Top,
 		SWP_FRAMECHANGED|SWP_NOACTIVATE|SWP_NOZORDER)

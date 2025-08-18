@@ -114,10 +114,10 @@ func glfwPollEvents() {
 				vk := keys[i][0]
 				key := keys[i][1]
 				scancode := _glfw.win32.scancodes[key]
-				if (GetKeyState(int(vk))&0x8000 != 0) || (window.keys[key] != glfw_PRESS) {
+				if (GetKeyState(int(vk))&0x8000 != 0) || (window.keys[key] != Press) {
 					continue
 				}
-				glfwInputKey(window, key, int(scancode), glfw_RELEASE, getKeyMods())
+				glfwInputKey(window, key, int(scancode), Release, getKeyMods())
 			}
 		}
 	}
@@ -208,7 +208,7 @@ func createNativeWindow(window *_GLFWwindow, wndconfig *_GLFWwndconfig, fbconfig
 			style |= ws_MAXIMIZE
 		}
 		AdjustWindowRectEx(&rect, style, 0, exStyle)
-		if wndconfig.xpos == glfw_ANY_POSISTION && wndconfig.ypos == glfw_ANY_POSISTION {
+		if wndconfig.xpos == AnyPosition && wndconfig.ypos == AnyPosition {
 			frameX = cw_USEDEFAULT
 			frameY = cw_USEDEFAULT
 		} else {
@@ -300,7 +300,7 @@ func glfwPlatformCreateWindow(window *_GLFWwindow, wndconfig *_GLFWwndconfig, ct
 	if err != nil {
 		return err
 	}
-	if ctxconfig.client != glfw_NO_API {
+	if ctxconfig.client != NoAPI {
 		if err := _glfwInitWGL(); err != nil {
 			return fmt.Errorf("_glfwInitWGL error %v", err.Error())
 		}
@@ -364,7 +364,7 @@ func glfwCreateWindow(width, height int32, title string, monitor *Monitor, share
 	window.autoIconify = wndconfig.autoIconify
 	window.floating = wndconfig.floating
 	window.focusOnShow = wndconfig.focusOnShow
-	window.cursorMode = CURSOR_NORMAL
+	window.cursorMode = CursorNormal
 	window.doublebuffer = fbconfig.doublebuffer
 	window.minwidth = glfw_DONT_CARE
 	window.minheight = glfw_DONT_CARE
@@ -482,7 +482,7 @@ func screenToClient(handle syscall.Handle, p *POINT) {
 }
 
 func glfwGetCursorPos(w *_GLFWwindow, x *int32, y *int32) {
-	if w.cursorMode == CURSOR_DISABLED {
+	if w.cursorMode == CursorDisabled {
 		*x = int32(w.virtualCursorPosX)
 		*y = int32(w.virtualCursorPosY)
 	} else {
@@ -643,7 +643,7 @@ func glfwPollMonitors() {
 
 	for adapterIndex := 0; adapterIndex < 1000; adapterIndex++ {
 		var adapter DISPLAY_DEVICEW
-		adapterType := glfw_INSERT_LAST
+		adapterType := InsertLast
 		adapter.cb = uint32(unsafe.Sizeof(adapter))
 		EnumDisplayDevices(0, adapterIndex, &adapter, 0)
 
@@ -652,7 +652,7 @@ func glfwPollMonitors() {
 		}
 
 		if (adapter.StateFlags & _DISPLAY_DEVICE_PRIMARY_DEVICE) != 0 {
-			adapterType = glfw_INSERT_FIRST
+			adapterType = InsertFirst
 		}
 		for displayIndex := 0; ; displayIndex++ {
 			var display DISPLAY_DEVICEW
@@ -670,7 +670,7 @@ func glfwPollMonitors() {
 			}
 
 			glfwInputMonitor(monitor, glfw_CONNECTED, adapterType)
-			adapterType = glfw_INSERT_LAST
+			adapterType = InsertLast
 
 			// HACK: If an active adapter does not have any display devices
 			//       (as sometimes happens), add it directly as a monitor

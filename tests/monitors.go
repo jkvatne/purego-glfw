@@ -4,11 +4,12 @@ package main
 
 import (
 	"fmt"
-	"github.com/jkvatne/jkvgui/gl"
-	glfw "github.com/jkvatne/purego-glfw"
 	"math/rand/v2"
 	"os"
 	"runtime"
+
+	"github.com/jkvatne/jkvgui/gl"
+	glfw "github.com/jkvatne/purego-glfw"
 )
 
 func euclid(a, b int32) int32 {
@@ -97,7 +98,7 @@ func test_modes(monitor *glfw.Monitor) {
 		glfw.SwapInterval(1)
 		glfw.SetTime(0.0)
 		gl.ClearColor(rand.Float32(), rand.Float32(), rand.Float32(), 1)
-		for glfw.GetTime() < 1.0 {
+		for glfw.GetTime() < 0.2 {
 			gl.Clear(gl.COLOR_BUFFER_BIT)
 			window.SwapBuffers()
 			glfw.PollEvents()
@@ -130,7 +131,7 @@ func test_modes(monitor *glfw.Monitor) {
 }
 
 func monitor() {
-	fmt.Printf("Monitor test started\n")
+	fmt.Printf("\nMonitor test started\n")
 	runtime.LockOSThread()
 	glfw.SetErrorCallback(error_callback)
 	err := glfw.Init()

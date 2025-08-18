@@ -732,17 +732,17 @@ func RegisterRawInputDevices(pRawInputDevices *RAWINPUTDEVICE, uiNumDevices uint
 	return r != 0
 }
 
-func GetClientRect(window *Window) RECT {
+func GetClientRect(hWnd syscall.Handle) RECT {
 	var area RECT
-	_, _, err := _GetClientRect.Call(uintptr(unsafe.Pointer(window.Win32.handle)), uintptr(unsafe.Pointer(&area)))
+	_, _, err := _GetClientRect.Call(uintptr(unsafe.Pointer(hWnd)), uintptr(unsafe.Pointer(&area)))
 	if !errors.Is(err, syscall.Errno(0)) {
 		panic("GetClientRect failed, " + err.Error())
 	}
 	return area
 }
 
-func ClientToScreen(window *Window, p POINT) POINT {
-	_, _, err := _ClientToScreen.Call(uintptr(unsafe.Pointer(window.Win32.handle)), uintptr(unsafe.Pointer(&p)))
+func ClientToScreen(hWnd syscall.Handle, p POINT) POINT {
+	_, _, err := _ClientToScreen.Call(uintptr(hWnd), uintptr(unsafe.Pointer(&p)))
 	if !errors.Is(err, syscall.Errno(0)) {
 		panic("ClientToScreen failed, " + err.Error())
 	}

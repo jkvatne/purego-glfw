@@ -1,6 +1,5 @@
 package glfw
 
-import "C"
 import (
 	"errors"
 	"fmt"
@@ -49,12 +48,6 @@ const (
 	ContextNoError          Hint = 0x0002200A
 )
 
-const (
-	OpenGlAnyProfile    = 0
-	OpenGLCoreProfile   = 0x00032001
-	OpenGLCompatProfile = 0x00032002
-)
-
 // Framebuffer related hints.
 const (
 	ContextRevision        Hint = 0x00022004
@@ -85,25 +78,32 @@ const (
 	WaylandAppId    Hint = 0x00026001
 )
 
+const (
+	OpenGlAnyProfile    = 0
+	OpenGLCoreProfile   = 0x00032001
+	OpenGLCompatProfile = 0x00032002
+	AnyPosition         = int32(-0x80000000)
+)
+
 // Values for the ClientAPI hint.
 const (
-	OpenGLAPI   int = 0x00030001
-	OpenGLESAPI int = 0x00030002
-	NoAPI       int = 0
+	OpenGLAPI   int32 = 0x00030001
+	OpenGLESAPI int32 = 0x00030002
+	NoAPI       int32 = 0
 )
 
 // Values for ContextCreationAPI hint.
 const (
-	NativeContextAPI int = 0x00036001
-	EGLContextAPI    int = 0x00036002
-	OSMesaContextAPI int = 0x00036003
+	NativeContextAPI int32 = 0x00036001
+	EGLContextAPI    int32 = 0x00036002
+	OSMesaContextAPI int32 = 0x00036003
 )
 
 // Values for the ContextRobustness hint.
 const (
-	NoRobustness        int = 0
-	NoResetNotification int = 0x00031001
-	LoseContextOnReset  int = 0x00031002
+	NoRobustness        int32 = 0
+	NoResetNotification int32 = 0x00031001
+	LoseContextOnReset  int32 = 0x00031002
 )
 
 // Values for ContextReleaseBehavior hint.
@@ -115,39 +115,24 @@ const (
 
 // Other values.
 const (
-	True     int = 1 // GL_TRUE
-	False    int = 0 // GL_FALSE
-	DontCare int = -1
+	True     = 1 // GL_TRUE
+	False    = 0 // GL_FALSE
+	DontCare = -1
 )
 
 // InputMode corresponds to an input mode.
 type InputMode int
 
+const (
+	CursorMode            = 0x00033001
+	StickyKeys            = 0x00033002
+	StickyMouseButtons    = 0x00033003
+	LockKeyMods           = 0x00033004
+	RawMouseMotion        = 0x00033005
+	UnlimitedMouseButtons = 0x00033006
+)
+
 // Cursor modes
-const (
-	CURSOR_NORMAL   = 0x00034001
-	CURSOR_CAPTURED = 0x00034004
-	CURSOR_HIDDEN   = 0x00034002
-	CURSOR_DISABLED = 0x00034003
-)
-
-const (
-	CURSOR_MODE             = 0x00033001
-	STICKY_KEYS             = 0x00033002
-	STICKY_MOUSE_BUTTONS    = 0x00033003
-	LOCK_KEY_MODS           = 0x00033004
-	RAW_MOUSE_MOTION        = 0x00033005
-	UNLIMITED_MOUSE_BUTTONS = 0x00033006
-)
-
-// Input modes.
-const (
-	CursorMode             InputMode = CURSOR_MODE          // See Cursor mode values
-	StickyKeysMode         InputMode = STICKY_KEYS          // Value can be either 1 or 0
-	StickyMouseButtonsMode InputMode = STICKY_MOUSE_BUTTONS // Value can be either 1 or 0
-	LockKeyMods            InputMode = LOCK_KEY_MODS        // Value can be either 1 or 0
-	RawMouseMotion         InputMode = RAW_MOUSE_MOTION     // Value can be either 1 or 0
-)
 const (
 	CursorNormal   = 0x00034001
 	CursorHidden   = 0x00034002
@@ -206,6 +191,7 @@ func WaitEvents() {
 	glfwPollEvents()
 }
 
+// WaitEventsTimeout waits a number of seconds or until an event is detected
 func WaitEventsTimeout(timeout float64) {
 	if timeout < 0.0 {
 		panic("Wait time must be positive")
@@ -441,7 +427,7 @@ func (w *Window) SetIcon(images []image.Image) {
 // GetPos returns the position, in screen coordinates, of the upper-left
 // corner of the client area of the window.
 func (w *Window) GetPos() (x, y int32) {
-	p := ClientToScreen(w, POINT{0, 0})
+	p := ClientToScreen(w.Win32.handle, POINT{0, 0})
 	return p.X, p.Y
 }
 
@@ -693,18 +679,19 @@ func Init() error {
 
 func (window *Window) GetInputMode(mode InputMode) int {
 	switch mode {
-	case CURSOR_MODE:
+	case CursorMode:
 		return window.cursorMode
-	case STICKY_KEYS:
+	case StickyKeys:
 		return window.stickyKeys
-	case STICKY_MOUSE_BUTTONS:
+	case StickyMouseButtons:
 		return window.stickyMouseButtons
-	case LOCK_KEY_MODS:
+	case LockKeyMods:
 		return window.lockKeyMods
-	case RAW_MOUSE_MOTION:
+	case RawMouseMotion:
 		return window.rawMouseMotion
+	default:
+		panic("Unknown InputMode")
 	}
-	// _glfwInputError(GLFW_INVALID_ENUM, "Invalid input mode 0x%08X", mode);
 	return 0
 }
 
@@ -744,7 +731,7 @@ func (window *Window) SetCursorMode(mode int) {
 
 func (window *Window) SetInputMode(mode int, value int) {
 	switch mode {
-	case CURSOR_MODE:
+	case CursorMode:
 		if value != CursorNormal &&
 			value != CursorHidden &&
 			value != CursorDisabled &&
@@ -757,7 +744,7 @@ func (window *Window) SetInputMode(mode int, value int) {
 		window.cursorMode = value
 		window.virtualCursorPosX, window.virtualCursorPosY = window.GetCursorPos()
 		window.SetCursorMode(value)
-	case STICKY_KEYS:
+	case StickyKeys:
 		value = min(1, max(0, value))
 		if window.stickyKeys == value {
 			return
@@ -765,13 +752,13 @@ func (window *Window) SetInputMode(mode int, value int) {
 		if value == 0 {
 			// Release all sticky keys
 			for i := 0; i <= KeyLast; i++ {
-				if window.keys[i] == glfw_STICK {
-					window.keys[i] = glfw_RELEASE
+				if window.keys[i] == Stick {
+					window.keys[i] = Release
 				}
 			}
 			window.stickyKeys = value
 		}
-	case STICKY_MOUSE_BUTTONS:
+	case StickyMouseButtons:
 		value = min(1, max(0, value))
 		if window.stickyMouseButtons == value {
 			return
@@ -779,16 +766,16 @@ func (window *Window) SetInputMode(mode int, value int) {
 		if value == 0 {
 			// Release all sticky mouse buttons
 			for i := MouseButton(0); i <= MouseButtonLast; i++ {
-				if window.mouseButtons[i] == glfw_STICK {
-					window.mouseButtons[i] = glfw_RELEASE
+				if window.mouseButtons[i] == Stick {
+					window.mouseButtons[i] = Release
 				}
 			}
 			window.stickyMouseButtons = value
 		}
-	case LOCK_KEY_MODS:
+	case LockKeyMods:
 		value = min(1, max(0, value))
 		window.lockKeyMods = value
-	case RAW_MOUSE_MOTION:
+	case RawMouseMotion:
 		value = min(1, max(0, value))
 		if window.rawMouseMotion == value {
 			return
@@ -808,7 +795,7 @@ func (window *Window) SetCursorPos(x, y float64) {
 	// Store the new position so it can be recognized later
 	window.lastCursorPosX = float64(pos.X)
 	window.lastCursorPosY = float64(pos.Y)
-	pos = ClientToScreen(window, pos)
+	pos = ClientToScreen(window.Win32.handle, pos)
 	SetCursorPos(pos.X, pos.Y)
 }
 
@@ -847,8 +834,8 @@ func DestroyCursor(cursor *Cursor) {
 }
 
 func DefaultWindowHints() {
-	_glfw.hints.context.client = glfw_OPENGL_API
-	_glfw.hints.context.source = glfw_NATIVE_CONTEXT_API
+	_glfw.hints.context.client = OpenGLAPI
+	_glfw.hints.context.source = NativeContextAPI
 	_glfw.hints.context.major = 1
 	_glfw.hints.context.minor = 0
 	// The default is a focused, visible, resizable window with decorations
@@ -859,8 +846,8 @@ func DefaultWindowHints() {
 	_glfw.hints.window.autoIconify = true
 	_glfw.hints.window.centerCursor = true
 	_glfw.hints.window.focusOnShow = true
-	_glfw.hints.window.xpos = glfw_ANY_POSISTION
-	_glfw.hints.window.ypos = glfw_ANY_POSISTION
+	_glfw.hints.window.xpos = AnyPosition
+	_glfw.hints.window.ypos = AnyPosition
 	_glfw.hints.window.scaleFramebuffer = true
 	// The default is 24 bits of color, 24 bits of depth and 8 bits of stencil, double buffered
 	_glfw.hints.framebuffer.redBits = 8

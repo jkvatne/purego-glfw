@@ -146,27 +146,27 @@ func key_callback9(window *glfw.Window, key glfw.Key, scancode int, action glfw.
 			window.SetWindowShouldClose(true)
 		}
 	case glfw.KeyN:
-		window.SetInputMode(glfw.CURSOR_MODE, glfw.CURSOR_NORMAL)
+		window.SetInputMode(glfw.CursorMode, glfw.CursorNormal)
 		cursor_x, cursor_y = window.GetCursorPos()
 		fmt.Printf("( cursor is normal )\n")
 	case glfw.KeyD:
-		window.SetInputMode(glfw.CURSOR_MODE, glfw.CURSOR_DISABLED)
+		window.SetInputMode(glfw.CursorMode, glfw.CursorDisabled)
 		fmt.Printf("( cursor is disabled )\n")
 	case glfw.KeyH:
-		window.SetInputMode(glfw.CURSOR_MODE, glfw.CURSOR_HIDDEN)
+		window.SetInputMode(glfw.CursorMode, glfw.CursorHidden)
 		fmt.Printf("( cursor is hidden )\n")
 	case glfw.KeyC:
-		window.SetInputMode(glfw.CURSOR_MODE, glfw.CURSOR_CAPTURED)
+		window.SetInputMode(glfw.CursorMode, glfw.CursorCaptured)
 		fmt.Printf("( cursor is captured )\n")
 	case glfw.KeyR:
 		if !glfw.RawMouseMotionSupported() {
 			break
 		}
-		if window.GetInputMode(glfw.RAW_MOUSE_MOTION) != 0 {
-			window.SetInputMode(glfw.RAW_MOUSE_MOTION, 0)
+		if window.GetInputMode(glfw.RawMouseMotion) != 0 {
+			window.SetInputMode(glfw.RawMouseMotion, 0)
 			fmt.Printf("( raw input is disabled )\n")
 		} else {
-			window.SetInputMode(glfw.RAW_MOUSE_MOTION, 1)
+			window.SetInputMode(glfw.RawMouseMotion, 1)
 			fmt.Printf("( raw input is enabled )\n")
 		}
 	case glfw.KeySpace:
