@@ -17,7 +17,7 @@ func glfwIsValidContextConfig(ctxconfig *_GLFWctxconfig) error {
 	}
 
 	if ctxconfig.profile != 0 {
-		if ctxconfig.profile != glfw_OPENGL_CORE_PROFILE && ctxconfig.profile != glfw_OPENGL_COMPAT_PROFILE {
+		if ctxconfig.profile != OpenGLCoreProfile && ctxconfig.profile != OpenGLCompatProfile {
 			return fmt.Errorf("Invalid OpenGL profile 0x%08X", ctxconfig.profile)
 		}
 		if ctxconfig.major <= 2 || (ctxconfig.major == 3 && ctxconfig.minor < 2) {

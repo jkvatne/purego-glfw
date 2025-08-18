@@ -28,8 +28,11 @@ const (
 	TransparentFramebuffer Hint = 0x0002000A // Specifies whether the framebuffer should be transparent.
 	FocusOnShow            Hint = 0x0002000C // Specifies whether the window will be given input focus when glfwShowWindow is called.
 	ScaleToMonitor         Hint = 0x0002200C // Specified whether the window content area should be resized based on the monitor content scale of any monitor it is placed on. This includes the initial placement when the window is created.
+	MousePassthrough       Hint = 0x0002000D
 	PositionX              Hint = 0x0002000E
 	PositionY              Hint = 0x0002000F
+	ScaleFramebuffer       Hint = 0x0002200D
+	CocoaRetinaFramebuffer Hint = 0x00023001
 )
 
 // Context related hints.
@@ -44,6 +47,12 @@ const (
 	OpenGLProfile           Hint = 0x00022008 // Specifies which OpenGL profile to create the context for. Hard constraint.
 	ContextCreationAPI      Hint = 0x0002200B // Specifies which context creation API to use to create the context.
 	ContextNoError          Hint = 0x0002200A
+)
+
+const (
+	OpenGlAnyProfile    = 0
+	OpenGLCoreProfile   = 0x00032001
+	OpenGLCompatProfile = 0x00032002
 )
 
 // Framebuffer related hints.
@@ -66,7 +75,6 @@ const (
 	RefreshRate            Hint = 0x0002100F // Specifies the desired refresh rate for full screen windows. If set to zero, the highest available refresh rate will be used. This hint is ignored for windowed mode windows.
 	DoubleBuffer           Hint = 0x00021010 // Specifies whether the framebuffer should be double buffered. You nearly always want to use double buffering. This is a hard constraint.
 	CocoaGraphicsSwitching Hint = 0x00023003 // Specifies whether to in Automatic Graphics Switching, i.e. to allow the system to choose the integrated GPU for the OpenGL context and move it between GPUs if necessary or whether to force it to always run on the discrete GPU.
-	CocoaRetinaFramebuffer Hint = 0x00023001 // Specifies whether to use full resolution framebuffers on Retina displays.
 )
 
 // Naming related hints. (Use with glfw.WindowHintString)
@@ -103,13 +111,6 @@ const (
 	AnyReleaseBehavior   int = 0
 	ReleaseBehaviorFlush int = 0x00035001
 	ReleaseBehaviorNone  int = 0x00035002
-)
-
-// Values for the OpenGLProfile hint.
-const (
-	OpenGLAnyProfile    int = 0
-	OpenGLCoreProfile   int = 0x00032001
-	OpenGLCompatProfile int = 0x00032002
 )
 
 // Other values.
@@ -264,14 +265,13 @@ func WindowHint(hint Hint, value int32) error {
 		_glfw.hints.window.ypos = value
 	case ScaleToMonitor:
 		_glfw.hints.window.scaleToMonitor = value != 0
-	case glfw_SCALE_FRAMEBUFFER:
-	case glfw_COCOA_RETINA_FRAMEBUFFER:
+	case ScaleFramebuffer, CocoaRetinaFramebuffer:
 		_glfw.hints.window.scaleFramebuffer = value != 0
 	case CenterCursor:
 		_glfw.hints.window.centerCursor = value != 0
 	case FocusOnShow:
 		_glfw.hints.window.focusOnShow = value != 0
-	case glfw_MOUSE_PASSTHROUGH:
+	case MousePassthrough:
 		_glfw.hints.window.mousePassthrough = value != 0
 	case ClientAPI:
 		_glfw.hints.context.client = value

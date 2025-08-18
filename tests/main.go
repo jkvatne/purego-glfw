@@ -26,6 +26,8 @@ func main() {
 		icon()
 	case "cursor":
 		cursor()
+	case "window":
+		window()
 	default:
 		title()
 		monitor()

@@ -1404,7 +1404,7 @@ func glfwGetWindowAttrib(window *Window, attrib Hint) int32 {
 		return toInt(cursorInContentArea(window))
 	case FocusOnShow:
 		return toInt(window.focusOnShow)
-	case glfw_MOUSE_PASSTHROUGH:
+	case MousePassthrough:
 		return toInt(window.mousePassthrough)
 	case TransparentFramebuffer:
 		// return _glfw.platform.framebufferTransparent(window)
@@ -1501,7 +1501,7 @@ func glfwSetWindowAttrib(window *Window, attrib Hint, value int32) {
 		}
 	case FocusOnShow:
 		window.focusOnShow = toBool(value)
-	case glfw_MOUSE_PASSTHROUGH:
+	case MousePassthrough:
 		window.mousePassthrough = toBool(value)
 		glfwSetWindowMousePassthrough(window, value != 0)
 	default:
