@@ -90,6 +90,13 @@ var (
 	_ClientToScreen                = user32.NewProc("ClientToScreen")
 	_ClipCursor                    = user32.NewProc("ClipCursor")
 	_SetCursorPos                  = user32.NewProc("SetCursorPos")
+	_SetWindowTextW                = user32.NewProc("SetWindowTextW")
+	_MoveWindow                    = user32.NewProc("MoveWindow")
+	_GetLayeredWindowAttributes    = user32.NewProc("GetLayeredWindowAttributes")
+	_SetLayeredWindowAttributes    = user32.NewProc("SetLayeredWindowAttributes")
+	_IsIconic                      = user32.NewProc("IsIconic")
+	_IsWindowVisible               = user32.NewProc("IsWindowVisible")
+	_IsZoomed                      = user32.NewProc("IsZoomed")
 )
 
 var (
@@ -318,6 +325,11 @@ func CreateWindowEx(dwExStyle uint32, lpClassName uint16, lpWindowName string, d
 		return 0, fmt.Errorf("CreateWindowEx failed: %v", err)
 	}
 	return syscall.Handle(hwnd), nil
+}
+
+func SetWindowTextW(window syscall.Handle, title string) {
+	wname, _ := syscall.UTF16PtrFromString(title)
+	_SetWindowTextW.Call(uintptr(window), uintptr(unsafe.Pointer(wname)))
 }
 
 func DestroyWindow(h syscall.Handle) {
@@ -749,4 +761,82 @@ func SetCursorPos(x, y int32) {
 	if !errors.Is(err, syscall.Errno(0)) {
 		panic("SetCursorPos failed, " + err.Error())
 	}
+}
+
+func GetWindowRect(handle syscall.Handle) RECT {
+	var area RECT
+	_, _, err := _GetWindowRect.Call(uintptr(handle), uintptr(unsafe.Pointer(&area)))
+	if !errors.Is(err, syscall.Errno(0)) {
+		panic("GetWindowRect failed, " + err.Error())
+	}
+	return area
+}
+
+func MoveWindow(hWnd syscall.Handle, x, y, w, h int32, repaint bool) {
+	rp := 0
+	if repaint {
+		rp = 1
+	}
+	_, _, err := _MoveWindow.Call(uintptr(hWnd), uintptr(x), uintptr(y), uintptr(w), uintptr(hWnd), uintptr(rp))
+	if err != nil && !errors.Is(err, syscall.Errno(0)) {
+		panic("MoveWindow failed, " + err.Error())
+	}
+}
+
+func ShowWindow(hWnd syscall.Handle, mode int32) {
+	_, _, err := _ShowWindow.Call(uintptr(hWnd), uintptr(mode))
+	if err != nil && !errors.Is(err, syscall.Errno(0)) {
+		panic("ShowWindow failed, " + err.Error())
+	}
+}
+
+func GetLayeredWindowAttributes(hWnd syscall.Handle, pcrKey *uint32, pbAlpha *uint8, pdwFlags *uint32) bool {
+	r, _, err := _GetLayeredWindowAttributes.Call(uintptr(hWnd), uintptr(unsafe.Pointer(pcrKey)), uintptr(unsafe.Pointer(pbAlpha)), uintptr(unsafe.Pointer(pdwFlags)))
+	if err != nil && !errors.Is(err, syscall.Errno(0)) {
+		panic("GetLayeredWindowAttributes failed, " + err.Error())
+	}
+	return r != 0
+}
+
+func SetLayeredWindowAttributes(hWnd syscall.Handle, pcrKey uint32, pbAlpha uint8, pdwFlags uint32) bool {
+	r, _, err := _SetLayeredWindowAttributes.Call(uintptr(hWnd), uintptr(pcrKey), uintptr(pbAlpha), uintptr(pdwFlags))
+	if err != nil && !errors.Is(err, syscall.Errno(0)) {
+		panic("SetLayeredWindowAttributes failed, " + err.Error())
+	}
+	return r != 0
+}
+
+func IsIconic(hWnd syscall.Handle) int32 {
+	r, _, err := _IsIconic.Call(uintptr(hWnd))
+	if err != nil && !errors.Is(err, syscall.Errno(0)) {
+		panic("IsIconic failed, " + err.Error())
+	}
+	return int32(r)
+}
+
+func IsWindowVisible(hwnd syscall.Handle) int32 {
+	r, _, err := _IsWindowVisible.Call(uintptr(hwnd))
+	if err != nil && !errors.Is(err, syscall.Errno(0)) {
+		panic("IsWindowVisible failed, " + err.Error())
+	}
+	return int32(r)
+}
+
+func IsZoomed(hwnd syscall.Handle) int32 {
+	r, _, err := _IsZoomed.Call(uintptr(hwnd))
+	if err != nil && !errors.Is(err, syscall.Errno(0)) {
+		panic("IsZoomed failed, " + err.Error())
+	}
+	return int32(r)
+}
+
+func LoadCursor(cursorID uint16) syscall.Handle {
+	h, err := LoadImage(0, uint32(cursorID), _IMAGE_CURSOR, 0, 0, lr_DEFAULTSIZE|lr_SHARED)
+	if err != nil && !errors.Is(err, syscall.Errno(0)) {
+		panic("LoadCursor failed, " + err.Error())
+	}
+	if h == 0 {
+		panic("LoadCursor failed")
+	}
+	return syscall.Handle(h)
 }

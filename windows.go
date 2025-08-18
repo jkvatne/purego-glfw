@@ -161,13 +161,14 @@ func getWindowExStyle(w *_GLFWwindow) uint32 {
 }
 
 func _glfwRegisterWindowClassWin32() error {
+	ws, _ := syscall.UTF16PtrFromString("GLFW")
 	wcls := WndClassEx{
 		CbSize:        uint32(unsafe.Sizeof(WndClassEx{})),
 		Style:         cs_HREDRAW | cs_VREDRAW | cs_OWNDC,
 		LpfnWndProc:   syscall.NewCallback(windowProc),
 		HInstance:     _glfw.instance,
 		HIcon:         0,
-		LpszClassName: syscall.StringToUTF16Ptr("GLFW"),
+		LpszClassName: ws,
 	}
 	// TODO Load user-provided icon if available
 	// wcls.hIcon = LoadImageW(GetModuleHandleW(NULL),"glfw_ICON", IMAGE_ICON,	0, 0, LR_DEFAULTSIZE | LR_SHARED);
@@ -289,7 +290,7 @@ func glfwPlatformInit() error {
 		return err
 	}
 	glfwPollMonitors()
-	glfwDefaultWindowHints()
+	DefaultWindowHints()
 	_glfw.initialized = true
 	return nil
 }
@@ -379,36 +380,6 @@ func glfwCreateWindow(width, height int32, title string, monitor *Monitor, share
 	return window, nil
 }
 
-func glfwDefaultWindowHints() {
-	_glfw.hints.context.client = glfw_OPENGL_API
-	_glfw.hints.context.source = glfw_NATIVE_CONTEXT_API
-	_glfw.hints.context.major = 1
-	_glfw.hints.context.minor = 0
-	// The default is a focused, visible, resizable window with decorations
-	_glfw.hints.window.resizable = true
-	_glfw.hints.window.visible = true
-	_glfw.hints.window.decorated = true
-	_glfw.hints.window.focused = true
-	_glfw.hints.window.autoIconify = true
-	_glfw.hints.window.centerCursor = true
-	_glfw.hints.window.focusOnShow = true
-	_glfw.hints.window.xpos = glfw_ANY_POSISTION
-	_glfw.hints.window.ypos = glfw_ANY_POSISTION
-	_glfw.hints.window.scaleFramebuffer = true
-	// The default is 24 bits of color, 24 bits of depth and 8 bits of stencil, double buffered
-	_glfw.hints.framebuffer.redBits = 8
-	_glfw.hints.framebuffer.greenBits = 8
-	_glfw.hints.framebuffer.blueBits = 8
-	_glfw.hints.framebuffer.alphaBits = 8
-	_glfw.hints.framebuffer.depthBits = 24
-	_glfw.hints.framebuffer.stencilBits = 8
-	_glfw.hints.framebuffer.doublebuffer = true
-	// The default is to select the highest available refresh rate
-	_glfw.hints.refreshRate = glfw_DONT_CARE
-	// The default is to use full Retina resolution framebuffers
-	_glfw.hints.window.ns.retina = true
-}
-
 func helperWindowProc(hwnd syscall.Handle, msg uint32, wParam, lParam uintptr) uintptr {
 	/*	switch msg	{
 		case wm_DISPLAYCHANGE:
@@ -438,10 +409,7 @@ func glfwShowWindow(w *_GLFWwindow) {
 	} else if w.Win32.maximized {
 		mode = windows.SW_MAXIMIZE
 	}
-	_, _, err := _ShowWindow.Call(uintptr(w.Win32.handle), uintptr(mode))
-	if err != nil && !errors.Is(err, syscall.Errno(0)) {
-		panic("ShowWindow failed, " + err.Error())
-	}
+	ShowWindow(w.Win32.handle, int32(mode))
 }
 
 func createHelperWindow() error {
@@ -735,17 +703,6 @@ func glfwPollMonitors() {
 			}
 		*/
 	}
-}
-
-func LoadCursor(cursorID uint16) syscall.Handle {
-	h, err := LoadImage(0, uint32(cursorID), _IMAGE_CURSOR, 0, 0, lr_DEFAULTSIZE|lr_SHARED)
-	if err != nil && !errors.Is(err, syscall.Errno(0)) {
-		panic("LoadCursor failed, " + err.Error())
-	}
-	if h == 0 {
-		panic("LoadCursor failed")
-	}
-	return syscall.Handle(h)
 }
 
 func glfwSetWindowSize(window *Window, width, height int32) {

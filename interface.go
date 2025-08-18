@@ -71,9 +71,10 @@ const (
 
 // Naming related hints. (Use with glfw.WindowHintString)
 const (
-	CocoaFrameNAME  Hint = 0x00023002 // Specifies the UTF-8 encoded name to use for autosaving the window frame, or if empty disables frame autosaving for the window.
+	CocoaFrameName  Hint = 0x00023002 // Specifies the UTF-8 encoded name to use for autosaving the window frame, or if empty disables frame autosaving for the window.
 	X11ClassName    Hint = 0x00024001 // Specifies the desired ASCII encoded class parts of the ICCCM WM_CLASS window property.nd instance parts of the ICCCM WM_CLASS window property.
 	X11InstanceName Hint = 0x00024002 // Specifies the desired ASCII encoded instance parts of the ICCCM WM_CLASS window property.nd instance parts of the ICCCM WM_CLASS window property.
+	WaylandAppId    Hint = 0x00026001
 )
 
 // Values for the ClientAPI hint.
@@ -300,6 +301,21 @@ func WindowHint(hint Hint, value int32) error {
 	return nil
 }
 
+func WindowHintString(hint Hint, value string) {
+	switch hint {
+	case CocoaFrameName:
+		_glfw.hints.window.ns.frameName = value
+	case X11ClassName:
+		// _glfw.hints.window.x11.classNam = value
+	case X11InstanceName:
+		// _glfw.hints.window.x11.instanceName = value
+	case WaylandAppId:
+		// _glfw.hints.window.wl.appId =  value
+	default:
+		panic(fmt.Sprintf("Invalid Window hint %d with value %s", hint, value))
+	}
+}
+
 // GetClipboardString returns the contents of the system clipboard
 // if it contains or is convertible to a UTF-8 encoded string.
 // This function may only be called from the main thread.
@@ -370,36 +386,36 @@ func CreateWindow(width, height int32, title string, monitor *Monitor, share *Wi
 	return wnd, nil
 }
 
-// SwapBuffers swaps the front and back buffers of the Window.
-func (w *Window) SwapBuffers() {
-	glfwSwapBuffers(w)
+// Destroy destroys the specified window and its context.
+func (w *Window) Destroy() {
+	glfwDestroyWindow(w)
 }
 
-func bytes(origin []byte) (pointer *uint8, free func()) {
-	n := len(origin)
-	if n == 0 {
-		return nil, func() {}
-	}
-	ptr := unsafe.Pointer(&origin)
-	return (*uint8)(ptr), func() {}
+// ShouldClose reports the close flag value for the specified Window.
+func (w *Window) ShouldClose() bool {
+	return w.shouldClose
 }
 
-// imageToGLFW converts img to be compatible with C.GLFWimage.
-func imageToGLFW(img image.Image) (r GLFWimage) {
-	b := img.Bounds()
-	r.Width = int32(b.Dx())
-	r.Height = int32(b.Dy())
-	var pixels *[16384]uint8
-	if m, ok := img.(*image.NRGBA); ok && m.Stride == b.Dx()*4 {
-		p := m.Pix[:m.PixOffset(m.Rect.Min.X, m.Rect.Max.Y)]
-		pixels = (*[16384]uint8)(unsafe.Pointer(&p[0]))
+// SetShouldClose sets the value of the close flag of the window. This can be
+// used to override the user's attempt to close the window, or to signal that it
+// should be closed.
+func (w *Window) SetShouldClose(value bool) {
+	if !value {
+		// glfwSetWindowShouldClose(w.data, C.int(False))
 	} else {
-		m := image.NewNRGBA(image.Rect(0, 0, b.Dx(), b.Dy()))
-		draw.Draw(m, m.Bounds(), img, b.Min, draw.Src)
-		pixels = (*[16384]uint8)(unsafe.Pointer(&m.Pix[0]))
+		// glfwSetWindowShouldClose(w.data, C.int(True))
 	}
-	r.Pixels = &pixels[0]
-	return r
+}
+
+func (w *Window) SetWindowShouldClose(close bool) {
+	w.shouldClose = close
+}
+
+// SetTitle sets the window title, encoded as UTF-8, of the window.
+//
+// This function may only be called from the main thread.
+func (w *Window) SetTitle(title string) {
+	SetWindowTextW(w.Win32.handle, title)
 }
 
 // SetIcon sets the icon of the specified window. If passed an array of candidate images,
@@ -422,15 +438,11 @@ func (w *Window) SetIcon(images []image.Image) {
 	glfwSetWindowIcon(w, count, cImages)
 }
 
-type GLFWimage struct {
-	Width  int32  // The width, in pixels, of this image.
-	Height int32  // The height, in pixels, of this image.
-	Pixels *uint8 // The pixel data of this image, arranged left-to-right, top-to-bottom.
-}
-
-// SetCursor sets the cursor image to be used when the cursor is over the client area
-func (w *Window) SetCursor(c *Cursor) {
-	glfwSetCursor(w, c)
+// GetPos returns the position, in screen coordinates, of the upper-left
+// corner of the client area of the window.
+func (w *Window) GetPos() (x, y int32) {
+	p := ClientToScreen(w, POINT{0, 0})
+	return p.X, p.Y
 }
 
 // SetPos sets the position, in screen coordinates, of the Window's upper-left corner
@@ -438,6 +450,14 @@ func (w *Window) SetPos(xPos, yPos int32) {
 	rect := RECT{Left: xPos, Top: yPos, Right: xPos, Bottom: yPos}
 	AdjustWindowRect(&rect, getWindowStyle(w), 0, getWindowExStyle(w), GetDpiForWindow(w.Win32.handle), "glfwSetWindowPos")
 	SetWindowPos(w.Win32.handle, 0, rect.Left, rect.Top, 0, 0, SWP_NOACTIVATE|SWP_NOZORDER|SWP_NOSIZE)
+}
+
+// GetSize returns the size, in screen coordinates, of the client area of the
+// specified Window.
+func (w *Window) GetSize() (width int32, height int32) {
+	var wi, h int32
+	glfwGetWindowSize(w, &wi, &h)
+	return wi, h
 }
 
 // SetSize sets the size, in screen coordinates, of the client area of the Window.
@@ -454,23 +474,28 @@ func (w *Window) SetSize(width, height int32) {
 	}
 }
 
-// SetMonitor sets the monitor that the window uses for full screen mode or,
-// if the monitor is NULL, makes it windowed mode.
-func (w *Window) SetMonitor(monitor *Monitor, xpos, ypos, width, height, refreshRate int32) {
-	glfwSetWindowMonitor(w, monitor, xpos, ypos, width, height, refreshRate)
+func (w *Window) SetSizeLimits(minw, minh, maxw, maxh int32) {
+	if (minw == glfw_DONT_CARE || minh == glfw_DONT_CARE) && (maxw == glfw_DONT_CARE || maxh == glfw_DONT_CARE) {
+		return
+	}
+	area := GetWindowRect(w.Win32.handle)
+	MoveWindow(w.Win32.handle, area.Left, area.Top, area.Right-area.Left, area.Bottom-area.Top, true)
 }
 
-// GetMonitor returns the handle of the monitor that the window is in fullscreen on.
-// Returns nil if the window is in windowed mode.
-func (w *Window) GetMonitor() *Monitor {
-	return glfwGetWindowMonitor(w)
+// SetAspectRatio sets the required aspect ratio of the client area of the specified window.
+func (w *Window) SetAspectRatio(numer, denom int32) {
+	glfwSetWindowAspectRatio(w, numer, denom)
 }
 
-// GetContentScale function retrieves the content scale for the specified
-// Window. The content scale is the ratio between the current DPI and the
-// platform's default DPI.
-func (w *Window) GetContentScale() (float32, float32) {
-	return glfwGetContentScale(w)
+func (w *Window) GetFramebufferSize() (width int32, height int32) {
+	var area RECT
+	_, _, err := _GetClientRect.Call(uintptr(unsafe.Pointer(w.Win32.handle)), uintptr(unsafe.Pointer(&area)))
+	if !errors.Is(err, syscall.Errno(0)) {
+		panic(err)
+	}
+	width = area.Right
+	height = area.Bottom
+	return width, height
 }
 
 // GetFrameSize retrieves the size, in screen coordinates, of each edge of the frame
@@ -481,19 +506,26 @@ func (w *Window) GetFrameSize() (left, top, right, bottom int32) {
 	return l, t, r, b
 }
 
-// GetCursorPos returns the last reported position of the cursor.
-func (w *Window) GetCursorPos() (x float64, y float64) {
-	var xPos, yPos int32
-	glfwGetCursorPos(w, &xPos, &yPos)
-	return float64(xPos), float64(yPos)
+// GetContentScale function retrieves the content scale for the specified
+// Window. The content scale is the ratio between the current DPI and the
+// platform's default DPI.
+func (w *Window) GetContentScale() (float32, float32) {
+	return glfwGetContentScale(w)
 }
 
-// GetSize returns the size, in screen coordinates, of the client area of the
-// specified Window.
-func (w *Window) GetSize() (width int32, height int32) {
-	var wi, h int32
-	glfwGetWindowSize(w, &wi, &h)
-	return wi, h
+// GetOpacity function returns the opacity of the window
+func (w *Window) GetOpacity() float32 {
+	return glfwGetWindowOpacity(w)
+}
+
+// SetOpacity function sets the opacity of the window
+func (w *Window) SetOpacity(opacity float32) {
+	glfwSetWindowOpacity(w, opacity)
+}
+
+// RequestWindowAttention funciton requests user attention to the specified window.
+func (w *Window) RequestAttention() {
+	glfwRequestWindowAttention(w)
 }
 
 // Focus brings the specified Window to front and sets input focus.
@@ -501,14 +533,23 @@ func (w *Window) Focus() {
 	glfwFocusWindow(w)
 }
 
-// ShouldClose reports the close flag value for the specified Window.
-func (w *Window) ShouldClose() bool {
-	return w.shouldClose
+// Iconify iconifies/minimizes the window, if it was previously restored.
+func (w *Window) Iconify() {
+	w.Win32.maximized = false
+	w.Win32.iconified = true
+	glfwShowWindow(w)
 }
 
-// Destroy destroys the specified window and its context.
-func (w *Window) Destroy() {
-	glfwDestroyWindow(w)
+// Maximize maximizes the specified window if it was previously not maximized.
+func (w *Window) Maximize() {
+	w.Win32.iconified = false
+	w.Win32.maximized = true
+	glfwShowWindow(w)
+}
+
+// Restore restores the window, if it was previously iconified/minimized.
+func (w *Window) Restore() {
+	glfwRestoreWindow(w)
 }
 
 // Show makes the Window visible if it was previously hidden.
@@ -520,6 +561,74 @@ func (w *Window) Show() {
 	if w.focusOnShow {
 		glfwFocusWindow(w)
 	}
+}
+
+// Show makes the Window visible if it was previously hidden.
+func (w *Window) Hide() {
+	glfwHideWindow(w)
+}
+
+// GetMonitor returns the handle of the monitor that the window is in fullscreen on.
+// Returns nil if the window is in windowed mode.
+func (w *Window) GetMonitor() *Monitor {
+	return glfwGetWindowMonitor(w)
+}
+
+// SetMonitor sets the monitor that the window uses for full screen mode or,
+// if the monitor is NULL, makes it windowed mode.
+func (w *Window) SetMonitor(monitor *Monitor, xpos, ypos, width, height, refreshRate int32) {
+	glfwSetWindowMonitor(w, monitor, xpos, ypos, width, height, refreshRate)
+}
+
+// GetAttrib returns an attribute of the window.
+func (w *Window) GetAttrib(attrib Hint) int32 {
+	return glfwGetWindowAttrib(w, attrib)
+}
+
+// SetAttrib function sets the value of an attribute of the specified window.
+func (w *Window) SetAttrib(attrib Hint, value int32) {
+	glfwSetWindowAttrib(w, attrib, value)
+}
+
+// SwapBuffers swaps the front and back buffers of the Window.
+func (w *Window) SwapBuffers() {
+	glfwSwapBuffers(w)
+}
+
+// imageToGLFW converts img to be compatible with C.GLFWimage.
+func imageToGLFW(img image.Image) (r GLFWimage) {
+	b := img.Bounds()
+	r.Width = int32(b.Dx())
+	r.Height = int32(b.Dy())
+	var pixels *[16384]uint8
+	if m, ok := img.(*image.NRGBA); ok && m.Stride == b.Dx()*4 {
+		p := m.Pix[:m.PixOffset(m.Rect.Min.X, m.Rect.Max.Y)]
+		pixels = (*[16384]uint8)(unsafe.Pointer(&p[0]))
+	} else {
+		m := image.NewNRGBA(image.Rect(0, 0, b.Dx(), b.Dy()))
+		draw.Draw(m, m.Bounds(), img, b.Min, draw.Src)
+		pixels = (*[16384]uint8)(unsafe.Pointer(&m.Pix[0]))
+	}
+	r.Pixels = &pixels[0]
+	return r
+}
+
+type GLFWimage struct {
+	Width  int32  // The width, in pixels, of this image.
+	Height int32  // The height, in pixels, of this image.
+	Pixels *uint8 // The pixel data of this image, arranged left-to-right, top-to-bottom.
+}
+
+// SetCursor sets the cursor image to be used when the cursor is over the client area
+func (w *Window) SetCursor(c *Cursor) {
+	glfwSetCursor(w, c)
+}
+
+// GetCursorPos returns the last reported position of the cursor.
+func (w *Window) GetCursorPos() (x float64, y float64) {
+	var xPos, yPos int32
+	glfwGetCursorPos(w, &xPos, &yPos)
+	return float64(xPos), float64(yPos)
 }
 
 func (w *Window) MakeContextCurrent() {
@@ -534,32 +643,6 @@ func DetachCurrentContext() {
 // GetCurrentContext returns the window whose context is current.
 func GetCurrentContext() *Window {
 	return glfwGetCurrentContext()
-}
-func (w *Window) Iconify() {
-	w.Win32.maximized = false
-	w.Win32.iconified = true
-	glfwShowWindow(w)
-}
-
-func (w *Window) Maximize() {
-	w.Win32.iconified = false
-	w.Win32.maximized = true
-	glfwShowWindow(w)
-}
-
-func (w *Window) SetWindowShouldClose(close bool) {
-	w.shouldClose = close
-}
-
-func (w *Window) GetFramebufferSize() (width int32, height int32) {
-	var area RECT
-	_, _, err := _GetClientRect.Call(uintptr(unsafe.Pointer(w.Win32.handle)), uintptr(unsafe.Pointer(&area)))
-	if !errors.Is(err, syscall.Errno(0)) {
-		panic(err)
-	}
-	width = area.Right
-	height = area.Bottom
-	return width, height
 }
 
 // Terminate destroys all remaining Windows, frees any allocated resources and
@@ -636,22 +719,22 @@ func (window *Window) SetCursorMode(mode int) {
 			// TODO glfwCenterCursorInContentArea(window);
 			if window.rawMouseMotion != 0 {
 				enableRawMouseMotion(window)
-			} else if _glfw.win32.disabledCursorWindow == window {
-				if window.rawMouseMotion != 0 {
-					disableRawMouseMotion(window)
-				}
 			}
-			if mode == CursorDisabled || mode == CursorCaptured {
-				captureCursor(window)
-			} else {
-				releaseCursor()
+		} else if _glfw.win32.disabledCursorWindow == window {
+			if window.rawMouseMotion != 0 {
+				disableRawMouseMotion(window)
 			}
-			if mode == CursorDisabled {
-				_glfw.win32.disabledCursorWindow = window
-			} else if _glfw.win32.disabledCursorWindow == window {
-				_glfw.win32.disabledCursorWindow = nil
-				window.SetCursorPos(_glfw.win32.restoreCursorPosX, _glfw.win32.restoreCursorPosY)
-			}
+		}
+		if mode == CursorDisabled || mode == CursorCaptured {
+			captureCursor(window)
+		} else {
+			releaseCursor()
+		}
+		if mode == CursorDisabled {
+			_glfw.win32.disabledCursorWindow = window
+		} else if _glfw.win32.disabledCursorWindow == window {
+			_glfw.win32.disabledCursorWindow = nil
+			window.SetCursorPos(_glfw.win32.restoreCursorPosX, _glfw.win32.restoreCursorPosY)
 		}
 	}
 	if cursorInContentArea(window) {
@@ -761,4 +844,34 @@ func DestroyCursor(cursor *Cursor) {
 			*prev = cursor.next
 		}
 	}
+}
+
+func DefaultWindowHints() {
+	_glfw.hints.context.client = glfw_OPENGL_API
+	_glfw.hints.context.source = glfw_NATIVE_CONTEXT_API
+	_glfw.hints.context.major = 1
+	_glfw.hints.context.minor = 0
+	// The default is a focused, visible, resizable window with decorations
+	_glfw.hints.window.resizable = true
+	_glfw.hints.window.visible = true
+	_glfw.hints.window.decorated = true
+	_glfw.hints.window.focused = true
+	_glfw.hints.window.autoIconify = true
+	_glfw.hints.window.centerCursor = true
+	_glfw.hints.window.focusOnShow = true
+	_glfw.hints.window.xpos = glfw_ANY_POSISTION
+	_glfw.hints.window.ypos = glfw_ANY_POSISTION
+	_glfw.hints.window.scaleFramebuffer = true
+	// The default is 24 bits of color, 24 bits of depth and 8 bits of stencil, double buffered
+	_glfw.hints.framebuffer.redBits = 8
+	_glfw.hints.framebuffer.greenBits = 8
+	_glfw.hints.framebuffer.blueBits = 8
+	_glfw.hints.framebuffer.alphaBits = 8
+	_glfw.hints.framebuffer.depthBits = 24
+	_glfw.hints.framebuffer.stencilBits = 8
+	_glfw.hints.framebuffer.doublebuffer = true
+	// The default is to select the highest available refresh rate
+	_glfw.hints.refreshRate = glfw_DONT_CARE
+	// The default is to use full Retina resolution framebuffers
+	_glfw.hints.window.ns.retina = true
 }

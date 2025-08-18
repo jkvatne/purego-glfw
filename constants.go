@@ -122,22 +122,23 @@ const (
 	_UNICODE_NOCHAR         = 65535
 	cw_USEDEFAULT           = -2147483648
 
-	ws_CLIPCHILDREN     = 0x02000000
-	ws_CLIPSIBLINGS     = 0x04000000
-	ws_MAXIMIZE         = 0x01000000
-	ws_ICONIC           = 0x20000000
-	ws_VISIBLE          = 0x10000000
-	ws_OVERLAPPED       = 0x00000000
-	ws_CAPTION          = 0x00C00000
-	ws_SYSMENU          = 0x00080000
-	ws_THICKFRAME       = 0x00040000
-	ws_MINIMIZEBOX      = 0x00020000
-	ws_MAXIMIZEBOX      = 0x00010000
-	ws_POPUP            = 0x80000000
-	ws_OVERLAPPEDWINDOW = ws_OVERLAPPED | ws_CAPTION | ws_SYSMENU | ws_THICKFRAME | ws_MINIMIZEBOX | ws_MAXIMIZEBOX
-	ws_EX_APPWINDOW     = 0x40000
-	ws_EX_TOPMOST       = 0x00000008
-
+	ws_CLIPCHILDREN         = 0x02000000
+	ws_CLIPSIBLINGS         = 0x04000000
+	ws_MAXIMIZE             = 0x01000000
+	ws_ICONIC               = 0x20000000
+	ws_VISIBLE              = 0x10000000
+	ws_OVERLAPPED           = 0x00000000
+	ws_CAPTION              = 0x00C00000
+	ws_SYSMENU              = 0x00080000
+	ws_THICKFRAME           = 0x00040000
+	ws_MINIMIZEBOX          = 0x00020000
+	ws_MAXIMIZEBOX          = 0x00010000
+	ws_POPUP                = 0x80000000
+	ws_OVERLAPPEDWINDOW     = ws_OVERLAPPED | ws_CAPTION | ws_SYSMENU | ws_THICKFRAME | ws_MINIMIZEBOX | ws_MAXIMIZEBOX
+	ws_EX_APPWINDOW         = 0x40000
+	ws_EX_TOPMOST           = 0x00000008
+	ws_EX_LAYERED           = 0x00080000
+	ws_EX_TRANSPARENT       = 0x00000020
 	dm_PELSWIDTH            = 0x00080000
 	dm_PELSHEIGHT           = 0x00100000
 	dm_BITSPERPEL           = 0x00040000
@@ -157,8 +158,14 @@ const (
 	mdt_RAW_DPI       = 2
 	mdt_DEFAULT       = 3
 
-	_GL_VERSION = 0x1F02
-	_GWL_STYLE  = -16
+	_GL_VERSION     = 0x1F02
+	_GWL_WNDPROC    = -4
+	_GWL_HINSTANCE  = -6
+	_GWL_HWNDPARENT = -8
+	_GWL_STYLE      = -16
+	_GWL_EXSTYLE    = -20
+	_GWL_USERDATA   = -21
+	_GWL_ID         = -12
 
 	_IMAGE_BITMAP      = 0
 	_IMAGE_ICON        = 1
@@ -223,6 +230,9 @@ const (
 	qs_ALLPOSTMESSAGE              = 0x100
 	qs_RAWINPUT                    = 0x400
 	_RIDEV_REMOVE                  = 1
+
+	_LWA_COLORKEY = 0x00000001
+	_LWA_ALPHA    = 0x00000002
 )
 
 const (

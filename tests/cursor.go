@@ -66,12 +66,12 @@ func star(x float64, y float64, t float64) float64 {
 func create_cursor(t float64) *glfw.Cursor {
 	var buffer [64 * 64 * 4]uint8
 	var image = glfw.GLFWimage{64, 64, &buffer[0]}
-	for y := int32(0); y < image.Width; y++ {
-		for x := int32(0); x < image.Height; x++ {
-			buffer[x*image.Width+y] = 255
-			buffer[x*image.Width+y] = 255
-			buffer[x*image.Width+y] = 255
-			buffer[x*image.Width+y] = uint8(255.0 * star(float64(x), float64(y), t))
+	for x := int32(0); x < image.Width; x++ {
+		for y := int32(0); y < image.Height; y++ {
+			buffer[(y*image.Width+x)*4] = 255
+			buffer[(y*image.Width+x)*4+1] = 255
+			buffer[(y*image.Width+x)*4+2] = 0
+			buffer[(y*image.Width+x)*4+3] = uint8(255.0 * star(float64(x), float64(y), t))
 		}
 	}
 	return glfw.CreateCursor(&image, image.Width/2, image.Height/2)
@@ -114,6 +114,21 @@ func cursor_position_callback(window *glfw.Window, x float64, y float64) {
 	cursor_x = x
 	cursor_y = y
 }
+
+var usage string = `
+A Animated yellow star cursor
+N Normal cursor mode
+D Disabled (invisible) cursor mode
+H Hidden cursor mode
+C Captured cursor mode
+R Raw mouse mode
+T Track cusor with a big cross
+Up Move cursor to upper left corner
+Dn Move cursor to lower right corner
+0-9 Show the different standard cursors
+Esc Exit
+`
+var x, y, w, h int32
 
 func key_callback9(window *glfw.Window, key glfw.Key, scancode int, action glfw.Action, mods glfw.ModifierKey) {
 	if action != glfw.Press {
@@ -203,22 +218,18 @@ func key_callback9(window *glfw.Window, key glfw.Key, scancode int, action glfw.
 		if mods != glfw.ModAlt {
 			return
 		}
-		/*
-		   if (glfwGetWindowMonitor(window))
-		       glfwSetWindowMonitor(window, NULL, x, y, width, height, 0);
-		   else
-		   {
-		       GLFWmonitor* monitor = glfwGetPrimaryMonitor();
-		       const GLFWvidmode* mode = glfwGetVideoMode(monitor);
-		       glfwGetWindowPos(window, &x, &y);
-		       glfwGetWindowSize(window, &width, &height);
-		       glfwSetWindowMonitor(window, monitor,
-		                            0, 0, mode->width, mode->height,
-		                            mode->refreshRate);
-		   }
-
-		   glfwGetCursorPos(window, &cursor_x, &cursor_y);
-		*/
+		if window.GetMonitor() != nil {
+			// Set windowed
+			window.SetMonitor(nil, x, y, w, h, 0)
+		} else {
+			// Set windowed
+			m := glfw.GetPrimaryMonitor()
+			mode := glfw.GetVideoMode(m)
+			x, y = window.GetPos()
+			w, h = window.GetSize()
+			window.SetMonitor(m, 0, 0, mode.Width, mode.Height, mode.RefreshRate)
+		}
+		cursor_x, cursor_y = window.GetCursorPos()
 	}
 }
 

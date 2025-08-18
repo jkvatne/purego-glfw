@@ -64,6 +64,7 @@ type _GLFWwindow struct {
 	floating               bool
 	focusOnShow            bool
 	shouldClose            bool
+	mousePassthrough       bool
 	userPointer            unsafe.Pointer
 	doublebuffer           bool
 	videoMode              GLFWvidmode
@@ -1330,5 +1331,206 @@ func SetRawMouseMotion(window *Window, enabled bool) {
 func destroyCursor(cursor *Cursor) {
 	if cursor.handle != 0 {
 		DestroyIcon(cursor.handle)
+	}
+}
+
+func glfwSetWindowAspectRatio(window *Window, numer, denom int32) {
+	if numer == glfw_DONT_CARE || denom == glfw_DONT_CARE {
+		return
+	}
+	area := GetWindowRect(window.Win32.handle)
+	var frame RECT
+	ratio := float32(window.numer) / float32(window.denom)
+	style := getWindowStyle(window)
+	exStyle := getWindowExStyle(window)
+
+	if IsWindows10Version1607OrGreater() {
+		AdjustWindowRectExForDpi(&frame, style, 0, exStyle, GetDpiForWindow(window.Win32.handle))
+	} else {
+		AdjustWindowRectEx(&frame, style, 0, exStyle)
+	}
+	area.Bottom = area.Top + (frame.Bottom - frame.Top) + int32(float32((area.Right-area.Left)-(frame.Right-frame.Left))/ratio)
+	MoveWindow(window.Win32.handle, area.Left, area.Top, area.Right-area.Left, area.Bottom-area.Top, true)
+}
+
+func glfwGetWindowOpacity(window *Window) float32 {
+	// TODO if (GetWindowLongW(window->win32.handle, GWL_EXSTYLE) & WS_EX_LAYERED) &&
+	//	GetLayeredWindowAttributes(window->win32.handle, NULL, &alpha, &flags) {
+	//	if (flags & LWA_ALPHA) {
+	//		return float32(alpha) / 255.0
+	//	}
+	// }
+	return 1.0
+}
+
+func glfwSetWindowOpacity(window *Window, opacity float32) {
+	// TODO exStyle := GetWindowLongW(window.Win32.handle, GWL_EXSTYLE)
+	/*if opacity < 1.0 || (exStyle & WS_EX_TRANSPARENT) {
+		alpha := (BYTE)(255 * opacity);
+		exStyle |= WS_EX_LAYERED;
+		SetWindowLongW(window- > win32.handle, GWL_EXSTYLE, exStyle);
+		SetLayeredWindowAttributes(window- > win32.handle, 0, alpha, LWA_ALPHA);
+	} else if (exStyle & WS_EX_TRANSPARENT) {
+		SetLayeredWindowAttributes(window->win32.handle, 0, 0, 0);
+	} else {
+		exStyle &= ~WS_EX_LAYERED;
+		SetWindowLongW(window->win32.handle, GWL_EXSTYLE, exStyle);
+	}*/
+}
+
+func glfwRequestWindowAttention(window *Window) {
+	// TODO FlashWIndow(window.Win32.handle, 1)
+}
+
+func glfwHideWindow(window *Window) {
+	ShowWindow(window.Win32.handle, windows.SW_HIDE)
+}
+
+func glfwRestoreWindow(window *Window) {
+	ShowWindow(window.Win32.handle, windows.SW_RESTORE)
+}
+
+func glfwGetWindowAttrib(window *Window, attrib Hint) int32 {
+	switch attrib {
+	case Focused:
+		return toInt(window.Win32.handle == GetActiveWindow())
+	case Iconified:
+		return IsIconic(window.Win32.handle)
+	case Visible:
+		return IsWindowVisible(window.Win32.handle)
+	case Maximized:
+		return IsZoomed(window.Win32.handle)
+	case Hovered:
+		return toInt(cursorInContentArea(window))
+	case FocusOnShow:
+		return toInt(window.focusOnShow)
+	case glfw_MOUSE_PASSTHROUGH:
+		return toInt(window.mousePassthrough)
+	case TransparentFramebuffer:
+		// return _glfw.platform.framebufferTransparent(window)
+		if !window.Win32.transparent {
+			return 0
+		}
+		// TODO if (FAILED(DwmIsCompositionEnabled(&composition)) || !composition) return GLFW_FALSE;
+		// TODO return 1
+		return 0
+	case Resizable:
+		return toInt(window.resizable)
+	case Decorated:
+		return toInt(window.decorated)
+	case Floating:
+		return toInt(window.floating)
+	case AutoIconify:
+		return toInt(window.autoIconify)
+	case DoubleBuffer:
+		return toInt(window.doublebuffer)
+	case ClientAPI:
+		return window.context.client
+	case ContextCreationAPI:
+		return window.context.source
+	case ContextVersionMajor:
+		return window.context.major
+	case ContextVersionMinor:
+		return window.context.minor
+	case ContextRevision:
+		return window.context.revision
+	case ContextRobustness:
+		return window.context.robustness
+	case OpenGLForwardCompatible:
+		return toInt(window.context.forward)
+	case OpenGLDebugContext:
+		return toInt(window.context.debug)
+	case OpenGLProfile:
+		return window.context.profile
+	case ContextReleaseBehavior:
+		return window.context.release
+	case ContextNoError:
+		return toInt(window.context.noerror)
+	default:
+		return 0
+	}
+}
+
+func toInt(x bool) int32 {
+	if x {
+		return 1
+	}
+	return 0
+}
+
+func toBool(x int32) bool {
+	return x != 0
+}
+
+// Update native window styles to match attributes
+func updateWindowStyles(window *Window) {
+	style := GetWindowLongW(window.Win32.handle, _GWL_STYLE)
+	style &= ^uint32(ws_OVERLAPPEDWINDOW | ws_POPUP)
+	style |= getWindowStyle(window)
+	rect := GetClientRect(window)
+	if IsWindows10Version1607OrGreater() {
+		AdjustWindowRectExForDpi(&rect, style, 0, getWindowExStyle(window), GetDpiForWindow(window.Win32.handle))
+	} else {
+		AdjustWindowRectEx(&rect, style, 0, getWindowExStyle(window))
+	}
+	ClientToScreen(window, POINT{rect.Left, rect.Top})
+	ClientToScreen(window, POINT{rect.Right, rect.Bottom})
+	SetWindowLongW(window.Win32.handle, _GWL_STYLE, style)
+	SetWindowPos(window.Win32.handle, hwnd_TOPMOST, rect.Left, rect.Top, rect.Right-rect.Left, rect.Bottom-rect.Top,
+		SWP_FRAMECHANGED|SWP_NOACTIVATE|SWP_NOZORDER)
+}
+
+func glfwSetWindowAttrib(window *Window, attrib Hint, value int32) {
+	switch attrib {
+	case AutoIconify:
+		window.autoIconify = toBool(value)
+	case Resizable:
+		window.resizable = toBool(value)
+		if window.monitor == nil {
+			updateWindowStyles(window)
+		}
+	case Decorated:
+		window.decorated = toBool(value)
+		if window.monitor == nil {
+			updateWindowStyles(window)
+		}
+	case Floating:
+		window.floating = toBool(value)
+		if window.monitor == nil {
+			updateWindowStyles(window)
+		}
+	case FocusOnShow:
+		window.focusOnShow = toBool(value)
+	case glfw_MOUSE_PASSTHROUGH:
+		window.mousePassthrough = toBool(value)
+		glfwSetWindowMousePassthrough(window, value != 0)
+	default:
+		panic("Unknown attribute")
+	}
+}
+
+func glfwSetWindowMousePassthrough(window *Window, enabled bool) {
+	var flags uint32
+	var alpha uint8
+	var key uint32
+	exStyle := GetWindowLongW(window.Win32.handle, _GWL_EXSTYLE)
+	if exStyle&ws_EX_LAYERED != 0 {
+		GetLayeredWindowAttributes(window.Win32.handle, &key, &alpha, &flags)
+	}
+	if enabled {
+		exStyle |= ws_EX_TRANSPARENT | ws_EX_LAYERED
+	} else {
+		exStyle &= ^uint32(ws_EX_TRANSPARENT)
+		// NOTE: Window opacity also needs the layered window style so do not
+		//       remove it if the window is alpha blended
+		if exStyle&ws_EX_LAYERED != 0 {
+			if (flags & _LWA_ALPHA) == 0 {
+				exStyle &= ^uint32(ws_EX_LAYERED)
+			}
+		}
+	}
+	SetWindowLongW(window.Win32.handle, _GWL_EXSTYLE, exStyle)
+	if enabled {
+		SetLayeredWindowAttributes(window.Win32.handle, key, alpha, flags)
 	}
 }
