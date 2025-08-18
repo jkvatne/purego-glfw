@@ -30,11 +30,13 @@ func main() {
 		window()
 	default:
 		title()
-		monitor()
 		msaa()
 		timeout()
 		reopen()
 		icon()
 		threads()
+		window()
+		monitor()
+		cursor()
 	}
 }

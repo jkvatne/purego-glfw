@@ -845,3 +845,15 @@ func DefaultWindowHints() {
 	// The default is to use full Retina resolution framebuffers
 	_glfw.hints.window.ns.retina = true
 }
+
+func SwapInterval(interval int) {
+	window := glfwGetCurrentContext()
+	if window == nil {
+		panic("glfwSwapInterval: window == nil")
+	}
+	window.context.swapInterval(interval)
+}
+
+func (w *Window) PostEmptyEvent() {
+	glfwPostEmptyEvent(w)
+}

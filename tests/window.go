@@ -76,5 +76,6 @@ func window() {
 			break
 		}
 	}
+	window.Destroy()
 	glfw.Terminate()
 }

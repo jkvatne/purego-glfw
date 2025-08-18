@@ -129,8 +129,9 @@ Dn Move cursor to lower right corner
 Esc Exit
 `
 var x, y, w, h int32
+var index int
 
-func key_callback9(window *glfw.Window, key glfw.Key, scancode int, action glfw.Action, mods glfw.ModifierKey) {
+func key_callback_cursor(window *glfw.Window, key glfw.Key, scancode int, action glfw.Action, mods glfw.ModifierKey) {
 	if action != glfw.Press {
 		return
 	}
@@ -207,7 +208,7 @@ func key_callback9(window *glfw.Window, key glfw.Key, scancode int, action glfw.
 		window.SetCursorPos(float64(width-1), float64(height-1))
 		cursor_x, cursor_y = window.GetCursorPos()
 	case glfw.Key0, glfw.Key1, glfw.Key2, glfw.Key3, glfw.Key4, glfw.Key5, glfw.Key6, glfw.Key7, glfw.Key8, glfw.Key9:
-		index := int(key - glfw.Key0)
+		index = int(key - glfw.Key0)
 		if mods&glfw.ModShift != 0 {
 			index += 9
 		}
@@ -312,8 +313,19 @@ func cursor() {
 	cursor_x, cursor_y = window.GetCursorPos()
 	fmt.Printf("Cursor position: %f %f\n", cursor_x, cursor_y)
 	window.SetCursorPosCallback(cursor_position_callback)
-	window.SetKeyCallback(key_callback9)
+	window.SetKeyCallback(key_callback_cursor)
+	glfw.SetTime(0)
 	for !window.ShouldClose() {
+		if glfw.GetTime() > 1.0 {
+			glfw.SetTime(0)
+			index = index + 1
+			if index >= len(standard_cursors) {
+				animate_cursor = true
+			} else {
+				window.SetCursor(standard_cursors[index])
+				window.PostEmptyEvent()
+			}
+		}
 		gl.Clear(gl.COLOR_BUFFER_BIT)
 		if track_cursor {
 			wnd_width, _ := window.GetSize()
@@ -345,15 +357,7 @@ func cursor() {
 		} else {
 			current_frame = nil
 		}
-		if wait_events {
-			if animate_cursor {
-				glfw.WaitEventsTimeout(1.0 / 30.0)
-			} else {
-				glfw.WaitEvents()
-			}
-		} else {
-			glfw.PollEvents()
-		}
+		glfw.WaitEventsTimeout(1.0 / 30.0)
 	}
 	window.Destroy()
 	for i := 0; i < CURSOR_FRAME_COUNT; i++ {

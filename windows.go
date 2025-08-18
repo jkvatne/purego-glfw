@@ -307,7 +307,7 @@ func glfwPlatformCreateWindow(window *_GLFWwindow, wndconfig *_GLFWwndconfig, ct
 		if err := glfwCreateContextWGL(window, ctxconfig, fbconfig); err != nil {
 			return fmt.Errorf("glfwCreateContextWGL error %v", err.Error())
 		}
-		if err := _glfwRefreshContextAttribs(window, ctxconfig); err != nil {
+		if err := glfwRefreshContextAttribs(window, ctxconfig); err != nil {
 			return err
 		}
 	}

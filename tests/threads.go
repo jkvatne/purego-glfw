@@ -119,7 +119,8 @@ func threads() {
 		go thread_main(&threadDefs[i])
 	}
 
-	for running {
+	glfw.SetTime(0)
+	for running && glfw.GetTime() < 4.0 {
 		glfw.PollEvents()
 		for i := 0; i < count; i++ {
 			if threadDefs[i].window.ShouldClose() {
@@ -134,6 +135,4 @@ func threads() {
 	for i := 0; i < count; i++ {
 		threadDefs[i].window.Destroy()
 	}
-	os.Exit(0)
-
 }

@@ -122,7 +122,7 @@ func glfwChooseFBConfig(desired *_GLFWfbconfig, alternatives []_GLFWfbconfig, co
 	return closest
 }
 
-func _glfwRefreshContextAttribs(window *_GLFWwindow, ctxconfig *_GLFWctxconfig) error {
+func glfwRefreshContextAttribs(window *_GLFWwindow, ctxconfig *_GLFWctxconfig) error {
 	window.context.source = ctxconfig.source
 	window.context.client = OpenGLAPI
 	previous := (*Window)(unsafe.Pointer(glfwPlatformGetTls(&_glfw.contextSlot)))
@@ -134,7 +134,7 @@ func _glfwRefreshContextAttribs(window *_GLFWwindow, ctxconfig *_GLFWctxconfig) 
 	window.context.GetIntegerv = window.context.getProcAddress("glGetIntegerv")
 	window.context.GetString = window.context.getProcAddress("glGetString")
 	if window.context.GetIntegerv == 0 || window.context.GetString == 0 {
-		return fmt.Errorf("_glfwRefreshContextAttribs: Entry point retrieval is broken")
+		return fmt.Errorf("glfwRefreshContextAttribs: Entry point retrieval is broken")
 	}
 	r, _, err := syscall.SyscallN(window.context.GetString, uintptr(_GL_VERSION))
 	if !errors.Is(err, syscall.Errno(0)) {
@@ -189,13 +189,13 @@ func _glfwRefreshContextAttribs(window *_GLFWwindow, ctxconfig *_GLFWctxconfig) 
 		// Read back context flags (OpenGL 3.0 and above)
 		if window.context.major >= 3 {
 			var flags int
-			GetIntegerv(window, _GL_CONTEXT_FLAGS, &flags)
+			getIntegerv(window, _GL_CONTEXT_FLAGS, &flags)
 			if flags&_GL_CONTEXT_FLAG_FORWARD_COMPATIBLE_BIT != 0 {
 				window.context.forward = true
 			}
 			if (flags & _GL_CONTEXT_FLAG_DEBUG_BIT) != 0 {
 				window.context.debug = true
-			} else if ExtensionSupported("GL_ARB_debug_output") && ctxconfig.debug {
+			} else if extensionSupported("GL_ARB_debug_output") && ctxconfig.debug {
 				// HACK: This is a workaround for older drivers (pre KHR_debug)
 				//       not setting the debug bit in the context flags for
 				//       debug contexts
@@ -208,12 +208,12 @@ func _glfwRefreshContextAttribs(window *_GLFWwindow, ctxconfig *_GLFWctxconfig) 
 		// Read back OpenGL context profile (OpenGL 3.2 and above)
 		if window.context.major >= 4 || window.context.major == 3 && window.context.minor >= 2 {
 			var mask int
-			GetIntegerv(window, _GL_CONTEXT_PROFILE_MASK, &mask)
+			getIntegerv(window, _GL_CONTEXT_PROFILE_MASK, &mask)
 			if (mask & _GL_CONTEXT_COMPATIBILITY_PROFILE_BIT) != 0 {
 				window.context.profile = OpenGLCompatProfile
 			} else if (mask & _GL_CONTEXT_CORE_PROFILE_BIT) != 0 {
 				window.context.profile = OpenGLCoreProfile
-			} else if ExtensionSupported("GL_ARB_compatibility") {
+			} else if extensionSupported("GL_ARB_compatibility") {
 				// HACK: This is a workaround for the compatibility profile bit
 				//       not being set in the context flags if an OpenGL 3.2+
 				//       context was created without having requested a specific
@@ -222,11 +222,11 @@ func _glfwRefreshContextAttribs(window *_GLFWwindow, ctxconfig *_GLFWctxconfig) 
 			}
 		}
 		// Read back robustness strategy
-		if ExtensionSupported("GL_ARB_robustness") {
+		if extensionSupported("GL_ARB_robustness") {
 			// NOTE: We avoid using the context flags for detection, as they are
 			//       only present from 3.0 while the extension applies from 1.1
 			var strategy int
-			GetIntegerv(window, _GL_RESET_NOTIFICATION_STRATEGY_ARB, &strategy)
+			getIntegerv(window, _GL_RESET_NOTIFICATION_STRATEGY_ARB, &strategy)
 			if strategy == _GL_LOSE_CONTEXT_ON_RESET_ARB {
 				window.context.robustness = LoseContextOnReset
 			} else if strategy == _GL_NO_RESET_NOTIFICATION_ARB {
@@ -235,10 +235,10 @@ func _glfwRefreshContextAttribs(window *_GLFWwindow, ctxconfig *_GLFWctxconfig) 
 		}
 	} else {
 		// Read back robustness strategy
-		if ExtensionSupported("GL_EXT_robustness") {
+		if extensionSupported("GL_EXT_robustness") {
 			// NOTE: The values of these constants match those of the OpenGL ARB one, so we can reuse them here
 			var strategy int
-			GetIntegerv(window, _GL_RESET_NOTIFICATION_STRATEGY_ARB, &strategy)
+			getIntegerv(window, _GL_RESET_NOTIFICATION_STRATEGY_ARB, &strategy)
 			if strategy == _GL_LOSE_CONTEXT_ON_RESET_ARB {
 				window.context.robustness = LoseContextOnReset
 			} else if strategy == _GL_NO_RESET_NOTIFICATION_ARB {
@@ -247,9 +247,9 @@ func _glfwRefreshContextAttribs(window *_GLFWwindow, ctxconfig *_GLFWctxconfig) 
 		}
 	}
 
-	if ExtensionSupported("GL_KHR_context_flush_control") {
+	if extensionSupported("GL_KHR_context_flush_control") {
 		var behavior int
-		GetIntegerv(window, _GL_CONTEXT_RELEASE_BEHAVIOR, &behavior)
+		getIntegerv(window, _GL_CONTEXT_RELEASE_BEHAVIOR, &behavior)
 		if behavior == 0 {
 			window.context.release = ReleaseBehaviorNone
 		} else if behavior == _GL_CONTEXT_RELEASE_BEHAVIOR_FLUSH {
@@ -267,10 +267,10 @@ func _glfwRefreshContextAttribs(window *_GLFWwindow, ctxconfig *_GLFWctxconfig) 
 	return nil
 }
 
-func GetIntegerv(window *Window, name int, value *int) {
+func getIntegerv(window *Window, name int, value *int) {
 	_, _, err := syscall.SyscallN(window.context.GetIntegerv, uintptr(name), uintptr(unsafe.Pointer(value)))
 	if !errors.Is(err, syscall.Errno(0)) {
-		panic("GetIntegerv failed, " + err.Error())
+		panic("getIntegerv failed, " + err.Error())
 	}
 }
 
@@ -300,15 +300,7 @@ func glfwSwapBuffers(window *_GLFWwindow) {
 	window.context.swapBuffers(window)
 }
 
-func SwapInterval(interval int) {
-	window := glfwGetCurrentContext()
-	if window == nil {
-		panic("glfwSwapInterval: window == nil")
-	}
-	window.context.swapInterval(interval)
-}
-
-func ExtensionSupported(extension string) bool {
+func extensionSupported(extension string) bool {
 	p := glfwPlatformGetTls(&_glfw.contextSlot)
 	if p == 0 {
 		return false
@@ -319,7 +311,7 @@ func ExtensionSupported(extension string) bool {
 	window := (*_GLFWwindow)(unsafe.Pointer(p))
 	if window.context.major >= 3 {
 		// Check if extension is in the modern OpenGL extensions string list
-		// count := window.context.GetIntegerv(_GL_NUM_EXTENSIONS)
+		// count := window.context.getIntegerv(_GL_NUM_EXTENSIONS)
 		r, _, _ := syscall.SyscallN(window.context.GetIntegerv, uintptr(_GL_NUM_EXTENSIONS))
 		count := int(r)
 		for i := 0; i < count; i++ {

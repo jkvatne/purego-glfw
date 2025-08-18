@@ -97,6 +97,7 @@ var (
 	_IsIconic                      = user32.NewProc("IsIconic")
 	_IsWindowVisible               = user32.NewProc("IsWindowVisible")
 	_IsZoomed                      = user32.NewProc("IsZoomed")
+	_PostMessageW                  = user32.NewProc("PostMessageW")
 )
 
 var (
@@ -304,7 +305,8 @@ func DispatchMessage(m *Msg) {
 func WaitMessage() {
 	_, _, err := _WaitMessage.Call()
 	if !errors.Is(err, syscall.Errno(0)) {
-		panic("WaitMessage failed, " + err.Error())
+		// panic("WaitMessage failed, " + err.Error())
+		fmt.Printf("WaitMessage failed: %v", err)
 	}
 }
 
@@ -839,4 +841,8 @@ func LoadCursor(cursorID uint16) syscall.Handle {
 		panic("LoadCursor failed")
 	}
 	return syscall.Handle(h)
+}
+
+func PostMessageW(hWnd syscall.Handle, msg uint32, wParam, lParam uintptr) {
+	_, _, _ = _PostMessageW.Call(uintptr(hWnd), uintptr(msg), uintptr(wParam), uintptr(lParam))
 }

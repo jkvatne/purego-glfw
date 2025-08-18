@@ -718,22 +718,16 @@ func SetFocus(window *_GLFWwindow) {
 }
 
 func BringWindowToTop(window *_GLFWwindow) {
-	r1, _, err := _BringWindowToTop.Call(uintptr(unsafe.Pointer(window.Win32.handle)))
-	if r1 == 0 || err != nil && !errors.Is(err, syscall.Errno(0)) {
+	_, _, err := _BringWindowToTop.Call(uintptr(unsafe.Pointer(window.Win32.handle)))
+	if err != nil && !errors.Is(err, syscall.Errno(0)) {
 		panic("BringWindowToTop failed, " + err.Error())
-	}
-	if r1 == 0 {
-		panic("BringWindowToTop failed")
 	}
 }
 
 func SetForegroundWindow(window *_GLFWwindow) {
-	r1, _, err := _SetForegroundWindow.Call(uintptr(unsafe.Pointer(window.Win32.handle)))
+	_, _, err := _SetForegroundWindow.Call(uintptr(unsafe.Pointer(window.Win32.handle)))
 	if err != nil && !errors.Is(err, syscall.Errno(0)) {
 		panic("SetForegroundWindow failed, " + err.Error())
-	}
-	if r1 == 0 {
-		panic("SetForegroundWindow failed, returned 0")
 	}
 }
 
@@ -1557,4 +1551,8 @@ func glfwGetFramebufferSize(w *Window) (width int32, height int32) {
 
 func glfwDetachCurrentContext() {
 	makeContextCurrentWGL(nil)
+}
+
+func glfwPostEmptyEvent(w *Window) {
+	PostMessageW(w.Win32.handle, 0, 0, 0)
 }
