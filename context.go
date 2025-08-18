@@ -33,9 +33,9 @@ func glfwIsValidContextConfig(ctxconfig *_GLFWctxconfig) error {
 }
 
 func glfwChooseFBConfig(desired *_GLFWfbconfig, alternatives []_GLFWfbconfig, count int32) *_GLFWfbconfig {
-	var missing, leastMissing = int32(INT_MAX), int32(INT_MAX)
-	var colorDiff, leastColorDiff = int32(INT_MAX), int32(INT_MAX)
-	var extraDiff, leastExtraDiff = int32(INT_MAX), int32(INT_MAX)
+	var missing, leastMissing = int32(_INT_MAX), int32(_INT_MAX)
+	var colorDiff, leastColorDiff = int32(_INT_MAX), int32(_INT_MAX)
+	var extraDiff, leastExtraDiff = int32(_INT_MAX), int32(_INT_MAX)
 	var closest *_GLFWfbconfig
 
 	for i := int32(0); i < count; i++ {
@@ -62,40 +62,40 @@ func glfwChooseFBConfig(desired *_GLFWfbconfig, alternatives []_GLFWfbconfig, co
 			missing++
 		}
 		colorDiff = 0
-		if desired.redBits != glfw_DONT_CARE {
+		if desired.redBits != DontCare {
 			colorDiff += (desired.redBits - current.redBits) * (desired.redBits - current.redBits)
 		}
-		if desired.greenBits != glfw_DONT_CARE {
+		if desired.greenBits != DontCare {
 			colorDiff += (desired.greenBits - current.greenBits) * (desired.greenBits - current.greenBits)
 		}
-		if desired.blueBits != glfw_DONT_CARE {
+		if desired.blueBits != DontCare {
 			colorDiff += (desired.blueBits - current.blueBits) * (desired.blueBits - current.blueBits)
 		}
 
 		// Calculate non-color channel size difference value
 		extraDiff = 0
-		if desired.alphaBits != glfw_DONT_CARE {
+		if desired.alphaBits != DontCare {
 			extraDiff += (desired.alphaBits - current.alphaBits) * (desired.alphaBits - current.alphaBits)
 		}
-		if desired.depthBits != glfw_DONT_CARE {
+		if desired.depthBits != DontCare {
 			extraDiff += (desired.depthBits - current.depthBits) * (desired.depthBits - current.depthBits)
 		}
-		if desired.stencilBits != glfw_DONT_CARE {
+		if desired.stencilBits != DontCare {
 			extraDiff += (desired.stencilBits - current.stencilBits) * (desired.stencilBits - current.stencilBits)
 		}
-		if desired.accumRedBits != glfw_DONT_CARE {
+		if desired.accumRedBits != DontCare {
 			extraDiff += (desired.accumRedBits - current.accumRedBits) * (desired.accumRedBits - current.accumRedBits)
 		}
-		if desired.accumGreenBits != glfw_DONT_CARE {
+		if desired.accumGreenBits != DontCare {
 			extraDiff += (desired.accumGreenBits - current.accumGreenBits) * (desired.accumGreenBits - current.accumGreenBits)
 		}
-		if desired.accumBlueBits != glfw_DONT_CARE {
+		if desired.accumBlueBits != DontCare {
 			extraDiff += (desired.accumBlueBits - current.accumBlueBits) * (desired.accumBlueBits - current.accumBlueBits)
 		}
-		if desired.accumAlphaBits != glfw_DONT_CARE {
+		if desired.accumAlphaBits != DontCare {
 			extraDiff += (desired.accumAlphaBits - current.accumAlphaBits) * (desired.accumAlphaBits - current.accumAlphaBits)
 		}
-		if desired.samples != glfw_DONT_CARE {
+		if desired.samples != DontCare {
 			extraDiff += (desired.samples - current.samples) * (desired.samples - current.samples)
 		}
 		if desired.sRGB && !current.sRGB {
@@ -228,9 +228,9 @@ func _glfwRefreshContextAttribs(window *_GLFWwindow, ctxconfig *_GLFWctxconfig) 
 			var strategy int
 			GetIntegerv(window, _GL_RESET_NOTIFICATION_STRATEGY_ARB, &strategy)
 			if strategy == _GL_LOSE_CONTEXT_ON_RESET_ARB {
-				window.context.robustness = glfw_LOSE_CONTEXT_ON_RESET
+				window.context.robustness = LoseContextOnReset
 			} else if strategy == _GL_NO_RESET_NOTIFICATION_ARB {
-				window.context.robustness = glfw_NO_RESET_NOTIFICATION
+				window.context.robustness = NoResetNotification
 			}
 		}
 	} else {
@@ -240,9 +240,9 @@ func _glfwRefreshContextAttribs(window *_GLFWwindow, ctxconfig *_GLFWctxconfig) 
 			var strategy int
 			GetIntegerv(window, _GL_RESET_NOTIFICATION_STRATEGY_ARB, &strategy)
 			if strategy == _GL_LOSE_CONTEXT_ON_RESET_ARB {
-				window.context.robustness = glfw_LOSE_CONTEXT_ON_RESET
+				window.context.robustness = LoseContextOnReset
 			} else if strategy == _GL_NO_RESET_NOTIFICATION_ARB {
-				window.context.robustness = glfw_NO_RESET_NOTIFICATION
+				window.context.robustness = NoResetNotification
 			}
 		}
 	}
@@ -251,9 +251,9 @@ func _glfwRefreshContextAttribs(window *_GLFWwindow, ctxconfig *_GLFWctxconfig) 
 		var behavior int
 		GetIntegerv(window, _GL_CONTEXT_RELEASE_BEHAVIOR, &behavior)
 		if behavior == 0 {
-			window.context.release = glfw_RELEASE_BEHAVIOR_NONE
+			window.context.release = ReleaseBehaviorNone
 		} else if behavior == _GL_CONTEXT_RELEASE_BEHAVIOR_FLUSH {
-			window.context.release = glfw_RELEASE_BEHAVIOR_FLUSH
+			window.context.release = ReleaseBehaviorFlush
 		}
 	}
 	// Clearing the front buffer to black to avoid garbage pixels left over from

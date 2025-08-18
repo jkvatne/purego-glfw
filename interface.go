@@ -108,9 +108,9 @@ const (
 
 // Values for ContextReleaseBehavior hint.
 const (
-	AnyReleaseBehavior   int = 0
-	ReleaseBehaviorFlush int = 0x00035001
-	ReleaseBehaviorNone  int = 0x00035002
+	AnyReleaseBehavior   int32 = 0
+	ReleaseBehaviorFlush int32 = 0x00035001
+	ReleaseBehaviorNone  int32 = 0x00035002
 )
 
 // Other values.
@@ -169,7 +169,7 @@ type Action int
 
 type StandardCursor uint16
 
-type Hint uint
+type Hint uint32
 
 // Window represents a Window.
 type Window = _GLFWwindow
@@ -461,7 +461,7 @@ func (w *Window) SetSize(width, height int32) {
 }
 
 func (w *Window) SetSizeLimits(minw, minh, maxw, maxh int32) {
-	if (minw == glfw_DONT_CARE || minh == glfw_DONT_CARE) && (maxw == glfw_DONT_CARE || maxh == glfw_DONT_CARE) {
+	if (minw == DontCare || minh == DontCare) && (maxw == DontCare || maxh == DontCare) {
 		return
 	}
 	area := GetWindowRect(w.Win32.handle)
@@ -858,7 +858,7 @@ func DefaultWindowHints() {
 	_glfw.hints.framebuffer.stencilBits = 8
 	_glfw.hints.framebuffer.doublebuffer = true
 	// The default is to select the highest available refresh rate
-	_glfw.hints.refreshRate = glfw_DONT_CARE
+	_glfw.hints.refreshRate = DontCare
 	// The default is to use full Retina resolution framebuffers
 	_glfw.hints.window.ns.retina = true
 }

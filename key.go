@@ -22,6 +22,12 @@ const (
 	Repeat  Action = 2 // The key was held down until it repeated.
 )
 
+const (
+	Stick       = 3
+	InsertFirst = 0
+	InsertLast  = 1
+)
+
 /* Printable keys */
 const (
 	KeySpace        = 32

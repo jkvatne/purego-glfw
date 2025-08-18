@@ -300,7 +300,7 @@ func glfwInputKey(window *_GLFWwindow, key Key, scancode int, action Action, mod
 		}
 	}
 	if window.lockKeyMods == 0 {
-		mods &= ^(glfw_MOD_CAPS_LOCK | glfw_MOD_NUM_LOCK)
+		mods &= ^(ModCapsLock | ModNumLock)
 	}
 
 	if window.keyCallback != nil {
@@ -1028,9 +1028,9 @@ func abs(x int32) int32 {
 // Chooses the video mode most closely matching the desired one
 // const GLFWvidmode* _glfwChooseVideoMode(_GLFWmonitor* monitor,const GLFWvidmode* desired)
 func glfwChooseVideoMode(monitor *Monitor, desired *GLFWvidmode) *GLFWvidmode {
-	var sizeDiff, leastSizeDiff int32 = INT_MAX, INT_MAX
-	var rateDiff, leastRateDiff int32 = INT_MAX, INT_MAX
-	var colorDiff, leastColorDiff int32 = INT_MAX, INT_MAX
+	var sizeDiff, leastSizeDiff int32 = _INT_MAX, _INT_MAX
+	var rateDiff, leastRateDiff int32 = _INT_MAX, _INT_MAX
+	var colorDiff, leastColorDiff int32 = _INT_MAX, _INT_MAX
 	var current GLFWvidmode
 	var closest *GLFWvidmode
 
@@ -1041,20 +1041,20 @@ func glfwChooseVideoMode(monitor *Monitor, desired *GLFWvidmode) *GLFWvidmode {
 	for i := 0; i < len(monitor.modes); i++ {
 		current = monitor.modes[i]
 		colorDiff = 0
-		if desired.RedBits != glfw_DONT_CARE {
+		if desired.RedBits != DontCare {
 			colorDiff += abs(current.RedBits - desired.RedBits)
 		}
-		if desired.GreenBits != glfw_DONT_CARE {
+		if desired.GreenBits != DontCare {
 			colorDiff += abs(current.GreenBits - desired.GreenBits)
 		}
-		if desired.BlueBits != glfw_DONT_CARE {
+		if desired.BlueBits != DontCare {
 			colorDiff += abs(current.BlueBits - desired.BlueBits)
 		}
 		sizeDiff = abs((current.Width-desired.Width)*(current.Width-desired.Width) + (current.Height-desired.Height)*(current.Height-desired.Height))
-		if desired.RefreshRate != glfw_DONT_CARE {
+		if desired.RefreshRate != DontCare {
 			rateDiff = abs(current.RefreshRate - desired.RefreshRate)
 		} else {
-			rateDiff = INT_MAX - current.RefreshRate
+			rateDiff = _INT_MAX - current.RefreshRate
 		}
 		if (colorDiff < leastColorDiff) || (colorDiff == leastColorDiff && sizeDiff < leastSizeDiff) ||
 			(colorDiff == leastColorDiff && sizeDiff == leastSizeDiff && rateDiff < leastRateDiff) {
@@ -1185,7 +1185,7 @@ func glfwSetPos(w *Window, xPos, yPos int32) {
 // Returns the image whose area most closely matches the desired one
 //
 func chooseImage(count int32, images []*GLFWimage, width int32, height int32) *GLFWimage {
-	var leastDiff = int32(INT_MAX)
+	var leastDiff = int32(_INT_MAX)
 	var closest int32
 
 	for i := int32(0); i < count; i++ {
@@ -1335,7 +1335,7 @@ func destroyCursor(cursor *Cursor) {
 }
 
 func glfwSetWindowAspectRatio(window *Window, numer, denom int32) {
-	if numer == glfw_DONT_CARE || denom == glfw_DONT_CARE {
+	if numer == DontCare || denom == DontCare {
 		return
 	}
 	area := GetWindowRect(window.Win32.handle)

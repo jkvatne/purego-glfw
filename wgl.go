@@ -358,9 +358,9 @@ func glfwCreateContextWGL(window *_GLFWwindow, ctxconfig *_GLFWctxconfig, fbconf
 		}
 		if ctxconfig.release != 0 {
 			if _glfw.wgl.ARB_context_flush_control {
-				if ctxconfig.release == glfw_RELEASE_BEHAVIOR_NONE {
+				if ctxconfig.release == ReleaseBehaviorNone {
 					attribList = append(attribList, wgl_CONTEXT_RELEASE_BEHAVIOR_ARB, wgl_CONTEXT_RELEASE_BEHAVIOR_NONE_ARB)
-				} else if ctxconfig.release == glfw_RELEASE_BEHAVIOR_FLUSH {
+				} else if ctxconfig.release == ReleaseBehaviorFlush {
 					attribList = append(attribList, wgl_CONTEXT_RELEASE_BEHAVIOR_ARB, wgl_CONTEXT_RELEASE_BEHAVIOR_FLUSH_ARB)
 				}
 			}

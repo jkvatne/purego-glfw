@@ -118,8 +118,6 @@ const (
 	wm_UNICHAR              = 0x0109
 	wm_USER                 = 0x0400
 	wm_WINDOWPOSCHANGED     = 0x0047
-	_UNICODE_NOCHAR         = 65535
-	cw_USEDEFAULT           = -2147483648
 
 	ws_CLIPCHILDREN         = 0x02000000
 	ws_CLIPSIBLINGS         = 0x04000000
@@ -170,6 +168,8 @@ const (
 	_IMAGE_ICON        = 1
 	_IMAGE_CURSOR      = 2
 	_IMAGE_ENHMETAFILE = 3
+	_UNICODE_NOCHAR    = 65535
+	cw_USEDEFAULT      = -2147483648
 
 	lr_CREATEDIBSECTION = 0x00002000
 	lr_DEFAULTCOLOR     = 0x00000000
@@ -235,21 +235,10 @@ const (
 )
 
 const (
-	glfw_DONT_CARE = -1
-	INT_MAX        = 0x7FFFFFFF
+	_INT_MAX = 0x7FFFFFFF
 
-	glfw_MOD_CAPS_LOCK = 0x0010
-	glfw_MOD_NUM_LOCK  = 0x0020
-	glfw_CONNECTED     = 0x00040001
-	glfw_DISCONNECTED  = 0x00040002
-	Stick              = 3
-	InsertFirst        = 0
-	InsertLast         = 1
-
-	glfw_NO_RESET_NOTIFICATION  = 0x00031001
-	glfw_LOSE_CONTEXT_ON_RESET  = 0x00031002
-	glfw_RELEASE_BEHAVIOR_FLUSH = 0x00035001
-	glfw_RELEASE_BEHAVIOR_NONE  = 0x00035002
+	glfw_CONNECTED    = 0x00040001
+	glfw_DISCONNECTED = 0x00040002
 
 	_GL_NUM_EXTENSIONS                      = 0x821d
 	_GL_EXTENSIONS                          = 0x1f03

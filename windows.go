@@ -366,12 +366,12 @@ func glfwCreateWindow(width, height int32, title string, monitor *Monitor, share
 	window.focusOnShow = wndconfig.focusOnShow
 	window.cursorMode = CursorNormal
 	window.doublebuffer = fbconfig.doublebuffer
-	window.minwidth = glfw_DONT_CARE
-	window.minheight = glfw_DONT_CARE
-	window.maxwidth = glfw_DONT_CARE
-	window.maxheight = glfw_DONT_CARE
-	window.numer = glfw_DONT_CARE
-	window.denom = glfw_DONT_CARE
+	window.minwidth = DontCare
+	window.minheight = DontCare
+	window.maxwidth = DontCare
+	window.maxheight = DontCare
+	window.numer = DontCare
+	window.denom = DontCare
 
 	if err := glfwPlatformCreateWindow(window, &wndconfig, &ctxconfig, &fbconfig); err != nil {
 		// glfwDestroyWindow(window)
