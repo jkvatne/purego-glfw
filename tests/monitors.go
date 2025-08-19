@@ -31,9 +31,9 @@ func format_mode(mode *glfw.GLFWvidmode) string {
 	return s
 }
 
-func framebuffer_size_callback(window *glfw.Window, width int32, height int32) {
+func framebuffer_size_callback(window *glfw.Window, width int, height int) {
 	fmt.Printf("Framebuffer resized to %ix%i\n", width, height)
-	gl.Viewport(0, 0, width, height)
+	gl.Viewport(0, 0, int32(width), int32(height))
 }
 
 func key_callback4(window *glfw.Window, key glfw.Key, scancode int, action glfw.Action, mods glfw.ModifierKey) {
@@ -76,13 +76,13 @@ func test_modes(monitor *glfw.Monitor) {
 	for i := 0; i < len(modes); i++ {
 		mode := modes[i]
 		// TODO _ = glfw.WindowHint(glfw.Samples, mode.Samples)
-		_ = glfw.WindowHint(glfw.RedBits, mode.RedBits)
-		_ = glfw.WindowHint(glfw.GreenBits, mode.GreenBits)
-		_ = glfw.WindowHint(glfw.BlueBits, mode.BlueBits)
-		_ = glfw.WindowHint(glfw.RefreshRate, mode.RefreshRate)
+		_ = glfw.WindowHint(glfw.RedBits, int(mode.RedBits))
+		_ = glfw.WindowHint(glfw.GreenBits, int(mode.GreenBits))
+		_ = glfw.WindowHint(glfw.BlueBits, int(mode.BlueBits))
+		_ = glfw.WindowHint(glfw.RefreshRate, int(mode.RefreshRate))
 
 		fmt.Printf("Testing mode %d on monitor %s: %s\n", i, monitor.GetMonitorName(), format_mode(&mode))
-		window, err := glfw.CreateWindow(mode.Width, mode.Height, "Video Mode Test", monitor, nil)
+		window, err := glfw.CreateWindow(int(mode.Width), int(mode.Height), "Video Mode Test", monitor, nil)
 		if err != nil {
 			fmt.Printf("Failed to enter mode %d: %s\n", i, format_mode(&mode))
 			continue
@@ -112,8 +112,8 @@ func test_modes(monitor *glfw.Monitor) {
 		gl.GetIntegerv(gl.RED_BITS, &current.RedBits)
 		gl.GetIntegerv(gl.GREEN_BITS, &current.GreenBits)
 		gl.GetIntegerv(gl.BLUE_BITS, &current.BlueBits)
-
-		current.Width, current.Height = window.GetSize()
+		w, h := window.GetSize()
+		current.Width, current.Height = int32(w), int32(h)
 		if current.RedBits != mode.RedBits || current.GreenBits != mode.GreenBits || current.BlueBits != mode.BlueBits {
 			fmt.Printf("*** Color bit mismatch: (%d %d %d) instead of (%d %d %id)\n",
 				current.RedBits, current.GreenBits, current.BlueBits,

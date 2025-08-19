@@ -91,12 +91,12 @@ func reopen() {
 			monitors := glfw.GetMonitors()
 			monitor = monitors[rand.Int()%len(monitors)]
 		}
-		width := int32(400)
-		height := int32(400)
+		width := 400
+		height := 400
 		if monitor != nil {
 			mode := glfw.GetVideoMode(monitor)
-			width = mode.Width
-			height = mode.Height
+			width = int(mode.Width)
+			height = int(mode.Height)
 			x, y := monitor.GetPos()
 			fmt.Printf("Monitor x=%d, y=%d, w=%d, h=%d", x, y, mode.Width, mode.Height)
 		}
@@ -159,7 +159,7 @@ func reopen() {
 			}
 			w, h := window.GetFramebufferSize()
 			ratio := float32(w) / float32(h)
-			gl.Viewport(0, 0, w, h)
+			gl.Viewport(0, 0, int32(w), int32(h))
 			gl.Clear(gl.COLOR_BUFFER_BIT)
 			p := mat4x4_ortho(-ratio, ratio, -1, 1, 0, 1)
 			m := Mat4{1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1}

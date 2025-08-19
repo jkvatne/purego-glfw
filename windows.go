@@ -353,10 +353,10 @@ func glfwCreateWindow(width, height int32, title string, monitor *Monitor, share
 
 	window.videoMode.Width = width
 	window.videoMode.Height = height
-	window.videoMode.RedBits = fbconfig.redBits
-	window.videoMode.GreenBits = fbconfig.greenBits
-	window.videoMode.BlueBits = fbconfig.blueBits
-	window.videoMode.RefreshRate = _glfw.hints.refreshRate
+	window.videoMode.RedBits = int32(fbconfig.redBits)
+	window.videoMode.GreenBits = int32(fbconfig.greenBits)
+	window.videoMode.BlueBits = int32(fbconfig.blueBits)
+	window.videoMode.RefreshRate = int32(_glfw.hints.refreshRate)
 
 	window.monitor = monitor
 	window.resizable = wndconfig.resizable
@@ -467,7 +467,7 @@ func glfwGetWindowFrameSize(window *_GLFWwindow, left, top, right, bottom *int32
 	rect.Right = width
 	rect.Bottom = height
 	dpi := GetDpiForWindow(window.Win32.handle)
-	AdjustWindowRect(&rect, getWindowStyle(window), 0, getWindowExStyle(window), dpi, "glfwGetWindowFrameSize")
+	adjustWindowRect(&rect, getWindowStyle(window), 0, getWindowExStyle(window), dpi, "glfwGetWindowFrameSize")
 	*left = -rect.Left
 	*top = -rect.Top
 	*right = rect.Right - width
@@ -495,8 +495,8 @@ func glfwGetCursorPos(w *_GLFWwindow, x *int32, y *int32) {
 			return
 		}
 		screenToClient(w.Win32.handle, &pos)
-		*x = int32(pos.X)
-		*y = int32(pos.Y)
+		*x = pos.X
+		*y = pos.Y
 	}
 }
 
@@ -572,7 +572,7 @@ func glfwSetWindowMonitor(window *Window, monitor *Monitor, xpos int32, ypos int
 				fitToMonitor(window)
 			}
 		} else {
-			rect := RECT{int32(xpos), int32(ypos), int32(xpos + width), int32(ypos + height)}
+			rect := RECT{(xpos), (ypos), (xpos + width), (ypos + height)}
 			if IsWindows10Version1607OrGreater() {
 				AdjustWindowRectExForDpi(&rect, getWindowStyle(window), 0, getWindowExStyle(window), GetDpiForWindow(window.Win32.handle))
 			} else {
@@ -609,7 +609,7 @@ func glfwSetWindowMonitor(window *Window, monitor *Monitor, xpos int32, ypos int
 			mi.RcMonitor.Right-mi.RcMonitor.Left, mi.RcMonitor.Bottom-mi.RcMonitor.Top,
 			SWP_NOCOPYBITS|SWP_NOACTIVATE|SWP_NOZORDER)
 	} else {
-		rect := RECT{int32(xpos), int32(ypos), int32(xpos + width), int32(ypos + height)}
+		rect := RECT{xpos, ypos, xpos + width, ypos + height}
 		style := GetWindowLongW(window.Win32.handle, _GWL_STYLE)
 		flags := SWP_NOACTIVATE | SWP_NOCOPYBITS
 		if window.decorated {
@@ -707,11 +707,11 @@ func glfwPollMonitors() {
 
 func glfwSetWindowSize(window *Window, width, height int32) {
 	rect := RECT{0, 0, width, height}
-	AdjustWindowRect(&rect, getWindowStyle(window), 0, getWindowExStyle(window), GetDpiForWindow(window.Win32.handle), "glfwSetWindowSize")
+	adjustWindowRect(&rect, getWindowStyle(window), 0, getWindowExStyle(window), GetDpiForWindow(window.Win32.handle), "glfwSetWindowSize")
 	SetWindowPos(window.Win32.handle, 0, 0, 0, rect.Right-rect.Left, rect.Bottom-rect.Top, SWP_NOACTIVATE|SWP_NOOWNERZORDER|SWP_NOMOVE|SWP_NOZORDER)
 }
 
-func AdjustWindowRect(rect *RECT, style uint32, menu int, exStyle uint32, dpi int, from string) {
+func adjustWindowRect(rect *RECT, style uint32, menu int, exStyle uint32, dpi int, from string) {
 	if IsWindows10Version1607OrGreater() {
 		AdjustWindowRectExForDpi(rect, style, 0, exStyle, dpi)
 	} else {

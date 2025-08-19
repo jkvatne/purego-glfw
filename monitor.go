@@ -188,7 +188,7 @@ func GetVideoModes(monitor *Monitor) (result []GLFWvidmode) {
 		mode.RedBits, mode.GreenBits, mode.BlueBits = SplitBpp(dm.dmBitsPerPel)
 		i := 0
 		for ; i < count; i++ {
-			if CompareVideoModes(&result[i], &mode) == 0 {
+			if glfwCompareVideoModes(&result[i], &mode) == 0 {
 				break
 			}
 		}
@@ -215,7 +215,7 @@ func GetVideoModes(monitor *Monitor) (result []GLFWvidmode) {
 
 // Lexically compare video modes, used by qsort
 //
-func CompareVideoModes(fp, sp *GLFWvidmode) int32 {
+func glfwCompareVideoModes(fp, sp *GLFWvidmode) int32 {
 	fbpp := fp.RedBits + fp.GreenBits + fp.BlueBits
 	sbpp := sp.RedBits + sp.GreenBits + sp.BlueBits
 	farea := fp.Width * fp.Height

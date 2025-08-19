@@ -2,6 +2,7 @@ package glfw
 
 import (
 	"errors"
+	"fmt"
 	"sync"
 	"syscall"
 	"unicode"
@@ -755,6 +756,7 @@ func createMonitor(adapter *DISPLAY_DEVICEW, display *DISPLAY_DEVICEW) *Monitor 
 	var dm DEVMODEW
 
 	dm.dmSize = uint16(unsafe.Sizeof(dm))
+	fmt.Printf("dmSize=%d, pointl=%d\n", dm.dmSize, unsafe.Sizeof(dm.dmPosition))
 	EnumDisplaySettingsEx(&adapter.DeviceName[0], ENUM_CURRENT_SETTINGS, &dm, 0)
 	pName, _ := syscall.UTF16PtrFromString("DISPLAY")
 	ret, _, err := _CreateDC.Call(uintptr(unsafe.Pointer(pName)), uintptr(unsafe.Pointer(&adapter.DeviceName)), 0, 0)
@@ -1007,7 +1009,7 @@ func refreshVideoModes(monitor *Monitor) bool {
 	if len(monitor.modes) == 0 {
 		return false
 	}
-	// slices.SortFunc(modes, compareVideoModes)
+	// slices.SortFunc(modes, glfwCompareVideoModes)
 	monitor.modes = modes
 	return true
 }
@@ -1036,7 +1038,7 @@ func glfwChooseVideoMode(monitor *Monitor, desired *GLFWvidmode) *GLFWvidmode {
 		current = monitor.modes[i]
 		colorDiff = 0
 		if desired.RedBits != DontCare {
-			colorDiff += abs(current.RedBits - desired.RedBits)
+			colorDiff += abs(current.RedBits) - desired.RedBits
 		}
 		if desired.GreenBits != DontCare {
 			colorDiff += abs(current.GreenBits - desired.GreenBits)
@@ -1172,17 +1174,17 @@ func releaseMonitor(window *Window) {
 
 func glfwSetPos(w *Window, xPos, yPos int32) {
 	rect := RECT{Left: xPos, Top: yPos, Right: xPos, Bottom: yPos}
-	AdjustWindowRect(&rect, getWindowStyle(w), 0, getWindowExStyle(w), GetDpiForWindow(w.Win32.handle), "glfwSetWindowPos")
+	adjustWindowRect(&rect, getWindowStyle(w), 0, getWindowExStyle(w), GetDpiForWindow(w.Win32.handle), "glfwSetWindowPos")
 	SetWindowPos(w.Win32.handle, 0, rect.Left, rect.Top, 0, 0, SWP_NOACTIVATE|SWP_NOZORDER|SWP_NOSIZE)
 }
 
 // Returns the image whose area most closely matches the desired one
 //
-func chooseImage(count int32, images []*GLFWimage, width int32, height int32) *GLFWimage {
+func chooseImage(count int, images []*GLFWimage, width int32, height int32) *GLFWimage {
 	var leastDiff = int32(_INT_MAX)
-	var closest int32
+	var closest int
 
-	for i := int32(0); i < count; i++ {
+	for i := 0; i < count; i++ {
 		currDiff := abs(images[i].Width*images[i].Height - width*height)
 		if currDiff < leastDiff {
 			closest = i
@@ -1246,7 +1248,7 @@ func createIcon(image *GLFWimage, xhot, yhot int32, icon bool) syscall.Handle {
 	return handle
 }
 
-func glfwSetWindowIcon(window *Window, count int32, images []*GLFWimage) {
+func glfwSetWindowIcon(window *Window, count int, images []*GLFWimage) {
 	var bigIcon, smallIcon syscall.Handle
 	if count > 0 {
 		bigImage := chooseImage(count, images, GetSystemMetrics(SM_CXICON), GetSystemMetrics(SM_CYICON))
@@ -1538,14 +1540,14 @@ func glfwGetPos(w *Window) (x, y int32) {
 	return p.X, p.Y
 }
 
-func glfwGetFramebufferSize(w *Window) (width int32, height int32) {
+func glfwGetFramebufferSize(w *Window) (width int, height int) {
 	var area RECT
 	_, _, err := _GetClientRect.Call(uintptr(unsafe.Pointer(w.Win32.handle)), uintptr(unsafe.Pointer(&area)))
 	if !errors.Is(err, syscall.Errno(0)) {
 		panic(err)
 	}
-	width = area.Right
-	height = area.Bottom
+	width = int(area.Right)
+	height = int(area.Bottom)
 	return width, height
 }
 

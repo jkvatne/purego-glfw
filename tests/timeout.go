@@ -40,7 +40,7 @@ func timeout() {
 	glfw.SetTime(0)
 	for !window.ShouldClose() && glfw.GetTime() < 5.0 {
 		width, height := window.GetFramebufferSize()
-		gl.Viewport(0, 0, width, height)
+		gl.Viewport(0, 0, int32(width), int32(height))
 		gl.ClearColor(rand.Float32(), rand.Float32(), rand.Float32(), 1)
 		gl.Clear(gl.COLOR_BUFFER_BIT)
 		window.SwapBuffers()

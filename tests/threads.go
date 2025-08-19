@@ -18,7 +18,7 @@ type Thread struct {
 	title   string
 	r, g, b float32
 	done    bool
-	x, y    int32
+	x, y    int
 	id      uint32
 }
 

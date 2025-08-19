@@ -586,15 +586,15 @@ func GetCurrentThreadId() uint32 {
 	return uint32(r)
 }
 
-func GetSystemMetrics(index uint32) int32 {
-	r, _, err := _GetSystemMetrics.Call()
+func GetSystemMetrics(index int32) int32 {
+	r, _, err := _GetSystemMetrics.Call(uintptr(index))
 	if !errors.Is(err, syscall.Errno(0)) {
 		panic("GetSystemMetrics failed, " + err.Error())
 	}
 	return int32(r)
 }
 
-func wincreateIcon(hInstance, nWidth, nHeight int, cPlanes int, cBitsPixel, AndBits *uint8, XorBits *uint8) syscall.Handle {
+func CreateIcon(hInstance, nWidth, nHeight int, cPlanes int, cBitsPixel, AndBits *uint8, XorBits *uint8) syscall.Handle {
 	r, _, err := _CreateIcon.Call(uintptr(hInstance), uintptr(nWidth), uintptr(nHeight), uintptr(cPlanes),
 		uintptr(unsafe.Pointer(AndBits)), uintptr(unsafe.Pointer(XorBits)))
 	if !errors.Is(err, syscall.Errno(0)) {
@@ -779,7 +779,7 @@ func MoveWindow(hWnd syscall.Handle, x, y, w, h int32, repaint bool) {
 	if repaint {
 		rp = 1
 	}
-	_, _, err := _MoveWindow.Call(uintptr(hWnd), uintptr(x), uintptr(y), uintptr(w), uintptr(hWnd), uintptr(rp))
+	_, _, err := _MoveWindow.Call(uintptr(hWnd), uintptr(x), uintptr(y), uintptr(w), uintptr(h), uintptr(rp))
 	if err != nil && !errors.Is(err, syscall.Errno(0)) {
 		panic("MoveWindow failed, " + err.Error())
 	}

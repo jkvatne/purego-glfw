@@ -81,7 +81,7 @@ func msaa() {
 	}
 	fmt.Printf("Requesting MSAA with %d samples\n", samples)
 
-	_ = glfw.WindowHint(glfw.Samples, samples)
+	_ = glfw.WindowHint(glfw.Samples, int(samples))
 	_ = glfw.WindowHint(glfw.ContextVersionMajor, 2)
 	_ = glfw.WindowHint(glfw.ContextVersionMinor, 0)
 
@@ -151,7 +151,7 @@ func msaa() {
 
 		width, height := window.GetFramebufferSize()
 		ratio := float32(width) / float32(height)
-		gl.Viewport(0, 0, width, height)
+		gl.Viewport(0, 0, int32(width), int32(height))
 		gl.Clear(gl.COLOR_BUFFER_BIT)
 		gl.UseProgram(program)
 		p = mat4x4_ortho(-ratio, ratio, -1, 1, 0, 1)

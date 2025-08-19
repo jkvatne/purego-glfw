@@ -1,6 +1,5 @@
 package glfw
 
-import "C"
 import (
 	"fmt"
 	"image"
@@ -200,7 +199,8 @@ func WaitEventsTimeout(timeout float64) {
 	glfwPollEvents()
 }
 
-func WindowHint(hint Hint, value int32) error {
+func WindowHint(hint Hint, v int) error {
+	value := int32(v)
 	switch hint {
 	case RedBits:
 		_glfw.hints.framebuffer.redBits = value
@@ -246,9 +246,9 @@ func WindowHint(hint Hint, value int32) error {
 	case Visible:
 		_glfw.hints.window.visible = value != 0
 	case PositionX:
-		_glfw.hints.window.xpos = value
+		_glfw.hints.window.xpos = int32(value)
 	case PositionY:
-		_glfw.hints.window.ypos = value
+		_glfw.hints.window.ypos = int32(value)
 	case ScaleToMonitor:
 		_glfw.hints.window.scaleToMonitor = value != 0
 	case ScaleFramebuffer, CocoaRetinaFramebuffer:
@@ -260,15 +260,15 @@ func WindowHint(hint Hint, value int32) error {
 	case MousePassthrough:
 		_glfw.hints.window.mousePassthrough = value != 0
 	case ClientAPI:
-		_glfw.hints.context.client = value
+		_glfw.hints.context.client = int32(value)
 	case ContextCreationAPI:
-		_glfw.hints.context.source = value
+		_glfw.hints.context.source = int32(value)
 	case ContextVersionMajor:
-		_glfw.hints.context.major = value
+		_glfw.hints.context.major = int32(value)
 	case ContextVersionMinor:
-		_glfw.hints.context.minor = value
+		_glfw.hints.context.minor = int32(value)
 	case ContextRobustness:
-		_glfw.hints.context.robustness = value
+		_glfw.hints.context.robustness = int32(value)
 	case OpenGLForwardCompatible:
 		_glfw.hints.context.forward = value != 0
 	case OpenGLDebugContext:
@@ -315,14 +315,15 @@ func SetClipboardString(str string) {
 	glfwSetClipboardString(str)
 }
 
-func CreateCursor(image *GLFWimage, xhot int32, yhot int32) *Cursor {
-	if image == nil || image.Width <= 0 || image.Height <= 0 {
+func CreateCursor(image image.Image, xhot int, yhot int) *Cursor {
+	if image == nil || image.Bounds().Dx() <= 0 || image.Bounds().Dy() <= 0 {
 		panic("CreateCursor: image is nil or invalid")
 	}
 	var cursor Cursor
 	cursor.next = _glfw.cursorListHead
 	_glfw.cursorListHead = &cursor
-	cursor.handle = createIcon(image, xhot, yhot, false)
+	im := imageToGLFW(image)
+	cursor.handle = createIcon(&im, int32(xhot), int32(yhot), false)
 	return &cursor
 }
 
@@ -364,8 +365,8 @@ func CreateStandardCursor(shape int) *Cursor {
 	return &cursor
 }
 
-func CreateWindow(width, height int32, title string, monitor *Monitor, share *Window) (*Window, error) {
-	wnd, err := glfwCreateWindow(width, height, title, monitor, share)
+func CreateWindow(width, height int, title string, monitor *Monitor, share *Window) (*Window, error) {
+	wnd, err := glfwCreateWindow(int32(width), int32(height), title, monitor, share)
 	if err != nil {
 		return nil, fmt.Errorf("CreateWindow failed: %v", err)
 	}
@@ -408,7 +409,7 @@ func (w *Window) SetTitle(title string) {
 // The desired image sizes varies depending on platform and system settings. The selected
 // images will be rescaled as needed. Good sizes include 16x16, 32x32 and 48x48.
 func (w *Window) SetIcon(images []image.Image) {
-	count := int32(len(images))
+	count := len(images)
 	cImages := make([]*GLFWimage, count)
 	for i, img := range images {
 		im := imageToGLFW(img)
@@ -419,38 +420,39 @@ func (w *Window) SetIcon(images []image.Image) {
 
 // GetPos returns the position, in screen coordinates, of the upper-left
 // corner of the client area of the window.
-func (w *Window) GetPos() (x, y int32) {
-	return glfwGetPos(w)
+func (w *Window) GetPos() (x, y int) {
+	xx, yy := glfwGetPos(w)
+	return int(xx), int(yy)
 }
 
 // SetPos sets the position, in screen coordinates, of the Window's upper-left corner
-func (w *Window) SetPos(xPos, yPos int32) {
-	glfwSetPos(w, xPos, yPos)
+func (w *Window) SetPos(xPos, yPos int) {
+	glfwSetPos(w, int32(xPos), int32(yPos))
 }
 
 // GetSize returns the size, in screen coordinates, of the client area of the
 // specified Window.
-func (w *Window) GetSize() (width int32, height int32) {
+func (w *Window) GetSize() (width int, height int) {
 	var wi, h int32
 	glfwGetWindowSize(w, &wi, &h)
-	return wi, h
+	return int(wi), int(h)
 }
 
 // SetSize sets the size, in screen coordinates, of the client area of the Window.
-func (w *Window) SetSize(width, height int32) {
+func (w *Window) SetSize(width, height int) {
 	if w.monitor != nil {
 		if w.monitor.window == w {
 			acquireMonitor(w)
 			fitToMonitor(w)
 		}
 	} else {
-		rect := RECT{0, 0, width, height}
-		AdjustWindowRect(&rect, getWindowStyle(w), 0, getWindowExStyle(w), GetDpiForWindow(w.Win32.handle), "glfwSetWindowSize")
-		SetWindowPos(w.Win32.handle, 0, 0, 0, width, height, SWP_NOACTIVATE|SWP_NOOWNERZORDER|SWP_NOMOVE|SWP_NOZORDER)
+		rect := RECT{0, 0, int32(width), int32(height)}
+		adjustWindowRect(&rect, getWindowStyle(w), 0, getWindowExStyle(w), GetDpiForWindow(w.Win32.handle), "glfwSetWindowSize")
+		SetWindowPos(w.Win32.handle, 0, 0, 0, int32(width), int32(height), SWP_NOACTIVATE|SWP_NOOWNERZORDER|SWP_NOMOVE|SWP_NOZORDER)
 	}
 }
 
-func (w *Window) SetSizeLimits(minw, minh, maxw, maxh int32) {
+func (w *Window) SetSizeLimits(minw, minh, maxw, maxh int) {
 	if (minw == DontCare || minh == DontCare) && (maxw == DontCare || maxh == DontCare) {
 		return
 	}
@@ -459,20 +461,20 @@ func (w *Window) SetSizeLimits(minw, minh, maxw, maxh int32) {
 }
 
 // SetAspectRatio sets the required aspect ratio of the client area of the specified window.
-func (w *Window) SetAspectRatio(numer, denom int32) {
-	glfwSetWindowAspectRatio(w, numer, denom)
+func (w *Window) SetAspectRatio(numer, denom int) {
+	glfwSetWindowAspectRatio(w, int32(numer), int32(denom))
 }
 
-func (w *Window) GetFramebufferSize() (width int32, height int32) {
+func (w *Window) GetFramebufferSize() (int, int) {
 	return glfwGetFramebufferSize(w)
 }
 
 // GetFrameSize retrieves the size, in screen coordinates, of each edge of the frame
 // This size includes the title bar if the Window has one.
-func (w *Window) GetFrameSize() (left, top, right, bottom int32) {
+func (w *Window) GetFrameSize() (left, top, right, bottom int) {
 	var l, t, r, b int32
 	glfwGetWindowFrameSize(w, &l, &t, &r, &b)
-	return l, t, r, b
+	return int(l), int(t), int(r), int(b)
 }
 
 // GetContentScale function retrieves the content scale for the specified
@@ -545,18 +547,18 @@ func (w *Window) GetMonitor() *Monitor {
 
 // SetMonitor sets the monitor that the window uses for full screen mode or,
 // if the monitor is NULL, makes it windowed mode.
-func (w *Window) SetMonitor(monitor *Monitor, xpos, ypos, width, height, refreshRate int32) {
-	glfwSetWindowMonitor(w, monitor, xpos, ypos, width, height, refreshRate)
+func (w *Window) SetMonitor(monitor *Monitor, xpos, ypos, width, height, refreshRate int) {
+	glfwSetWindowMonitor(w, monitor, int32(xpos), int32(ypos), int32(width), int32(height), int32(refreshRate))
 }
 
 // GetAttrib returns an attribute of the window.
-func (w *Window) GetAttrib(attrib Hint) int32 {
-	return glfwGetWindowAttrib(w, attrib)
+func (w *Window) GetAttrib(attrib Hint) int {
+	return int(glfwGetWindowAttrib(w, attrib))
 }
 
 // SetAttrib function sets the value of an attribute of the specified window.
-func (w *Window) SetAttrib(attrib Hint, value int32) {
-	glfwSetWindowAttrib(w, attrib, value)
+func (w *Window) SetAttrib(attrib Hint, value int) {
+	glfwSetWindowAttrib(w, attrib, int32(value))
 }
 
 // SwapBuffers swaps the front and back buffers of the Window.

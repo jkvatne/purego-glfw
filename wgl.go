@@ -114,7 +114,7 @@ func makeCurrent(dc HDC, handle HANDLE) bool {
 	return r1 != 0
 }
 
-func setPixelFormat(dc HDC, iPixelFormat int32, pfd *PIXELFORMATDESCRIPTOR) int32 {
+func setPixelFormat(dc HDC, iPixelFormat int32, pfd *PIXELFORMATDESCRIPTOR) int {
 	ret, _, err := _SetPixelFormat.Call(uintptr(unsafe.Pointer(dc)), uintptr(iPixelFormat), uintptr(unsafe.Pointer(pfd)))
 	if !errors.Is(err, syscall.Errno(0)) {
 		panic("wglSetPixelFormat failed, " + err.Error())
@@ -123,7 +123,7 @@ func setPixelFormat(dc HDC, iPixelFormat int32, pfd *PIXELFORMATDESCRIPTOR) int3
 		err = syscall.GetLastError()
 		panic("wglSetPixelFormat failed" + err.Error())
 	}
-	return int32(ret)
+	return int(ret)
 }
 
 func choosePixelFormat(dc HDC, pfd *PIXELFORMATDESCRIPTOR) int32 {
@@ -331,7 +331,7 @@ func glfwCreateContextWGL(window *_GLFWwindow, ctxconfig *_GLFWctxconfig, fbconf
 	if _glfw.wgl.ARB_create_context {
 		mask := 0
 		flags := 0
-		if ctxconfig.client == int32(OpenGLAPI) {
+		if ctxconfig.client == OpenGLAPI {
 			if ctxconfig.forward {
 				flags |= wgl_CONTEXT_FORWARD_COMPATIBLE_BIT_ARB
 			}
@@ -348,10 +348,10 @@ func glfwCreateContextWGL(window *_GLFWwindow, ctxconfig *_GLFWctxconfig, fbconf
 		}
 		if ctxconfig.robustness != 0 {
 			if _glfw.wgl.ARB_create_context_robustness {
-				if ctxconfig.robustness == int32(NoResetNotification) {
+				if ctxconfig.robustness == NoResetNotification {
 					attribList = append(attribList, wgl_CONTEXT_RESET_NOTIFICATION_STRATEGY_ARB, wgl_NO_RESET_NOTIFICATION_ARB)
 				}
-			} else if ctxconfig.robustness == int32(LoseContextOnReset) {
+			} else if ctxconfig.robustness == LoseContextOnReset {
 				attribList = append(attribList, wgl_CONTEXT_RESET_NOTIFICATION_STRATEGY_ARB, wgl_LOSE_CONTEXT_ON_RESET_ARB)
 			}
 			flags |= wgl_CONTEXT_ROBUST_ACCESS_BIT_ARB
@@ -372,8 +372,8 @@ func glfwCreateContextWGL(window *_GLFWwindow, ctxconfig *_GLFWctxconfig, fbconf
 		}
 		// Only request an explicitly versioned context when necessary,
 		if ctxconfig.major != 1 || ctxconfig.minor != 0 {
-			attribList = append(attribList, wgl_CONTEXT_MAJOR_VERSION_ARB, int32(ctxconfig.major))
-			attribList = append(attribList, wgl_CONTEXT_MINOR_VERSION_ARB, int32(ctxconfig.minor))
+			attribList = append(attribList, wgl_CONTEXT_MAJOR_VERSION_ARB, ctxconfig.major)
+			attribList = append(attribList, wgl_CONTEXT_MINOR_VERSION_ARB, ctxconfig.minor)
 		}
 		if flags != 0 {
 			attribList = append(attribList, wgl_CONTEXT_FLAGS_ARB, int32(flags))
@@ -468,7 +468,7 @@ func choosePixelFormatWGL(window *_GLFWwindow, ctxconfig *_GLFWctxconfig, fbconf
 	usableConfigs := make([]_GLFWfbconfig, nativeCount)
 	for i := 0; i < int(nativeCount); i++ {
 		u := &usableConfigs[usableCount]
-		pixelFormat = int32(i + 1)
+		pixelFormat = int32(i) + 1
 		if _glfw.wgl.ARB_pixel_format {
 			// Get pixel format attributes through "modern" extension
 			values[0] = 0

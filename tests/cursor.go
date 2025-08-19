@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+	"image"
 	"math"
 	"runtime"
 	"unsafe"
@@ -64,47 +65,45 @@ func star(x float64, y float64, t float64) float64 {
 }
 
 func create_cursor(t float64) *glfw.Cursor {
-	var buffer [64 * 64 * 4]uint8
-	var image = glfw.GLFWimage{64, 64, &buffer[0]}
-	for x := int32(0); x < image.Width; x++ {
-		for y := int32(0); y < image.Height; y++ {
-			buffer[(y*image.Width+x)*4] = 255
-			buffer[(y*image.Width+x)*4+1] = 255
-			buffer[(y*image.Width+x)*4+2] = 0
-			buffer[(y*image.Width+x)*4+3] = uint8(255.0 * star(float64(x), float64(y), t))
+	img := image.NewNRGBA(image.Rect(0, 0, 64, 64))
+	for x := 0; x < img.Bounds().Dx(); x++ {
+		for y := 0; y < img.Bounds().Dy(); y++ {
+			img.Pix[(y*img.Bounds().Dx()+x)*4] = 255
+			img.Pix[(y*img.Bounds().Dx()+x)*4+1] = 255
+			img.Pix[(y*img.Bounds().Dx()+x)*4+2] = 0
+			img.Pix[(y*img.Bounds().Dx()+x)*4+3] = uint8(255.0 * star(float64(x), float64(y), t))
 		}
 	}
-	return glfw.CreateCursor(&image, image.Width/2, image.Height/2)
+	return glfw.CreateCursor(img, 32, 32)
 }
 
 func create_tracking_cursor() *glfw.Cursor {
-	var buffer [32 * 32 * 4]uint8
-	var image = glfw.GLFWimage{32, 32, &buffer[0]}
+	img := image.NewNRGBA(image.Rect(0, 0, 32, 32))
 	var i int
-	for y := int32(0); y < image.Width; y++ {
-		for x := int32(0); x < image.Height; x++ {
+	for y := 0; y < img.Bounds().Dy(); y++ {
+		for x := 0; x < img.Bounds().Dx(); x++ {
 			if x == 7 || y == 7 {
-				buffer[i] = 255
+				img.Pix[i] = 255
 				i++
-				buffer[i] = 0
+				img.Pix[i] = 0
 				i++
-				buffer[i] = 0
+				img.Pix[i] = 0
 				i++
-				buffer[i] = 255
+				img.Pix[i] = 255
 				i++
 			} else {
-				buffer[i] = 0
+				img.Pix[i] = 0
 				i++
-				buffer[i] = 0
+				img.Pix[i] = 0
 				i++
-				buffer[i] = 0
+				img.Pix[i] = 0
 				i++
-				buffer[i] = 0
+				img.Pix[i] = 0
 				i++
 			}
 		}
 	}
-	return glfw.CreateCursor(&image, 7, 7)
+	return glfw.CreateCursor(img, 7, 7)
 }
 
 func cursor_position_callback(window *glfw.Window, x float64, y float64) {
@@ -128,7 +127,7 @@ Dn Move cursor to lower right corner
 0-9 Show the different standard cursors
 Esc Exit
 `
-var x, y, w, h int32
+var x, y, w, h int
 var index int
 
 func key_callback_cursor(window *glfw.Window, key glfw.Key, scancode int, action glfw.Action, mods glfw.ModifierKey) {
@@ -228,7 +227,7 @@ func key_callback_cursor(window *glfw.Window, key glfw.Key, scancode int, action
 			mode := glfw.GetVideoMode(m)
 			x, y = window.GetPos()
 			w, h = window.GetSize()
-			window.SetMonitor(m, 0, 0, mode.Width, mode.Height, mode.RefreshRate)
+			window.SetMonitor(m, 0, 0, int(mode.Width), int(mode.Height), int(mode.RefreshRate))
 		}
 		cursor_x, cursor_y = window.GetCursorPos()
 	}
@@ -330,7 +329,7 @@ func cursor() {
 		if track_cursor {
 			wnd_width, _ := window.GetSize()
 			fb_width, fb_height := window.GetFramebufferSize()
-			gl.Viewport(0, 0, fb_width, fb_height)
+			gl.Viewport(0, 0, int32(fb_width), int32(fb_height))
 			scale := float32(fb_width) / float32(wnd_width)
 			vertices[0][0] = 0.5
 			vertices[0][1] = float32(fb_height) - float32(cursor_y)*scale - 1.0 + 0.5
