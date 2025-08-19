@@ -204,3 +204,70 @@ const (
 	_TME_NOCLIENT = 0x10
 	_TME_QUERY    = 0x40000000
 )
+
+type PIXELFORMATDESCRIPTOR = struct {
+	nSize           uint16
+	nVersion        uint16
+	dwFlags         uint32
+	iPixelType      uint8
+	cColorBits      uint8
+	cRedBits        uint8
+	cRedShift       uint8
+	cGreenBits      uint8
+	cGreenShift     uint8
+	cBlueBits       uint8
+	cBlueShift      uint8
+	cAlphaBits      uint8
+	cAlphaShift     uint8
+	cAccumBits      uint8
+	cAccumRedBits   uint8
+	cAccumGreenBits uint8
+	cAccumBlueBits  uint8
+	cAccumAlphaBits uint8
+	cDepthBits      uint8
+	cStencilBits    uint8
+	cAuxBuffers     uint8
+	iLayerType      uint8
+	bReserved       uint8
+	dwLayerMask     uint32
+	dwVisibleMask   uint32
+	dwDamageMask    uint32
+}
+
+const (
+	PFD_DRAW_TO_WINDOW = 0x04
+	PFD_SUPPORT_OPENGL = 0x20
+	PFD_DOUBLEBUFFER   = 0x01
+	PFD_TYPE_RGBA      = 0x00
+)
+const (
+	SWP_NOSIZE         = 0x0001
+	SWP_NOMOVE         = 0x0002
+	SWP_NOZORDER       = 0x0004
+	SWP_NOREDRAW       = 0x0008
+	SWP_NOACTIVATE     = 0x0010
+	SWP_FRAMECHANGED   = 0x0020
+	SWP_SHOWWINDOW     = 0x0040
+	SWP_HIDEWINDOW     = 0x0080
+	SWP_NOCOPYBITS     = 0x0100
+	SWP_NOOWNERZORDER  = 0x0200
+	SWP_NOSENDCHANGING = 0x0400
+)
+
+// Internal cursor types
+const (
+	IDC_ARROW       = 32512 // Standard arrow
+	IDC_IBEAM       = 32513 // I-beam
+	IDC_WAIT        = 32514 // Hour
+	IDC_CROSS       = 32515 // Crosshair
+	IDC_UPARROW     = 32516 // Vertical arrow
+	IDC_SIZENWSE    = 32642 // Double-pointed arrow pointing northwest and southeast
+	IDC_SIZENESW    = 32643 // Double-pointed arrow pointing northeast and southwest
+	IDC_SIZEWE      = 32644 // Double-pointed arrow pointing west and east
+	IDC_SIZENS      = 32645 // Double-pointed arrow pointing north and south
+	IDC_SIZEALL     = 32646 // Four-pointed arrow pointing north, south, east, and west
+	IDC_NO          = 32648 // Slashed circle
+	IDC_HAND        = 32649 // Hand
+	IDC_APPSTARTING = 32650 // Standard arrow and small hourglass
+	IDC_HELP        = 32651 // Arrow and question mark
+)

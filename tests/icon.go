@@ -95,13 +95,14 @@ func icon() {
 	set_icon(window, cur_icon_color)
 
 	for !window.ShouldClose() && glfw.GetTime() < 5.0 {
+		set_icon(window, cur_icon_color)
 		gl.ClearColor(1, 0.5, 1, 1)
 		gl.Clear(gl.COLOR_BUFFER_BIT)
 		window.SwapBuffers()
 		time.Sleep(time.Second)
 		glfw.PollEvents()
 		cur_icon_color = (cur_icon_color + 1) % 5
-		set_icon(window, cur_icon_color)
+
 	}
 
 	window.Destroy()

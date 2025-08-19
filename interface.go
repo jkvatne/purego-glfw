@@ -195,8 +195,7 @@ func WaitEventsTimeout(timeout float64) {
 	if timeout < 0.0 {
 		panic("Wait time must be positive")
 	}
-	MsgWaitForMultipleObjects(0, nil, 0, uint32(timeout*1e3), _QS_ALLINPUT)
-	glfwPollEvents()
+	glfwWaitEventsTimeout(timeout)
 }
 
 func WindowHint(hint Hint, v int) error {
@@ -356,7 +355,7 @@ func CreateStandardCursor(shape int) *Cursor {
 	case NotAllowedCursor:
 		id = IDC_NO
 	default:
-		panic("Win32: Unknown or unsupported standard cursor")
+		panic("Unknown or unsupported standard cursor")
 	}
 	cursor.handle = LoadCursor(id)
 	if cursor.handle == 0 {
@@ -446,9 +445,7 @@ func (w *Window) SetSize(width, height int) {
 			fitToMonitor(w)
 		}
 	} else {
-		rect := RECT{0, 0, int32(width), int32(height)}
-		adjustWindowRect(&rect, getWindowStyle(w), 0, getWindowExStyle(w), GetDpiForWindow(w.Win32.handle), "glfwSetWindowSize")
-		SetWindowPos(w.Win32.handle, 0, 0, 0, int32(width), int32(height), SWP_NOACTIVATE|SWP_NOOWNERZORDER|SWP_NOMOVE|SWP_NOZORDER)
+		glfwSetSize(w, width, height)
 	}
 }
 
@@ -456,8 +453,7 @@ func (w *Window) SetSizeLimits(minw, minh, maxw, maxh int) {
 	if (minw == DontCare || minh == DontCare) && (maxw == DontCare || maxh == DontCare) {
 		return
 	}
-	area := GetWindowRect(w.Win32.handle)
-	MoveWindow(w.Win32.handle, area.Left, area.Top, area.Right-area.Left, area.Bottom-area.Top, true)
+	glfwSetSizeLimits(w, minw, minh, maxw, maxh)
 }
 
 // SetAspectRatio sets the required aspect ratio of the client area of the specified window.
@@ -509,15 +505,15 @@ func (w *Window) Focus() {
 
 // Iconify iconifies/minimizes the window, if it was previously restored.
 func (w *Window) Iconify() {
-	w.Win32.maximized = false
-	w.Win32.iconified = true
+	w.maximized = false
+	w.iconified = true
 	glfwShowWindow(w)
 }
 
 // Maximize maximizes the specified window if it was previously not maximized.
 func (w *Window) Maximize() {
-	w.Win32.iconified = false
-	w.Win32.maximized = true
+	w.iconified = false
+	w.maximized = true
 	glfwShowWindow(w)
 }
 
@@ -781,12 +777,7 @@ func (window *Window) SetInputMode(mode int, value int) {
 }
 
 func (window *Window) SetCursorPos(x, y float64) {
-	pos := POINT{int32(x), int32(y)}
-	// Store the new position so it can be recognized later
-	window.lastCursorPosX = float64(pos.X)
-	window.lastCursorPosY = float64(pos.Y)
-	pos = ClientToScreen(window.Win32.handle, pos)
-	SetCursorPos(pos.X, pos.Y)
+	glfwSetCursorPos(window, x, y)
 }
 
 func setRawMouseMotion(window *Window, enabled bool) {

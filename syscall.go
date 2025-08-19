@@ -815,7 +815,7 @@ func GetClassLongPtrW(hWnd syscall.Handle, nIndex int32) syscall.Handle {
 func SendMessage(hWnd syscall.Handle, Msg uint32, wParam uint16, Lparam uint32) uintptr {
 	r, _, err := _SendMessage.Call(uintptr(hWnd), uintptr(Msg), uintptr(wParam), uintptr(Lparam))
 	if !errors.Is(err, syscall.Errno(0)) {
-		panic("SendMessage failed, " + err.Error())
+		fmt.Println("SendMessage failed, " + err.Error())
 	}
 	return r
 }
