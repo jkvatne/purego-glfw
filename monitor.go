@@ -199,7 +199,7 @@ func GetVideoModes(monitor *Monitor) (result []GLFWvidmode) {
 		}
 		if monitor.modesPruned {
 			// Skip modes not supported by the connected displays
-			if ChangeDisplaySettingsEx(&monitor.adapterName[0], &dm, 0, CDS_TEST, uintptr(0)) {
+			if ChangeDisplaySettingsEx(&monitor.adapterName[0], &dm, 0, CDS_TEST, uintptr(0)) != 0 {
 				continue
 			}
 		}

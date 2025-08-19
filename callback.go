@@ -4,10 +4,13 @@ type SizeCallback func(w *Window, width int, height int)
 type CursorPosCallback func(w *Window, xpos float64, ypos float64)
 type KeyCallback func(w *Window, key Key, scancode int, action Action, mods ModifierKey)
 type DropCallback func(w *Window, names []string)
+type IconifyCallback func(w *Window, iconified bool)
 type CharCallback func(w *Window, char rune)
 type ContentScaleCallback func(w *Window, x float32, y float32)
+type CursorEnterCallback func(w *Window, entered bool)
 type RefreshCallback func(w *Window)
 type FocusCallback func(w *Window, focused bool)
+type MaximizeCallback func(w *Window, maximized bool)
 type ScrollCallback func(w *Window, xoff float64, yoff float64)
 type MouseButtonCallback func(w *Window, button MouseButton, action Action, mods ModifierKey)
 type WindowCloseCallback func(w *Window)
@@ -69,6 +72,19 @@ func (w *Window) SetFocusCallback(cbfun FocusCallback) (previous FocusCallback) 
 // coordinates, of the client area of the Window.
 func (w *Window) SetSizeCallback(cbfun SizeCallback) (previous SizeCallback) {
 	w.sizeCallback = cbfun
+	return nil
+}
+
+// SetFramebufferSizeCallback sets the size callback of the Window, which is called when
+// the Window is resized. The callback is provided with the size, in screen
+// coordinates, of the client area of the Window.
+func (w *Window) SetFramebufferSizeCallback(cbfun SizeCallback) (previous SizeCallback) {
+	w.framebufferSizeCallback = cbfun
+	return nil
+}
+
+func (w *Window) SetIconifyCallback(cbfun IconifyCallback) (previous IconifyCallback) {
+	w.iconifyCallback = cbfun
 	return nil
 }
 

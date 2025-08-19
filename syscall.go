@@ -109,6 +109,7 @@ var (
 	_SetWindowPlacement            = user32.NewProc("SetWindowPlacement")
 	_SetCapture                    = user32.NewProc("SetCapture")
 	_ReleaseCapture                = user32.NewProc("ReleaseCapture")
+	_TrackMouseEvent               = user32.NewProc("TrackMouseEvent")
 )
 
 var (
@@ -192,6 +193,8 @@ const (
 	_WM_MOUSEMOVE            = 0x0200
 	_WM_MOUSEWHEEL           = 0x020A
 	_WM_MOUSEHWHEEL          = 0x020E
+	_WM_MOUSELEAVE           = 0x02A3
+	_WM_MOUSEHOVER           = 0x02A1
 	_WM_NCACTIVATE           = 0x0086
 	_WM_NCHITTEST            = 0x0084
 	_WM_NCCALCSIZE           = 0x0083
@@ -932,12 +935,12 @@ func PostMessageW(hWnd syscall.Handle, msg uint32, wParam, lParam uintptr) {
 	_, _, _ = _PostMessageW.Call(uintptr(hWnd), uintptr(msg), uintptr(wParam), uintptr(lParam))
 }
 
-func ChangeDisplaySettingsEx(name *uint16, mode *DEVMODEW, hWnd syscall.Handle, flags uint32, lParam uintptr) bool {
+func ChangeDisplaySettingsEx(name *uint16, mode *DEVMODEW, hWnd syscall.Handle, flags uint32, lParam uintptr) int32 {
 	r, _, err := _ChangeDisplaySettingsEx.Call(uintptr(unsafe.Pointer(name)), uintptr(unsafe.Pointer(mode)), uintptr(hWnd), uintptr(flags), lParam)
 	if !errors.Is(err, syscall.Errno(0)) {
 		panic("IsZoomed failed, " + err.Error())
 	}
-	return r == 0
+	return int32(r)
 }
 
 func DwmIsCompositionEnabled() bool {
@@ -986,4 +989,8 @@ func SetCapture(hWnd syscall.Handle) {
 
 func ReleaseCapture() {
 	_, _, _ = _ReleaseCapture.Call()
+}
+
+func TrackMouseEvent(tme *TRACKMOUSEEVENT) {
+	_TrackMouseEvent.Call(uintptr(unsafe.Pointer(tme)))
 }

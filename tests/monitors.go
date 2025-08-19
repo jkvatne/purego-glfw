@@ -87,8 +87,7 @@ func test_modes(monitor *glfw.Monitor) {
 			fmt.Printf("Failed to enter mode %d: %s\n", i, format_mode(&mode))
 			continue
 		}
-
-		// TODO glfw.SetFramebufferSizeCallback(window, framebuffer_size_callback);
+		window.SetFramebufferSizeCallback(framebuffer_size_callback)
 		window.SetKeyCallback(key_callback)
 		window.MakeContextCurrent()
 		err = gl.Init()
@@ -143,7 +142,6 @@ func monitor() {
 	for i := 0; i < len(mons); i++ {
 		list_modes(mons[i])
 	}
-	// TODO test both monitors
 	for i := 1; i < len(mons); i++ {
 		test_modes(mons[i])
 	}

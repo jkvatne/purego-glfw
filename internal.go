@@ -60,54 +60,60 @@ type _GLFWcontext struct {
 type _GLFWwindow struct {
 	next *_GLFWwindow
 	// Window settings and state
-	resizable              bool
-	decorated              bool
-	autoIconify            bool
-	floating               bool
-	focusOnShow            bool
-	shouldClose            bool
-	mousePassthrough       bool
-	userPointer            unsafe.Pointer
-	doublebuffer           bool
-	videoMode              GLFWvidmode
-	monitor                *Monitor
-	cursor                 *Cursor
-	minwidth               int
-	minheight              int
-	maxwidth               int
-	maxheight              int
-	numer                  int
-	denom                  int
-	stickyKeys             int
-	stickyMouseButtons     int
-	lockKeyMods            int
-	cursorMode             int
-	rawMouseMotion         int
-	mouseButtons           [MouseButtonLast + 1]Action
-	keys                   [KeyLast + 1]Action
-	virtualCursorPosX      float64 // Virtual cursor position when cursor is disabled
-	virtualCursorPosY      float64 // Virtual cursor position when cursor is disabled
-	context                *_GLFWcontext
-	lastCursorPosX         float64 // The last received cursor position, regardless of source
-	lastCursorPosY         float64 // The last received cursor position, regardless of source
-	charCallback           CharCallback
-	focusCallback          FocusCallback
-	keyCallback            KeyCallback
-	mouseButtonCallback    MouseButtonCallback
-	cursorPosCallback      CursorPosCallback
-	scrollCallback         ScrollCallback
-	refreshCallback        RefreshCallback
-	sizeCallback           SizeCallback
-	dropCallback           DropCallback
-	contentScaleCallback   ContentScaleCallback
-	windowCloseCallback    func(w *_GLFWwindow)
-	fFramebufferSizeHolder func(w *_GLFWwindow, width int, height int)
-	fCloseHolder           func(w *_GLFWwindow)
-	fMaximizeHolder        func(w *_GLFWwindow, maximized bool)
-	fIconifyHolder         func(w *_GLFWwindow, iconified bool)
-	fCursorEnterHolder     func(w *_GLFWwindow, entered bool)
-	fCharModsHolder        func(w *_GLFWwindow, char rune, mods ModifierKey)
-	Win32                  _GLFWwindowWin32
+	resizable               bool
+	decorated               bool
+	autoIconify             bool
+	floating                bool
+	focusOnShow             bool
+	shouldClose             bool
+	mousePassthrough        bool
+	cursorTracked           bool
+	userPointer             unsafe.Pointer
+	doublebuffer            bool
+	videoMode               GLFWvidmode
+	monitor                 *Monitor
+	cursor                  *Cursor
+	minwidth                int32
+	minheight               int32
+	maxwidth                int32
+	maxheight               int32
+	numer                   int
+	denom                   int
+	stickyKeys              bool
+	stickyMouseButtons      bool
+	lockKeyMods             bool
+	disableMouseButtonLimit bool
+	cursorMode              int
+	rawMouseMotion          int
+	mouseButtons            [MouseButtonLast + 1]Action
+	keys                    [KeyLast + 1]Action
+	virtualCursorPosX       float64 // Virtual cursor position when cursor is disabled
+	virtualCursorPosY       float64 // Virtual cursor position when cursor is disabled
+	context                 *_GLFWcontext
+	lastCursorPosX          float64 // The last received cursor position, regardless of source
+	lastCursorPosY          float64 // The last received cursor position, regardless of source
+	charCallback            CharCallback
+	focusCallback           FocusCallback
+	keyCallback             KeyCallback
+	mouseButtonCallback     MouseButtonCallback
+	cursorPosCallback       CursorPosCallback
+	scrollCallback          ScrollCallback
+	refreshCallback         RefreshCallback
+	sizeCallback            SizeCallback
+	dropCallback            DropCallback
+	iconifyCallback         IconifyCallback
+	framebufferSizeCallback SizeCallback
+	contentScaleCallback    ContentScaleCallback
+	cursorEnterCallback     CursorEnterCallback
+	maximizeCallback        MaximizeCallback
+	windowCloseCallback     func(w *_GLFWwindow)
+	fFramebufferSizeHolder  func(w *_GLFWwindow, width int, height int)
+	fCloseHolder            func(w *_GLFWwindow)
+	fMaximizeHolder         func(w *_GLFWwindow, maximized bool)
+	fIconifyHolder          func(w *_GLFWwindow, iconified bool)
+	fCursorEnterHolder      func(w *_GLFWwindow, entered bool)
+	fCharModsHolder         func(w *_GLFWwindow, char rune, mods ModifierKey)
+	Win32                   _GLFWwindowWin32
 }
 
 type _GLFWwindowWin32 = struct {
@@ -285,6 +291,18 @@ var _glfw struct {
 	}
 }
 
+type MINMAXINFO struct {
+	ptReserved     POINT
+	ptMaxSize      POINT
+	ptMaxPosition  POINT
+	ptMinTrackSize POINT
+	ptMaxTrackSize POINT
+}
+
+func glfwIconifyWindow(w *Window) {
+	ShowWindow(w.Win32.handle, windows.SW_MINIMIZE)
+}
+
 func glfwInputKey(window *_GLFWwindow, key Key, scancode int, action Action, mods ModifierKey) {
 	var repeated bool
 	if key >= 0 && key <= KeyLast {
@@ -298,7 +316,7 @@ func glfwInputKey(window *_GLFWwindow, key Key, scancode int, action Action, mod
 			repeated = true
 		}
 
-		if action == Release && window.stickyKeys == 1 {
+		if action == Release && window.stickyKeys {
 			window.keys[key] = Stick
 		} else {
 			window.keys[key] = action
@@ -307,7 +325,7 @@ func glfwInputKey(window *_GLFWwindow, key Key, scancode int, action Action, mod
 			action = Repeat
 		}
 	}
-	if window.lockKeyMods == 0 {
+	if !window.lockKeyMods {
 		mods &= ^(ModCapsLock | ModNumLock)
 	}
 
@@ -344,8 +362,17 @@ func enableCursor(window *Window) {
 }
 
 func glfwInputMouseClick(window *_GLFWwindow, button MouseButton, action Action, mods ModifierKey) {
-	// TODO if (!window.lockKeyMods)	mods &= ~(glfw_MOD_CAPS_LOCK | glfw_MOD_NUM_LOCK);
-	// TODO if (action == glfw_RELEASE && window.stickyMouseButtons) window.mouseButtons[button] = glfw_STICK; else window.mouseButtons[button] = (char) action;
+	if button < 0 || !window.disableMouseButtonLimit && button > MouseButtonLast {
+		return
+	}
+	if !window.lockKeyMods {
+		mods &= ^(ModCapsLock | ModNumLock)
+	}
+	if action == Release && window.stickyMouseButtons {
+		window.mouseButtons[button] = Stick
+	} else {
+		window.mouseButtons[button] = action
+	}
 	if window.mouseButtonCallback != nil {
 		window.mouseButtonCallback(window, button, action, mods)
 	}
@@ -485,29 +512,29 @@ func windowProc(hwnd syscall.Handle, msg uint32, wParam, lParam uintptr) uintptr
 				// Right side keys have the extended key bit set
 				key = KeyRightControl
 			} else {
-				/*
-					// NOTE: Alt Gr sends Left Ctrl followed by Right Alt
-					// HACK: We only want one event for Alt Gr, so if we detect
-					//       this sequence we discard this Left Ctrl message now
-					//       and later report Right Alt normally
-					MSG next;
-					const DWORD time = GetMessageTime();
+				/* TODO
+				// NOTE: Alt Gr sends Left Ctrl followed by Right Alt
+				// HACK: We only want one event for Alt Gr, so if we detect
+				//       this sequence we discard this Left Ctrl message now
+				//       and later report Right Alt normally
+				MSG next;
+				const DWORD time = GetMessageTime();
 
-					if (PeekMessageW(&next, NULL, 0, 0, pm_NOREMOVE)) {
-						if (next.message == _WM_KEYDOWN ||
-							next.message == _WM_SYSKEYDOWN ||
-							next.message == _WM_KEYUP ||
-							next.message == _WM_SYSKEYUP)
+				if (PeekMessageW(&next, NULL, 0, 0, pm_NOREMOVE)) {
+					if (next.message == _WM_KEYDOWN ||
+						next.message == _WM_SYSKEYDOWN ||
+						next.message == _WM_KEYUP ||
+						next.message == _WM_SYSKEYUP)
+					{
+						if (next.wParam == VK_MENU &&
+							(HIWORD(next.lParam) & KF_EXTENDED) &&
+							next.time == time)
 						{
-							if (next.wParam == VK_MENU &&
-								(HIWORD(next.lParam) & KF_EXTENDED) &&
-								next.time == time)
-							{
-								// Next message is Right Alt down so discard this
-								break;
-							}
+							// Next message is Right Alt down so discard this
+							break;
 						}
 					}
+				}
 				*/
 				// This is a regular Left Ctrl message
 				key = KeyLeftControl
@@ -562,10 +589,7 @@ func windowProc(hwnd syscall.Handle, msg uint32, wParam, lParam uintptr) uintptr
 		if i > MouseButtonLast {
 			ReleaseCapture()
 		}
-
 		return 0
-
-	// TODO case _WM_CANCELMODE:
 
 	case _WM_SETFOCUS:
 		glfwInputWindowFocus(window, true)
@@ -577,13 +601,13 @@ func windowProc(hwnd syscall.Handle, msg uint32, wParam, lParam uintptr) uintptr
 			disableCursor(window)
 		}
 		return 0
+
 	case _WM_KILLFOCUS:
 		if window.cursorMode == CursorDisabled {
 			enableCursor(window)
 		}
 		if window.monitor != nil && window.autoIconify {
-			// Do  glfwIconifyWindow(window)
-			ShowWindow(window.Win32.handle, windows.SW_MINIMIZE)
+			glfwIconifyWindow(window)
 		}
 		glfwInputWindowFocus(window, false)
 		return 0
@@ -592,11 +616,14 @@ func windowProc(hwnd syscall.Handle, msg uint32, wParam, lParam uintptr) uintptr
 		x := float64(int(lParam & 0xffff))
 		y := float64(int((lParam >> 16) & 0xffff))
 		if !window.Win32.cursorTracked {
-			// tme.dwFlags = TME_LEAVE;
-			// tme.hwndTrack = window.hMonitor;
-			// TrackMouseEvent(&tme);
-			// window.cursorTracked = true;
-			// glfwInputCursorEnter(window, glfw_TRUE);
+			var tme TRACKMOUSEEVENT
+			tme.dwFlags = _TME_LEAVE
+			tme.hwndTrack = window.Win32.handle
+			TrackMouseEvent(&tme)
+			window.cursorTracked = true
+			if window.cursorEnterCallback != nil {
+				window.cursorEnterCallback(window, true)
+			}
 		}
 
 		if window.cursorMode == CursorDisabled {
@@ -621,6 +648,13 @@ func windowProc(hwnd syscall.Handle, msg uint32, wParam, lParam uintptr) uintptr
 		glfwInputScroll(window, -float64(int16(wParam>>16))/120.0, 0.0)
 		return 0
 
+	case _WM_MOUSELEAVE:
+		window.Win32.cursorTracked = false
+		if window.cursorEnterCallback != nil {
+			window.cursorEnterCallback(window, false)
+		}
+		return 0
+
 	case _WM_PAINT:
 		glfwInputWindowDamage(window)
 
@@ -629,24 +663,30 @@ func windowProc(hwnd syscall.Handle, msg uint32, wParam, lParam uintptr) uintptr
 		height := int(lParam >> 16)
 		iconified := wParam == _SIZE_MINIMIZED
 		maximized := wParam == _SIZE_MAXIMIZED || (window.Win32.maximized && wParam != _SIZE_RESTORED)
-		// if (_glfw.win32.capturedCursorWindow == window) {
-		//	captureCursor(window)
-		// }
+		if _glfw.win32.capturedCursorWindow == window {
+			captureCursor(window)
+		}
 
 		if window.Win32.iconified != iconified {
-			// TODO _glfwInputWindowIconify(window, iconified)
+			if window.iconifyCallback != nil {
+				window.iconifyCallback(window, iconified)
+			}
 		}
 
 		if window.Win32.maximized != maximized {
-			// TODO _glfwInputWindowMaximize(window, maximized);
+			if window.maximizeCallback != nil {
+				window.maximizeCallback(window, maximized)
+			}
 		}
 
 		if width != window.Win32.width || height != window.Win32.height {
 			window.Win32.width = width
 			window.Win32.height = height
-			// TODO _glfwInputFramebufferSize(window, width, height);
 			if window.sizeCallback != nil {
 				window.sizeCallback(window, width, height)
+			}
+			if window.framebufferSizeCallback != nil {
+				window.framebufferSizeCallback(window, width, height)
 			}
 		}
 		if window.monitor != nil && window.Win32.iconified != iconified {
@@ -662,10 +702,44 @@ func windowProc(hwnd syscall.Handle, msg uint32, wParam, lParam uintptr) uintptr
 		return 0
 
 	case _WM_GETMINMAXINFO:
-		// TODO
+		if window.monitor != nil {
+			break
+		}
+
+		var frame RECT
+		mmi := (*MINMAXINFO)(unsafe.Pointer(lParam))
+		style := getWindowStyle(window)
+		exStyle := getWindowExStyle(window)
+		if IsWindows10Version1607OrGreater() {
+			AdjustWindowRectExForDpi(&frame, style, 0, exStyle,
+				GetDpiForWindow(window.Win32.handle))
+		} else {
+			AdjustWindowRectEx(&frame, style, 0, exStyle)
+		}
+		if window.minwidth != DontCare && window.minheight != DontCare {
+			mmi.ptMinTrackSize.X = window.minwidth + frame.Right - frame.Left
+			mmi.ptMinTrackSize.Y = window.minheight + frame.Bottom - frame.Top
+		}
+
+		if window.maxwidth != DontCare && window.maxheight != DontCare {
+			mmi.ptMaxTrackSize.X = window.maxwidth + frame.Right - frame.Left
+			mmi.ptMaxTrackSize.Y = window.maxheight + frame.Bottom - frame.Top
+		}
+		if !window.decorated {
+			mh := monitorFromWindow(window.Win32.handle, _MONITOR_DEFAULTTONEAREST)
+			mi := GetMonitorInfo(mh)
+			mmi.ptMaxPosition.X = mi.RcWork.Left - mi.RcMonitor.Left
+			mmi.ptMaxPosition.Y = mi.RcWork.Top - mi.RcMonitor.Top
+			mmi.ptMaxSize.X = mi.RcWork.Right - mi.RcWork.Left
+			mmi.ptMaxSize.Y = mi.RcWork.Bottom - mi.RcWork.Top
+		}
+		return 0
 
 	case _WM_SETCURSOR:
-		// TODO
+		if lParam&0xFFFF == 1 {
+			updateCursorImage(window)
+			return 1
+		}
 	}
 
 	r1, _, _ := _DefWindowProc.Call(uintptr(hwnd), uintptr(msg), wParam, lParam)
@@ -864,11 +938,11 @@ func glfwInputMonitor(monitor *Monitor, action int, placement int) {
 	} else if action == glfw_DISCONNECTED {
 		for window := _glfw.windowListHead; window != nil; window = window.next {
 			if window.monitor == monitor {
-				// TODO var width, height, xoff, yoff int
-				// glfwGetWindowSize(window, &width, &height);
-				// _glfw.platform.setWindowMonitor(window, NULL, 0, 0, width, height, 0);
-				// _glfw.platform.getWindowFrameSize(window, &xoff, &yoff, NULL, NULL);
-				// _glfw.platform.SetWindowPos(window, xoff, yoff);
+				var width, height int32
+				glfwGetWindowSize(window, &width, &height)
+				window.SetMonitor(nil, 0, 0, int(width), int(height), 0)
+				x, y, _, _ := window.GetFrameSize()
+				window.SetPos(x, y)
 			}
 		}
 		for i := 0; i < _glfw.monitorCount; i++ {
@@ -903,8 +977,8 @@ func refreshVideoModes(monitor *Monitor) bool {
 	if len(monitor.modes) != 0 {
 		return true
 	}
-	// modes = monitor.GetVideoModes()
-	if len(monitor.modes) == 0 {
+	modes = GetVideoModes(monitor)
+	if len(modes) == 0 {
 		return false
 	}
 	// slices.SortFunc(modes, glfwCompareVideoModes)
@@ -963,35 +1037,27 @@ func glfwChooseVideoMode(monitor *Monitor, desired *GLFWvidmode) *GLFWvidmode {
 
 // Change the current video mode
 //
-/*
-func glfwSetVideoModeWin32(monitor *Monitor, desired *GLFWvidmode) error {
-	var current GLFWvidmode
-	var best *GLFWvidmode
+func glfwSetVideoMode(monitor *Monitor, desired *GLFWvidmode) error {
+	best := glfwChooseVideoMode(monitor, desired)
+	if best == nil {
+		fmt.Printf("NIL")
+	}
+	current := GetVideoMode(monitor)
+	if glfwCompareVideoModes(&current, best) == 0 {
+		return nil
+	}
 	var dm DEVMODEW
-	var result int
-
-	best = _glfwChooseVideoMode(monitor, *desired)
-	//TODO _glfwPlatformGetVideoMode(monitor, &current)
-	//TODO if _glfwCompareVideoModes(&current, best) == 0 {
-	//	return nil
-	//}
-
 	dm.dmSize = uint16(unsafe.Sizeof(dm))
-	dm.dmFields = DM_PELSWIDTH | DM_PELSHEIGHT | DM_BITSPERPEL | DM_DISPLAYFREQUENCY
-	dm.dmPelsWidth = int32(best.Width)
-	dm.dmPelsHeight = int32(best.Height)
-	dm.dmBitsPerPel = uint32(best.RedBits + best.GreenBits + best.BlueBits)
-	dm.dmDisplayFrequency = uint32(best.RefreshRate)
+	dm.dmFields = dm_PELSWIDTH | dm_PELSHEIGHT | dm_BITSPERPEL | dm_DISPLAYFREQUENCY
+	dm.dmPelsWidth = best.Width
+	dm.dmPelsHeight = best.Height
+	dm.dmBitsPerPel = best.RedBits + best.GreenBits + best.BlueBits
+	dm.dmDisplayFrequency = best.RefreshRate
 
 	if dm.dmBitsPerPel < 15 || dm.dmBitsPerPel >= 24 {
 		dm.dmBitsPerPel = 32
 	}
-	result = ChangeDisplaySettingsExW(
-		&monitor.adapterName,
-		&dm,
-		nil,
-		cds_FULLSCREEN,
-		0)
+	result := ChangeDisplaySettingsEx(&monitor.adapterName[0], &dm, 0, cds_FULLSCREEN, 0)
 	if result == disp_CHANGE_SUCCESSFUL {
 		monitor.modeChanged = true
 	} else {
@@ -1015,7 +1081,6 @@ func glfwSetVideoModeWin32(monitor *Monitor, desired *GLFWvidmode) error {
 	}
 	return nil
 }
-*/
 
 func fitToMonitor(window *Window) {
 	mi := GetMonitorInfo(window.monitor.hMonitor)
@@ -1048,7 +1113,7 @@ func acquireMonitor(window *Window) {
 
 	if window.monitor.window == nil {
 		_glfw.win32.acquiredMonitorCount++
-		// TODO _glfwSetVideoModeWin32(window.monitor, &window.videoMode)
+		glfwSetVideoMode(window.monitor, &window.videoMode)
 		glfwInputMonitorWindow(window.monitor, window)
 	}
 }
@@ -1289,7 +1354,7 @@ func glfwRestoreWindow(window *Window) {
 func glfwGetWindowAttrib(window *Window, attrib Hint) int32 {
 	switch attrib {
 	case Focused:
-		return toInt(window.Win32.handle == GetActiveWindow())
+		return int32(toInt(window.Win32.handle == GetActiveWindow()))
 	case Iconified:
 		return IsIconic(window.Win32.handle)
 	case Visible:
@@ -1297,26 +1362,26 @@ func glfwGetWindowAttrib(window *Window, attrib Hint) int32 {
 	case Maximized:
 		return IsZoomed(window.Win32.handle)
 	case Hovered:
-		return toInt(cursorInContentArea(window))
+		return int32(toInt(cursorInContentArea(window)))
 	case FocusOnShow:
-		return toInt(window.focusOnShow)
+		return int32(toInt(window.focusOnShow))
 	case MousePassthrough:
-		return toInt(window.mousePassthrough)
+		return int32(toInt(window.mousePassthrough))
 	case TransparentFramebuffer:
 		if !window.Win32.transparent || !DwmIsCompositionEnabled() {
 			return 0
 		}
 		return 1
 	case Resizable:
-		return toInt(window.resizable)
+		return int32(toInt(window.resizable))
 	case Decorated:
-		return toInt(window.decorated)
+		return int32(toInt(window.decorated))
 	case Floating:
-		return toInt(window.floating)
+		return int32(toInt(window.floating))
 	case AutoIconify:
-		return toInt(window.autoIconify)
+		return int32(toInt(window.autoIconify))
 	case DoubleBuffer:
-		return toInt(window.doublebuffer)
+		return int32(toInt(window.doublebuffer))
 	case ClientAPI:
 		return window.context.client
 	case ContextCreationAPI:
@@ -1330,21 +1395,21 @@ func glfwGetWindowAttrib(window *Window, attrib Hint) int32 {
 	case ContextRobustness:
 		return window.context.robustness
 	case OpenGLForwardCompatible:
-		return toInt(window.context.forward)
+		return int32(toInt(window.context.forward))
 	case OpenGLDebugContext:
-		return toInt(window.context.debug)
+		return int32(toInt(window.context.debug))
 	case OpenGLProfile:
 		return window.context.profile
 	case ContextReleaseBehavior:
 		return window.context.release
 	case ContextNoError:
-		return toInt(window.context.noerror)
+		return int32(toInt(window.context.noerror))
 	default:
 		return 0
 	}
 }
 
-func toInt(x bool) int32 {
+func toInt(x bool) int {
 	if x {
 		return 1
 	}

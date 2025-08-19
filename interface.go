@@ -670,13 +670,13 @@ func (window *Window) GetInputMode(mode InputMode) int {
 	case CursorMode:
 		return window.cursorMode
 	case StickyKeys:
-		return window.stickyKeys
+		return toInt(window.stickyKeys)
 	case StickyMouseButtons:
-		return window.stickyMouseButtons
+		return toInt(window.stickyMouseButtons)
 	case LockKeyMods:
-		return window.lockKeyMods
+		return toInt(window.lockKeyMods)
 	case RawMouseMotion:
-		return window.rawMouseMotion
+		return int(window.rawMouseMotion)
 	default:
 		panic("Unknown InputMode")
 	}
@@ -736,7 +736,7 @@ func (window *Window) SetInputMode(mode int, value int) {
 		window.SetCursorMode(value)
 	case StickyKeys:
 		value = min(1, max(0, value))
-		if window.stickyKeys == value {
+		if window.stickyKeys == (value != 0) {
 			return
 		}
 		if value == 0 {
@@ -746,11 +746,11 @@ func (window *Window) SetInputMode(mode int, value int) {
 					window.keys[i] = Release
 				}
 			}
-			window.stickyKeys = value
+			window.stickyKeys = value != 0
 		}
 	case StickyMouseButtons:
 		value = min(1, max(0, value))
-		if window.stickyMouseButtons == value {
+		if window.stickyMouseButtons == (value != 0) {
 			return
 		}
 		if value == 0 {
@@ -760,11 +760,11 @@ func (window *Window) SetInputMode(mode int, value int) {
 					window.mouseButtons[i] = Release
 				}
 			}
-			window.stickyMouseButtons = value
+			window.stickyMouseButtons = value != 0
 		}
 	case LockKeyMods:
 		value = min(1, max(0, value))
-		window.lockKeyMods = value
+		window.lockKeyMods = value != 0
 	case RawMouseMotion:
 		value = min(1, max(0, value))
 		if window.rawMouseMotion == value {
@@ -772,9 +772,9 @@ func (window *Window) SetInputMode(mode int, value int) {
 		}
 		window.rawMouseMotion = value
 		setRawMouseMotion(window, value != 0)
-		// TODO case GLFW_UNLIMITED_MOUSE_BUTTONS:
-		// value = min(1, max(0, value))
-		// window.disableMouseButtonLimit = value
+	case UnlimitedMouseButtons:
+		value = min(1, max(0, value))
+		window.disableMouseButtonLimit = value != 0
 	default:
 		panic(fmt.Sprintf("Invalid input mode 0x%08X", mode))
 	}
@@ -833,7 +833,7 @@ func DefaultWindowHints() {
 	_glfw.hints.window.visible = true
 	_glfw.hints.window.decorated = true
 	_glfw.hints.window.focused = true
-	_glfw.hints.window.autoIconify = true
+	_glfw.hints.window.autoIconify = false
 	_glfw.hints.window.centerCursor = true
 	_glfw.hints.window.focusOnShow = true
 	_glfw.hints.window.xpos = AnyPosition

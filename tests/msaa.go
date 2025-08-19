@@ -70,10 +70,7 @@ func msaa() {
 	var vertex_buffer2 uint32
 	fmt.Printf("Multisample anti-aliasing test.\n")
 	fmt.Printf("Notice bottom side aliasing at the left and not at the right side\n")
-
-	// TODO glfwSetErrorCallback(error_callback);
 	runtime.LockOSThread()
-
 	err := glfw.Init()
 	if err != nil {
 		fmt.Println("init glfw error: " + err.Error())

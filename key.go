@@ -3,7 +3,7 @@ package glfw
 type Key int
 
 // ModifierKey corresponds to a modifier key.
-type ModifierKey int
+type ModifierKey uint32
 
 // Modifier keys.
 const (

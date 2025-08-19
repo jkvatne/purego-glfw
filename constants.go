@@ -1,5 +1,7 @@
 package glfw
 
+import "syscall"
+
 // WGL Constants
 const (
 	wgl_NUMBER_PIXEL_FORMATS_ARB                = 0x2000
@@ -198,4 +200,19 @@ const (
 	_GL_CONTEXT_RELEASE_BEHAVIOR            = 0x82fb
 	_GL_CONTEXT_RELEASE_BEHAVIOR_FLUSH      = 0x82fc
 	_GL_COLOR_BUFFER_BIT                    = 0x00004000
+)
+
+type TRACKMOUSEEVENT struct {
+	cbSize      uint32
+	dwFlags     uint32
+	hwndTrack   syscall.Handle
+	dwHoverTime uint32
+}
+
+const (
+	_TME_LEAVE    = 2
+	_TME_CANCEL   = 0
+	_TME_HOVER    = 1
+	_TME_NOCLIENT = 0x10
+	_TME_QUERY    = 0x40000000
 )
