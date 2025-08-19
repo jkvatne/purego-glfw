@@ -75,7 +75,7 @@ func test_modes(monitor *glfw.Monitor) {
 	modes := glfw.GetVideoModes(monitor)
 	for i := 0; i < len(modes); i++ {
 		mode := modes[i]
-		// TODO _ = glfw.WindowHint(glfw.Samples, mode.Samples)
+		_ = glfw.WindowHint(glfw.Samples, 1)
 		_ = glfw.WindowHint(glfw.RedBits, int(mode.RedBits))
 		_ = glfw.WindowHint(glfw.GreenBits, int(mode.GreenBits))
 		_ = glfw.WindowHint(glfw.BlueBits, int(mode.BlueBits))

@@ -1130,8 +1130,15 @@ func acquireMonitor(window *Window) {
 	}
 }
 
+// Restore the previously saved (original) video mode
+func glfwRestoreVideoMode(monitor *Monitor) {
+	if monitor.modeChanged {
+		ChangeDisplaySettingsEx(&monitor.adapterName[0], nil, 0, cds_FULLSCREEN, 0)
+		monitor.modeChanged = false
+	}
+}
+
 // Remove the window and restore the original video mode
-//
 func releaseMonitor(window *Window) {
 	if window.monitor.window != window {
 		return
@@ -1144,7 +1151,7 @@ func releaseMonitor(window *Window) {
 		systemParametersInfoW(spi_SETMOUSETRAILS, _glfw.win32.mouseTrailSize, nil, 0)
 	}
 	glfwInputMonitorWindow(window.monitor, nil)
-	// TODO _glfwRestoreVideoModeWin32(window.monitor)
+	glfwRestoreVideoMode(window.monitor)
 }
 
 func glfwSetPos(w *Window, xPos, yPos int32) {
@@ -1352,7 +1359,7 @@ func glfwSetWindowOpacity(window *Window, opacity float64) {
 }
 
 func glfwRequestWindowAttention(window *Window) {
-	// TODO FlashWIndow(window.Win32.handle, 1)
+	FlashWindow(window.Win32.handle, 1)
 }
 
 func glfwHideWindow(window *Window) {

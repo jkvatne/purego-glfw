@@ -40,6 +40,7 @@ var (
 	_TlsAlloc                = kernel32.NewProc("TlsAlloc")
 	_TlsGetValue             = kernel32.NewProc("TlsGetValue")
 	_TlsSetValue             = kernel32.NewProc("TlsSetValue")
+	_TlsFree                 = kernel32.NewProc("TlsFree")
 	_GetCurrentThreadId      = kernel32.NewProc("GetCurrentThreadId")
 )
 
@@ -110,6 +111,7 @@ var (
 	_SetCapture                    = user32.NewProc("SetCapture")
 	_ReleaseCapture                = user32.NewProc("ReleaseCapture")
 	_TrackMouseEvent               = user32.NewProc("TrackMouseEvent")
+	_FlashWindow                   = user32.NewProc("FlashWindow")
 )
 
 var (
@@ -622,6 +624,13 @@ func TlsAlloc() int {
 	return int(r)
 }
 
+func TlsFree(index int) {
+	_, _, err := _TlsFree.Call(uintptr(index))
+	if !errors.Is(err, syscall.Errno(0)) {
+		panic("TlsFree failed, " + err.Error())
+	}
+}
+
 func glfwPlatformSetTls(tls *_GLFWtls, value uintptr) {
 	if !tls.allocated {
 		panic("_glfwPlatformGetTls failed: tls not allocated")
@@ -636,9 +645,6 @@ func glfwPlatformGetTls(tls *_GLFWtls) uintptr {
 	return TlsGetValue(tls.index)
 }
 
-func TlsFree(index int) {
-	// TODO
-}
 func glfwPlatformDestroyTls(tls *_GLFWtls) {
 	if tls.allocated {
 		TlsFree(tls.index)
@@ -993,4 +999,8 @@ func ReleaseCapture() {
 
 func TrackMouseEvent(tme *TRACKMOUSEEVENT) {
 	_TrackMouseEvent.Call(uintptr(unsafe.Pointer(tme)))
+}
+
+func FlashWindow(hWnd syscall.Handle, invert uint32) {
+	_, _, _ = _FlashWindow.Call(uintptr(hWnd), uintptr(invert))
 }
