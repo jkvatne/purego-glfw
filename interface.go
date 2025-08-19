@@ -489,8 +489,11 @@ func (w *Window) GetOpacity() float32 {
 	return glfwGetWindowOpacity(w)
 }
 
-// SetOpacity function sets the opacity of the window
-func (w *Window) SetOpacity(opacity float32) {
+// SetOpacity function sets the opacity of the window (0 to 1.0)
+func (w *Window) SetOpacity(opacity float64) {
+	if opacity < 0.0 || (opacity > 1.0) {
+		panic("SetOpacity: opacity must be between 0.0 and 1.0")
+	}
 	glfwSetWindowOpacity(w, opacity)
 }
 

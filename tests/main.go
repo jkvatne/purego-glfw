@@ -28,7 +28,10 @@ func main() {
 		cursor()
 	case "window":
 		window()
+	case "opacity":
+		opacity()
 	default:
+		opacity()
 		title()
 		msaa()
 		timeout()

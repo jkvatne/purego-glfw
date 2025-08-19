@@ -51,7 +51,7 @@ func printInfo(window *glfw.Window) {
 }
 
 func window() {
-	fmt.Printf("Print some window info\n")
+	fmt.Printf("\nPrint some window info\n")
 	runtime.LockOSThread()
 	if err := glfw.Init(); err != nil {
 		panic(err)

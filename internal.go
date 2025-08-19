@@ -1350,28 +1350,30 @@ func glfwSetWindowAspectRatio(window *Window, numer, denom int32) {
 }
 
 func glfwGetWindowOpacity(window *Window) float32 {
-	// TODO if (GetWindowLongW(window->win32.handle, GWL_EXSTYLE) & WS_EX_LAYERED) &&
-	//	GetLayeredWindowAttributes(window->win32.handle, NULL, &alpha, &flags) {
-	//	if (flags & LWA_ALPHA) {
-	//		return float32(alpha) / 255.0
-	//	}
-	// }
+	var alpha uint8
+	var flags uint32
+	exStyle := GetWindowLongW(window.Win32.handle, _GWL_EXSTYLE)
+	if (exStyle&ws_EX_LAYERED) != 0 && GetLayeredWindowAttributes(window.Win32.handle, nil, &alpha, &flags) {
+		if (flags & _LWA_ALPHA) != 0 {
+			return float32(alpha) / 255.0
+		}
+	}
 	return 1.0
 }
 
-func glfwSetWindowOpacity(window *Window, opacity float32) {
-	// TODO exStyle := GetWindowLongW(window.Win32.handle, GWL_EXSTYLE)
-	/*if opacity < 1.0 || (exStyle & WS_EX_TRANSPARENT) {
-		alpha := (BYTE)(255 * opacity);
-		exStyle |= WS_EX_LAYERED;
-		SetWindowLongW(window- > win32.handle, GWL_EXSTYLE, exStyle);
-		SetLayeredWindowAttributes(window- > win32.handle, 0, alpha, LWA_ALPHA);
-	} else if (exStyle & WS_EX_TRANSPARENT) {
-		SetLayeredWindowAttributes(window->win32.handle, 0, 0, 0);
+func glfwSetWindowOpacity(window *Window, opacity float64) {
+	exStyle := GetWindowLongW(window.Win32.handle, _GWL_EXSTYLE)
+	if opacity < 1.0 || (exStyle&ws_EX_TRANSPARENT) != 0 {
+		alpha := uint8(255 * opacity)
+		exStyle |= ws_EX_LAYERED
+		SetWindowLongW(window.Win32.handle, _GWL_EXSTYLE, exStyle)
+		SetLayeredWindowAttributes(window.Win32.handle, 0, alpha, _LWA_ALPHA)
+	} else if (exStyle & ws_EX_TRANSPARENT) != 0 {
+		SetLayeredWindowAttributes(window.Win32.handle, 0, 0, 0)
 	} else {
-		exStyle &= ~WS_EX_LAYERED;
-		SetWindowLongW(window->win32.handle, GWL_EXSTYLE, exStyle);
-	}*/
+		exStyle &= ^uint32(ws_EX_LAYERED)
+		SetWindowLongW(window.Win32.handle, _GWL_EXSTYLE, exStyle)
+	}
 }
 
 func glfwRequestWindowAttention(window *Window) {
