@@ -508,7 +508,7 @@ func windowProc(hwnd syscall.Handle, msg uint32, wParam, lParam uintptr) uintptr
 
 		key = _glfw.win32.keycodes[scancode]
 		if wParam == VK_CONTROL {
-			if lParam>>16&kf_EXTENDED != 0 {
+			if lParam>>16&_KF_EXTENDED != 0 {
 				// Right side keys have the extended key bit set
 				key = KeyRightControl
 			} else {
@@ -520,7 +520,7 @@ func windowProc(hwnd syscall.Handle, msg uint32, wParam, lParam uintptr) uintptr
 				MSG next;
 				const DWORD time = GetMessageTime();
 
-				if (PeekMessageW(&next, NULL, 0, 0, pm_NOREMOVE)) {
+				if (PeekMessageW(&next, NULL, 0, 0, _PM_NOREMOVE)) {
 					if (next.message == _WM_KEYDOWN ||
 						next.message == _WM_SYSKEYDOWN ||
 						next.message == _WM_KEYUP ||
@@ -748,7 +748,7 @@ func windowProc(hwnd syscall.Handle, msg uint32, wParam, lParam uintptr) uintptr
 
 func glfwPlatformPollEvents() {
 	var msg Msg
-	for PeekMessage(&msg, 0, 0, 0, pm_REMOVE) {
+	for PeekMessage(&msg, 0, 0, 0, _PM_REMOVE) {
 		if msg.Message == _WM_QUIT {
 			// NOTE: While GLFW does not itself post _WM_QUIT, other processes may post it to this one, for example Task Manager
 			// HACK: Treat _WM_QUIT as a close on all windows
@@ -1060,7 +1060,7 @@ func glfwSetVideoMode(monitor *Monitor, desired *GLFWvidmode) error {
 	}
 	var dm DEVMODEW
 	dm.dmSize = uint16(unsafe.Sizeof(dm))
-	dm.dmFields = dm_PELSWIDTH | dm_PELSHEIGHT | dm_BITSPERPEL | dm_DISPLAYFREQUENCY
+	dm.dmFields = _DM_PELSWIDTH | _DM_PELSHEIGHT | _DM_BITSPERPEL | _DM_DISPLAYFREQUENCY
 	dm.dmPelsWidth = best.Width
 	dm.dmPelsHeight = best.Height
 	dm.dmBitsPerPel = best.RedBits + best.GreenBits + best.BlueBits
@@ -1069,24 +1069,24 @@ func glfwSetVideoMode(monitor *Monitor, desired *GLFWvidmode) error {
 	if dm.dmBitsPerPel < 15 || dm.dmBitsPerPel >= 24 {
 		dm.dmBitsPerPel = 32
 	}
-	result := ChangeDisplaySettingsEx(&monitor.adapterName[0], &dm, 0, cds_FULLSCREEN, 0)
-	if result == disp_CHANGE_SUCCESSFUL {
+	result := ChangeDisplaySettingsEx(&monitor.adapterName[0], &dm, 0, _CDS_FULLSCREEN, 0)
+	if result == _DISP_CHANGE_SUCCESSFUL {
 		monitor.modeChanged = true
 	} else {
 		description := "Unknown error"
-		if result == disp_CHANGE_BADDUALVIEW {
+		if result == _DISP_CHANGE_BADDUALVIEW {
 			description = "The system uses DualView"
-		} else if result == disp_CHANGE_BADFLAGS {
+		} else if result == _DISP_CHANGE_BADFLAGS {
 			description = "Invalid flags"
-		} else if result == disp_CHANGE_BADMODE {
+		} else if result == _DISP_CHANGE_BADMODE {
 			description = "Graphics mode not supported"
-		} else if result == disp_CHANGE_BADPARAM {
+		} else if result == _DISP_CHANGE_BADPARAM {
 			description = "Invalid parameter"
-		} else if result == disp_CHANGE_FAILED {
+		} else if result == _DISP_CHANGE_FAILED {
 			description = "Graphics mode failed"
-		} else if result == disp_CHANGE_NOTUPDATED {
+		} else if result == _DISP_CHANGE_NOTUPDATED {
 			description = "Failed to write to registry"
-		} else if result == disp_CHANGE_RESTART {
+		} else if result == _DISP_CHANGE_RESTART {
 			description = "Computer restart required"
 		}
 		return fmt.Errorf("Win32: Failed to set video mode: %s", description)
@@ -1098,7 +1098,7 @@ func fitToMonitor(window *Window) {
 	mi := GetMonitorInfo(window.monitor.hMonitor)
 	_, _, err := _SetWindowPos.Call(
 		uintptr(window.Win32.handle),
-		uintptr(hwnd_TOPMOST),
+		uintptr(_HWND_TOPMOST),
 		uintptr(mi.RcMonitor.Left),
 		uintptr(mi.RcMonitor.Top),
 		uintptr(mi.RcMonitor.Right-mi.RcMonitor.Left),
@@ -1117,10 +1117,10 @@ func systemParametersInfoW(uiAction uint32, uiParam uint32, pvParam *uint32, fWi
 //
 func acquireMonitor(window *Window) {
 	if _glfw.win32.acquiredMonitorCount > 0 {
-		_SetThreadExecutionState.Call(uintptr(es_CONTINUOUS | es_DISPLAY_REQUIRED))
+		_SetThreadExecutionState.Call(uintptr(_ES_CONTINUOUS | _ES_DISPLAY_REQUIRED))
 		// HACK: When mouse trails are enabled the cursor becomes invisible when the OpenGL ICD switches to page flipping
-		systemParametersInfoW(spi_GETMOUSETRAILS, 0, &_glfw.win32.mouseTrailSize, 0)
-		systemParametersInfoW(spi_SETMOUSETRAILS, 0, nil, 0)
+		systemParametersInfoW(_SPI_GETMOUSETRAILS, 0, &_glfw.win32.mouseTrailSize, 0)
+		systemParametersInfoW(_SPI_SETMOUSETRAILS, 0, nil, 0)
 	}
 
 	if window.monitor.window == nil {
@@ -1133,7 +1133,7 @@ func acquireMonitor(window *Window) {
 // Restore the previously saved (original) video mode
 func glfwRestoreVideoMode(monitor *Monitor) {
 	if monitor.modeChanged {
-		ChangeDisplaySettingsEx(&monitor.adapterName[0], nil, 0, cds_FULLSCREEN, 0)
+		ChangeDisplaySettingsEx(&monitor.adapterName[0], nil, 0, _CDS_FULLSCREEN, 0)
 		monitor.modeChanged = false
 	}
 }
@@ -1146,9 +1146,9 @@ func releaseMonitor(window *Window) {
 
 	_glfw.win32.acquiredMonitorCount--
 	if _glfw.win32.acquiredMonitorCount == 0 {
-		_SetThreadExecutionState.Call(uintptr(es_CONTINUOUS))
+		_SetThreadExecutionState.Call(uintptr(_ES_CONTINUOUS))
 		// HACK: Restore mouse trail length saved in acquireMonitor
-		systemParametersInfoW(spi_SETMOUSETRAILS, _glfw.win32.mouseTrailSize, nil, 0)
+		systemParametersInfoW(_SPI_SETMOUSETRAILS, _glfw.win32.mouseTrailSize, nil, 0)
 	}
 	glfwInputMonitorWindow(window.monitor, nil)
 	glfwRestoreVideoMode(window.monitor)
@@ -1453,7 +1453,7 @@ func updateWindowStyles(window *Window) {
 	ClientToScreen(window.Win32.handle, POINT{rect.Left, rect.Top})
 	ClientToScreen(window.Win32.handle, POINT{rect.Right, rect.Bottom})
 	SetWindowLongW(window.Win32.handle, _GWL_STYLE, style)
-	SetWindowPos(window.Win32.handle, hwnd_TOPMOST, rect.Left, rect.Top, rect.Right-rect.Left, rect.Bottom-rect.Top,
+	SetWindowPos(window.Win32.handle, _HWND_TOPMOST, rect.Left, rect.Top, rect.Right-rect.Left, rect.Bottom-rect.Top,
 		SWP_FRAMECHANGED|SWP_NOACTIVATE|SWP_NOZORDER)
 }
 

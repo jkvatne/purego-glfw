@@ -927,7 +927,7 @@ func IsZoomed(hwnd syscall.Handle) int32 {
 }
 
 func LoadCursor(cursorID uint16) syscall.Handle {
-	h, err := LoadImage(0, uintptr(cursorID), _IMAGE_CURSOR, 0, 0, lr_DEFAULTSIZE|lr_SHARED)
+	h, err := LoadImage(0, uintptr(cursorID), _IMAGE_CURSOR, 0, 0, _LR_DEFAULTSIZE|_LR_SHARED)
 	if err != nil && !errors.Is(err, syscall.Errno(0)) {
 		panic("LoadCursor failed, " + err.Error())
 	}

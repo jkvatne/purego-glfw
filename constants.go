@@ -1,6 +1,8 @@
 package glfw
 
-import "syscall"
+import (
+	"syscall"
+)
 
 // WGL Constants
 const (
@@ -78,27 +80,25 @@ const (
 
 // Windows constants
 const (
-	pm_REMOVE   = 0x0001
-	pm_NOREMOVE = 0x0000
-
-	dm_PELSWIDTH            = 0x00080000
-	dm_PELSHEIGHT           = 0x00100000
-	dm_BITSPERPEL           = 0x00040000
-	dm_DISPLAYFREQUENCY     = 0x00400000
-	cds_FULLSCREEN          = 0x00000004
-	disp_CHANGE_SUCCESSFUL  = 0
-	disp_CHANGE_RESTART     = 1
-	disp_CHANGE_FAILED      = -1
-	disp_CHANGE_BADMODE     = -2
-	disp_CHANGE_NOTUPDATED  = -3
-	disp_CHANGE_BADFLAGS    = -4
-	disp_CHANGE_BADPARAM    = -5
-	disp_CHANGE_BADDUALVIEW = -6
-
-	mdt_EFFECTIVE_DPI = 0
-	mdt_ANGULAR_DPI   = 1
-	mdt_RAW_DPI       = 2
-	mdt_DEFAULT       = 3
+	_PM_REMOVE               = 0x0001
+	_PM_NOREMOVE             = 0x0000
+	_DM_PELSWIDTH            = 0x00080000
+	_DM_PELSHEIGHT           = 0x00100000
+	_DM_BITSPERPEL           = 0x00040000
+	_DM_DISPLAYFREQUENCY     = 0x00400000
+	_CDS_FULLSCREEN          = 0x00000004
+	_DISP_CHANGE_SUCCESSFUL  = 0
+	_DISP_CHANGE_RESTART     = 1
+	_DISP_CHANGE_FAILED      = -1
+	_DISP_CHANGE_BADMODE     = -2
+	_DISP_CHANGE_NOTUPDATED  = -3
+	_DISP_CHANGE_BADFLAGS    = -4
+	_DISP_CHANGE_BADPARAM    = -5
+	_DISP_CHANGE_BADDUALVIEW = -6
+	_MDT_EFFECTIVE_DPI       = 0
+	_MDT_ANGULAR_DPI         = 1
+	_MDT_RAW_DPI             = 2
+	_MDT_DEFAULT             = 3
 
 	_GL_VERSION     = 0x1F02
 	_GWL_WNDPROC    = -4
@@ -109,29 +109,19 @@ const (
 	_GWL_USERDATA   = -21
 	_GWL_ID         = -12
 
-	_IMAGE_BITMAP      = 0
-	_IMAGE_ICON        = 1
-	_IMAGE_CURSOR      = 2
-	_IMAGE_ENHMETAFILE = 3
-	_UNICODE_NOCHAR    = 65535
-	cw_USEDEFAULT      = -2147483648
+	_IMAGE_ICON     = 1
+	_IMAGE_CURSOR   = 2
+	_UNICODE_NOCHAR = 65535
+	_CW_USEDEFAULT  = -2147483648
 
-	lr_CREATEDIBSECTION = 0x00002000
-	lr_DEFAULTCOLOR     = 0x00000000
-	lr_DEFAULTSIZE      = 0x00000040
-	lr_LOADFROMFILE     = 0x00000010
-	lr_LOADMAP3DCOLORS  = 0x00001000
-	lr_LOADTRANSPARENT  = 0x00000020
-	lr_MONOCHROME       = 0x00000001
-	lr_SHARED           = 0x00008000
-	lr_VGACOLOR         = 0x00000080
+	_LR_DEFAULTCOLOR = 0x00000000
+	_LR_DEFAULTSIZE  = 0x00000040
+	_LR_SHARED       = 0x00008000
 
-	cs_HREDRAW                = 0x0002
-	cs_INSERTCHAR             = 0x2000
-	cs_NOMOVECARET            = 0x4000
-	cs_VREDRAW                = 0x0001
-	cs_OWNDC                  = 0x0020
-	kf_EXTENDED               = 0x100
+	_CS_HREDRAW               = 0x0002
+	_CS_VREDRAW               = 0x0001
+	_CS_OWNDC                 = 0x0020
+	_KF_EXTENDED              = 0x100
 	_MONITOR_DEFAULTTONULL    = 0x00000000
 	_MONITOR_DEFAULTTOPRIMARY = 0x00000001
 	_MONITOR_DEFAULTTONEAREST = 0x00000002
@@ -143,36 +133,34 @@ const (
 	_SIZE_RESTORED  = 0
 	_SIZE_MINIMIZED = 1
 	_SIZE_MAXIMIZED = 2
-	_SIZE_MAXSHOW   = 3
-	_SIZE_MAXHIDE   = 4
 
-	hwnd_TOPMOST   = 0xFFFFFFFFFFFFFFFF
-	hwnd_NOTOPMOST = 0xFFFFFFFFFFFFFFFE
+	_HWND_TOPMOST   = 0xFFFFFFFFFFFFFFFF
+	_HWND_NOTOPMOST = 0xFFFFFFFFFFFFFFFE
 
-	spi_SETMOUSETRAILS = 0x005D
-	spi_GETMOUSETRAILS = 0x005E
+	_SPI_SETMOUSETRAILS = 0x005D
+	_SPI_GETMOUSETRAILS = 0x005E
 
-	es_CONTINUOUS       = 0x80000000
-	es_DISPLAY_REQUIRED = 0x00000002
+	_ES_CONTINUOUS       = 0x80000000
+	_ES_DISPLAY_REQUIRED = 0x00000002
 
 	_DISPLAY_DEVICE_ACTIVE         = 0x00000001
 	_DISPLAY_DEVICE_ATTACHED       = 0x00000002
 	_DISPLAY_DEVICE_PRIMARY_DEVICE = 0x00000004
-	qs_KEY                         = 0x1
-	qs_MOUSEMOVE                   = 0x2
-	qs_MOUSEBUTTON                 = 0x4
-	qs_MOUSE                       = (qs_MOUSEMOVE | qs_MOUSEBUTTON)
-	qs_INPUT                       = (qs_MOUSE | qs_KEY)
-	qs_POSTMESSAGE                 = 0x8
-	qs_TIMER                       = 0x10
-	qs_PAINT                       = 0x20
-	qs_SENDMESSAGE                 = 0x40
-	qs_HOTKEY                      = 0x80
-	qs_REFRESH                     = qs_HOTKEY | qs_KEY | qs_MOUSEBUTTON | qs_PAINT
-	qs_ALLEVENTS                   = qs_INPUT | qs_POSTMESSAGE | qs_TIMER | qs_PAINT | qs_HOTKEY
-	qs_ALLINPUT                    = qs_SENDMESSAGE | qs_PAINT | qs_TIMER | qs_POSTMESSAGE | qs_MOUSEBUTTON | qs_MOUSEMOVE | qs_HOTKEY | qs_KEY
-	qs_ALLPOSTMESSAGE              = 0x100
-	qs_RAWINPUT                    = 0x400
+	_QS_KEY                        = 0x1
+	_QS_MOUSEMOVE                  = 0x2
+	_QS_MOUSEBUTTON                = 0x4
+	_QS_MOUSE                      = (_QS_MOUSEMOVE | _QS_MOUSEBUTTON)
+	_QS_INPUT                      = (_QS_MOUSE | _QS_KEY)
+	_QS_POSTMESSAGE                = 0x8
+	_QS_TIMER                      = 0x10
+	_QS_PAINT                      = 0x20
+	_QS_SENDMESSAGE                = 0x40
+	_QS_HOTKEY                     = 0x80
+	_QS_REFRESH                    = _QS_HOTKEY | _QS_KEY | _QS_MOUSEBUTTON | _QS_PAINT
+	_QS_ALLEVENTS                  = _QS_INPUT | _QS_POSTMESSAGE | _QS_TIMER | _QS_PAINT | _QS_HOTKEY
+	_QS_ALLINPUT                   = _QS_SENDMESSAGE | _QS_PAINT | _QS_TIMER | _QS_POSTMESSAGE | _QS_MOUSEBUTTON | _QS_MOUSEMOVE | _QS_HOTKEY | _QS_KEY
+	_QS_ALLPOSTMESSAGE             = 0x100
+	_QS_RAWINPUT                   = 0x400
 	_RIDEV_REMOVE                  = 1
 
 	_LWA_COLORKEY = 0x00000001

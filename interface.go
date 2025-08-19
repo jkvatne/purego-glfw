@@ -195,7 +195,7 @@ func WaitEventsTimeout(timeout float64) {
 	if timeout < 0.0 {
 		panic("Wait time must be positive")
 	}
-	MsgWaitForMultipleObjects(0, nil, 0, uint32(timeout*1e3), qs_ALLINPUT)
+	MsgWaitForMultipleObjects(0, nil, 0, uint32(timeout*1e3), _QS_ALLINPUT)
 	glfwPollEvents()
 }
 

@@ -85,7 +85,7 @@ var resources struct {
 
 func glfwPollEvents() {
 	var msg Msg
-	for PeekMessage(&msg, 0, 0, 0, pm_REMOVE) {
+	for PeekMessage(&msg, 0, 0, 0, _PM_REMOVE) {
 		if msg.Message == _WM_QUIT {
 			window := _glfw.windowListHead
 			for window != nil {
@@ -165,7 +165,7 @@ func _glfwRegisterWindowClassWin32() error {
 	ws, _ := syscall.UTF16PtrFromString("GLFW")
 	wcls := WndClassEx{
 		CbSize:        uint32(unsafe.Sizeof(WndClassEx{})),
-		Style:         cs_HREDRAW | cs_VREDRAW | cs_OWNDC,
+		Style:         _CS_HREDRAW | _CS_VREDRAW | _CS_OWNDC,
 		LpfnWndProc:   syscall.NewCallback(windowProc),
 		HInstance:     _glfw.instance,
 		HIcon:         0,
@@ -174,10 +174,10 @@ func _glfwRegisterWindowClassWin32() error {
 	// Load user-provided icon if available
 	h, _ := GetModuleHandle()
 	wstr, _ := syscall.UTF16FromString("GLFW_ICON")
-	wcls.HIcon, _ = LoadImage(h, uintptr(unsafe.Pointer(&wstr[0])), _IMAGE_ICON, 0, 0, lr_DEFAULTSIZE|lr_SHARED)
+	wcls.HIcon, _ = LoadImage(h, uintptr(unsafe.Pointer(&wstr[0])), _IMAGE_ICON, 0, 0, _LR_DEFAULTSIZE|_LR_SHARED)
 	if wcls.HIcon == 0 {
 		// No user-provided icon found, load default icon
-		wcls.HIcon, _ = LoadImage(0, IDI_APPLICATION, _IMAGE_ICON, 0, 0, lr_DEFAULTSIZE|lr_SHARED)
+		wcls.HIcon, _ = LoadImage(0, IDI_APPLICATION, _IMAGE_ICON, 0, 0, _LR_DEFAULTSIZE|_LR_SHARED)
 	}
 	var err error
 	_glfw.class, err = RegisterClassEx(&wcls)
@@ -212,8 +212,8 @@ func createNativeWindow(window *_GLFWwindow, wndconfig *_GLFWwndconfig, fbconfig
 		}
 		AdjustWindowRectEx(&rect, style, 0, exStyle)
 		if wndconfig.xpos == AnyPosition && wndconfig.ypos == AnyPosition {
-			frameX = cw_USEDEFAULT
-			frameY = cw_USEDEFAULT
+			frameX = _CW_USEDEFAULT
+			frameY = _CW_USEDEFAULT
 		} else {
 			frameX = int32(wndconfig.xpos) + rect.Left
 			frameY = int32(wndconfig.ypos) + rect.Top
@@ -275,7 +275,7 @@ func createNativeWindow(window *_GLFWwindow, wndconfig *_GLFWwndconfig, fbconfig
 
 		if wndconfig.maximized && !wndconfig.decorated {
 			mi := GetMonitorInfo(mh)
-			SetWindowPos(window.Win32.handle, hwnd_TOPMOST,
+			SetWindowPos(window.Win32.handle, _HWND_TOPMOST,
 				mi.RcWork.Left,
 				mi.RcWork.Top,
 				mi.RcWork.Right-mi.RcWork.Left,
@@ -470,7 +470,7 @@ func createHelperWindow() error {
 	var err error
 	var wc WndClassEx
 	wc.CbSize = uint32(unsafe.Sizeof(wc))
-	wc.Style = cs_OWNDC
+	wc.Style = _CS_OWNDC
 	wc.LpfnWndProc = syscall.NewCallback(helperWindowProc)
 	wc.HInstance = _glfw.instance
 	wc.LpszClassName = syscall.StringToUTF16Ptr("GLFW3 Helper")
@@ -506,7 +506,7 @@ func createHelperWindow() error {
 					(DEV_BROADCAST_HDR*) &dbi,	DEVICE_NOTIFY_WINDOW_HANDLE)
 		}*/
 	var msg Msg
-	for PeekMessage(&msg, _glfw.win32.helperWindowHandle, 0, 0, pm_REMOVE) {
+	for PeekMessage(&msg, _glfw.win32.helperWindowHandle, 0, 0, _PM_REMOVE) {
 		TranslateMessage(&msg)
 		DispatchMessage(&msg)
 	}
@@ -657,7 +657,7 @@ func glfwSetWindowMonitor(window *Window, monitor *Monitor, xpos int32, ypos int
 		}
 		acquireMonitor(window)
 		mi := GetMonitorInfo(window.monitor.hMonitor)
-		SetWindowPos(window.Win32.handle, hwnd_TOPMOST,
+		SetWindowPos(window.Win32.handle, _HWND_TOPMOST,
 			mi.RcMonitor.Left, mi.RcMonitor.Top,
 			mi.RcMonitor.Right-mi.RcMonitor.Left, mi.RcMonitor.Bottom-mi.RcMonitor.Top,
 			SWP_NOCOPYBITS|SWP_NOACTIVATE|SWP_NOZORDER)
@@ -672,9 +672,9 @@ func glfwSetWindowMonitor(window *Window, monitor *Monitor, xpos int32, ypos int
 			flags |= SWP_FRAMECHANGED
 			style = getWindowStyle(window)
 		}
-		after := syscall.Handle(hwnd_NOTOPMOST)
+		after := syscall.Handle(_HWND_NOTOPMOST)
 		if window.floating {
-			after = syscall.Handle(hwnd_TOPMOST)
+			after = syscall.Handle(_HWND_TOPMOST)
 		}
 
 		if IsWindows10Version1607OrGreater() {

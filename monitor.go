@@ -121,7 +121,7 @@ func (m *Monitor) GetWorkarea() (x, y, width, height int) {
 func (m *Monitor) GetContentScale() (float32, float32) {
 	var dpiX, dpiY int
 	if IsWindows8Point1OrGreater() {
-		dpiX, dpiY = GetDpiForMonitor(m.hMonitor, mdt_EFFECTIVE_DPI)
+		dpiX, dpiY = GetDpiForMonitor(m.hMonitor, _MDT_EFFECTIVE_DPI)
 	} else {
 		dc := getDC(0)
 		dpiX = GetDeviceCaps(dc, _LOGPIXELSX)
@@ -240,7 +240,7 @@ func glfwCompareVideoModes(fp, sp *GLFWvidmode) int32 {
 func glfwGetHMONITORContentScale(handle HMONITOR) (xscale float32, yscale float32) {
 	var xdpi, ydpi int
 	if IsWindows8Point1OrGreater() {
-		xdpi, ydpi = GetDpiForMonitor(handle, mdt_EFFECTIVE_DPI)
+		xdpi, ydpi = GetDpiForMonitor(handle, _MDT_EFFECTIVE_DPI)
 	} else {
 		dc := getDC(0)
 		xdpi = GetDeviceCaps(dc, _LOGPIXELSX)
