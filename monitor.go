@@ -17,14 +17,15 @@ type Monitor struct {
 	heightMM    int
 	modes       []GLFWvidmode
 	currentMode GLFWvidmode
-
-	// This is defined in the window API's platform.h _GLFW_PLATFORM_MONITOR_STATE;
-	hMonitor HMONITOR
-	hDc      HDC
 	// The window whose video mode is current on this monitor
 	window *_GLFWwindow
-	Bounds RECT
-	// This size matches the static size of DISPLAY_DEVICE.DeviceName
+	Win32  _GLFWMonitorWin32
+}
+
+type _GLFWMonitorWin32 struct {
+	hMonitor          HMONITOR
+	hDc               HDC
+	Bounds            RECT
 	adapterName       [32]uint16
 	displayName       [32]uint16
 	publicAdapterName string
@@ -57,7 +58,7 @@ func (m *Monitor) GetPos() (x, y int) {
 	// This is from _glfwPlatformGetMonitorPos
 	var dm DEVMODEW
 	dm.dmSize = uint16(unsafe.Sizeof(dm))
-	EnumDisplaySettingsEx(&m.adapterName[0],
+	EnumDisplaySettingsEx(&m.Win32.adapterName[0],
 		ENUM_CURRENT_SETTINGS,
 		&dm,
 		EDS_ROTATEDMODE)
@@ -70,9 +71,9 @@ func (m *Monitor) GetPos() (x, y int) {
 
 func enumMonitorCallback(monitor HMONITOR, hdc HDC, bounds RECT, lParam uintptr) bool {
 	m := (*Monitor)(unsafe.Pointer(lParam))
-	m.hMonitor = monitor
-	m.hDc = hdc
-	m.Bounds = bounds
+	m.Win32.hMonitor = monitor
+	m.Win32.hDc = hdc
+	m.Win32.Bounds = bounds
 	// monitorInfo := GetMonitorInfo(m.hMonitor)
 	// Monitors = append(Monitors, &m)
 	return true
@@ -103,7 +104,7 @@ func (m *Monitor) GetPhysicalSize() (width, height int) {
 // corner of the work area of the specified monitor along with the work area
 // size in screen coordinates.
 func (m *Monitor) GetWorkarea() (x, y, width, height int) {
-	mi := GetMonitorInfo(m.hMonitor)
+	mi := GetMonitorInfo(m.Win32.hMonitor)
 	x = int(mi.RcWork.Left)
 	y = int(mi.RcWork.Top)
 	width = int(mi.RcWork.Right - mi.RcWork.Left)
@@ -121,7 +122,7 @@ func (m *Monitor) GetWorkarea() (x, y, width, height int) {
 func (m *Monitor) GetContentScale() (float32, float32) {
 	var dpiX, dpiY int
 	if IsWindows8Point1OrGreater() {
-		dpiX, dpiY = GetDpiForMonitor(m.hMonitor, _MDT_EFFECTIVE_DPI)
+		dpiX, dpiY = GetDpiForMonitor(m.Win32.hMonitor, _MDT_EFFECTIVE_DPI)
 	} else {
 		dc := getDC(0)
 		dpiX = GetDeviceCaps(dc, _LOGPIXELSX)
@@ -140,7 +141,7 @@ func GetVideoMode(monitor *Monitor) GLFWvidmode {
 	mode := monitor.currentMode
 	var dm DEVMODEW
 	dm.dmSize = uint16(unsafe.Sizeof(dm))
-	EnumDisplaySettingsEx(&monitor.adapterName[0], ENUM_CURRENT_SETTINGS, &dm, 0)
+	EnumDisplaySettingsEx(&monitor.Win32.adapterName[0], ENUM_CURRENT_SETTINGS, &dm, 0)
 	mode.Width = dm.dmPelsWidth
 	mode.Height = dm.dmPelsHeight
 	mode.RefreshRate = dm.dmDisplayFrequency
@@ -171,7 +172,7 @@ func GetVideoModes(monitor *Monitor) (result []GLFWvidmode) {
 		var mode GLFWvidmode
 		var dm DEVMODEW
 		dm.dmSize = uint16(unsafe.Sizeof(dm))
-		n := EnumDisplaySettingsEx(&monitor.adapterName[0], modeIndex, &dm, 0)
+		n := EnumDisplaySettingsEx(&monitor.Win32.adapterName[0], modeIndex, &dm, 0)
 		if n == 0 {
 			break
 		}
@@ -197,9 +198,9 @@ func GetVideoModes(monitor *Monitor) (result []GLFWvidmode) {
 		if i < count {
 			continue
 		}
-		if monitor.modesPruned {
+		if monitor.Win32.modesPruned {
 			// Skip modes not supported by the connected displays
-			if ChangeDisplaySettingsEx(&monitor.adapterName[0], &dm, 0, CDS_TEST, uintptr(0)) != 0 {
+			if ChangeDisplaySettingsEx(&monitor.Win32.adapterName[0], &dm, 0, CDS_TEST, uintptr(0)) != 0 {
 				continue
 			}
 		}

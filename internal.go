@@ -918,20 +918,20 @@ func createMonitor(adapter *DISPLAY_DEVICEW, display *DISPLAY_DEVICEW) *Monitor 
 	monitor.widthMM = widthMM
 
 	if adapter.StateFlags&DISPLAY_DEVICE_MODESPRUNED != 0 {
-		monitor.modesPruned = true
+		monitor.Win32.modesPruned = true
 	}
 	for i := 0; i < len(adapter.DeviceName); i++ {
-		monitor.adapterName[i] = adapter.DeviceName[i]
+		monitor.Win32.adapterName[i] = adapter.DeviceName[i]
 	}
 	// WideCharToMultiByte(CP_UTF8, 0, adapter.DeviceName, -1, monitor.win32.publicAdapterName, sizeof(monitor.win32.publicAdapterName), NULL, NULL)
 	if display != nil {
 		for i := 0; i < len(adapter.DeviceName); i++ {
-			monitor.displayName[i] = display.DeviceName[i]
+			monitor.Win32.displayName[i] = display.DeviceName[i]
 		}
 	}
 	//	WideCharToMultiByte(CP_UTF8, 0, display.DeviceName, -1, monitor.win32.publicDisplayName, sizeof(monitor.win32.publicDisplayName), NULL, NULL)
-	monitor.publicDisplayName = string(utf16.Decode(display.DeviceName[:]))
-	monitor.publicAdapterName = string(utf16.Decode(adapter.DeviceName[:]))
+	monitor.Win32.publicDisplayName = string(utf16.Decode(display.DeviceName[:]))
+	monitor.Win32.publicAdapterName = string(utf16.Decode(adapter.DeviceName[:]))
 	rect.Left = dm.dmPosition.X
 	rect.Top = dm.dmPosition.Y
 	rect.Right = dm.dmPosition.X + dm.dmPelsWidth
@@ -1071,9 +1071,9 @@ func glfwSetVideoMode(monitor *Monitor, desired *GLFWvidmode) error {
 	if dm.dmBitsPerPel < 15 || dm.dmBitsPerPel >= 24 {
 		dm.dmBitsPerPel = 32
 	}
-	result := ChangeDisplaySettingsEx(&monitor.adapterName[0], &dm, 0, _CDS_FULLSCREEN, 0)
+	result := ChangeDisplaySettingsEx(&monitor.Win32.adapterName[0], &dm, 0, _CDS_FULLSCREEN, 0)
 	if result == _DISP_CHANGE_SUCCESSFUL {
-		monitor.modeChanged = true
+		monitor.Win32.modeChanged = true
 	} else {
 		description := "Unknown error"
 		if result == _DISP_CHANGE_BADDUALVIEW {
@@ -1097,7 +1097,7 @@ func glfwSetVideoMode(monitor *Monitor, desired *GLFWvidmode) error {
 }
 
 func fitToMonitor(window *Window) {
-	mi := GetMonitorInfo(window.monitor.hMonitor)
+	mi := GetMonitorInfo(window.monitor.Win32.hMonitor)
 	_, _, err := _SetWindowPos.Call(
 		uintptr(window.Win32.handle),
 		uintptr(_HWND_TOPMOST),
@@ -1134,9 +1134,9 @@ func acquireMonitor(window *Window) {
 
 // Restore the previously saved (original) video mode
 func glfwRestoreVideoMode(monitor *Monitor) {
-	if monitor.modeChanged {
-		ChangeDisplaySettingsEx(&monitor.adapterName[0], nil, 0, _CDS_FULLSCREEN, 0)
-		monitor.modeChanged = false
+	if monitor.Win32.modeChanged {
+		ChangeDisplaySettingsEx(&monitor.Win32.adapterName[0], nil, 0, _CDS_FULLSCREEN, 0)
+		monitor.Win32.modeChanged = false
 	}
 }
 
@@ -1688,7 +1688,7 @@ func createNativeWindow(window *_GLFWwindow, wndconfig *_GLFWwndconfig, fbconfig
 		_glfw.win32.mainWindowClass = _glfw.class
 	}
 	if window.monitor != nil {
-		mi := GetMonitorInfo(window.monitor.hMonitor)
+		mi := GetMonitorInfo(window.monitor.Win32.hMonitor)
 		// NOTE: This window placement is temporary
 		frameX = mi.RcMonitor.Left
 		frameY = mi.RcMonitor.Top
@@ -2146,7 +2146,7 @@ func glfwSetWindowMonitor(window *Window, monitor *Monitor, xpos int32, ypos int
 			flags |= SWP_FRAMECHANGED
 		}
 		acquireMonitor(window)
-		mi := GetMonitorInfo(window.monitor.hMonitor)
+		mi := GetMonitorInfo(window.monitor.Win32.hMonitor)
 		SetWindowPos(window.Win32.handle, _HWND_TOPMOST,
 			mi.RcMonitor.Left, mi.RcMonitor.Top,
 			mi.RcMonitor.Right-mi.RcMonitor.Left, mi.RcMonitor.Bottom-mi.RcMonitor.Top,
