@@ -94,7 +94,7 @@ func reopen() {
 		width := 400
 		height := 400
 		if monitor != nil {
-			mode := glfw.GetVideoMode(monitor)
+			mode := monitor.GetVideoMode()
 			width = int(mode.Width)
 			height = int(mode.Height)
 			x, y := monitor.GetPos()

@@ -43,8 +43,8 @@ func key_callback4(window *glfw.Window, key glfw.Key, scancode int, action glfw.
 }
 
 func list_modes(monitor *glfw.Monitor) {
-	mode := glfw.GetVideoMode(monitor)
-	modes := glfw.GetVideoModes(monitor)
+	mode := monitor.GetVideoMode()
+	modes := monitor.GetVideoModes()
 	x, y := monitor.GetPos()
 	width_mm, height_mm := monitor.GetPhysicalSize()
 	xscale, yscale := monitor.GetContentScale()
@@ -72,7 +72,7 @@ func list_modes(monitor *glfw.Monitor) {
 }
 
 func test_modes(monitor *glfw.Monitor) {
-	modes := glfw.GetVideoModes(monitor)
+	modes := monitor.GetVideoModes()
 	for i := 0; i < len(modes); i++ {
 		mode := modes[i]
 		_ = glfw.WindowHint(glfw.Samples, 1)

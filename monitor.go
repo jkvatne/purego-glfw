@@ -1,7 +1,6 @@
 package glfw
 
 import (
-	"syscall"
 	"unsafe"
 )
 
@@ -55,44 +54,7 @@ func GetPrimaryMonitor() *Monitor {
 // GetPos returns the position, in screen coordinates, of the upper-left
 // corner of the monitor.
 func (m *Monitor) GetPos() (x, y int) {
-	// This is from _glfwPlatformGetMonitorPos
-	var dm DEVMODEW
-	dm.dmSize = uint16(unsafe.Sizeof(dm))
-	EnumDisplaySettingsEx(&m.Win32.adapterName[0],
-		ENUM_CURRENT_SETTINGS,
-		&dm,
-		EDS_ROTATEDMODE)
-
-	x = int(dm.dmPosition.X)
-	y = int(dm.dmPosition.Y)
-	return x, y
-	// return int(m.Bounds.Left), int(m.Bounds.Top)
-}
-
-func enumMonitorCallback(monitor HMONITOR, hdc HDC, bounds RECT, lParam uintptr) bool {
-	m := (*Monitor)(unsafe.Pointer(lParam))
-	m.Win32.hMonitor = monitor
-	m.Win32.hDc = hdc
-	m.Win32.Bounds = bounds
-	// monitorInfo := GetMonitorInfo(m.hMonitor)
-	// Monitors = append(Monitors, &m)
-	return true
-}
-
-// NewEnumDisplayMonitorsCallback is used in EnumDisplayMonitors to create the callback.
-func NewEnumDisplayMonitorsCallback(callback func(monitor HMONITOR, hdc HDC, bounds RECT, lParam uintptr) bool) uintptr {
-	return syscall.NewCallback(
-		func(monitor HMONITOR, hdc HDC, bounds *RECT, lParam uintptr) uintptr {
-			var r RECT
-			if bounds != nil {
-				r = *bounds
-			}
-			if callback(monitor, hdc, r, lParam) {
-				return 1
-			}
-			return 0
-		},
-	)
+	return glfwGetMonitorPos(m)
 }
 
 // GetPhysicalSize returns the size, in millimetres, of the display area of the monitor.
@@ -120,16 +82,7 @@ func (m *Monitor) GetWorkarea() (x, y, width, height int) {
 //
 // This function must only be called from the main thread.
 func (m *Monitor) GetContentScale() (float32, float32) {
-	var dpiX, dpiY int
-	if IsWindows8Point1OrGreater() {
-		dpiX, dpiY = GetDpiForMonitor(m.Win32.hMonitor, _MDT_EFFECTIVE_DPI)
-	} else {
-		dc := getDC(0)
-		dpiX = GetDeviceCaps(dc, _LOGPIXELSX)
-		dpiX = GetDeviceCaps(dc, _LOGPIXELSY)
-		releaseDC(0, dc)
-	}
-	return float32(dpiX) / _USER_DEFAULT_SCREEN_DPI, float32(dpiY) / _USER_DEFAULT_SCREEN_DPI
+	return glfwGetMonitorContentScale(m)
 }
 
 func (m *Monitor) GetMonitorName() string {
@@ -137,116 +90,13 @@ func (m *Monitor) GetMonitorName() string {
 	return s
 }
 
-func GetVideoMode(monitor *Monitor) GLFWvidmode {
-	mode := monitor.currentMode
-	var dm DEVMODEW
-	dm.dmSize = uint16(unsafe.Sizeof(dm))
-	EnumDisplaySettingsEx(&monitor.Win32.adapterName[0], ENUM_CURRENT_SETTINGS, &dm, 0)
-	mode.Width = dm.dmPelsWidth
-	mode.Height = dm.dmPelsHeight
-	mode.RefreshRate = dm.dmDisplayFrequency
-	mode.RedBits, mode.GreenBits, mode.BlueBits = SplitBpp(dm.dmBitsPerPel)
-	return mode
+func (monitor *Monitor) GetVideoMode() GLFWvidmode {
+	return glfwGetVideoMode(monitor)
 }
 
-func SplitBpp(bitsPerPel int32) (int32, int32, int32) {
-	bitsPerPel = min(24, bitsPerPel)
-	n := bitsPerPel / 3
-	blueBits := n
-	redBits := n
-	greenBits := n
-	delta := bitsPerPel - redBits*3
-	if delta >= 1 {
-		greenBits++
+func (m *Monitor) GetVideoModes() []GLFWvidmode {
+	if !refreshVideoModes(m) {
+		return nil
 	}
-	if delta == 2 {
-		redBits++
-	}
-	return redBits, greenBits, blueBits
-}
-
-func GetVideoModes(monitor *Monitor) (result []GLFWvidmode) {
-	modeIndex := 0
-	count := 0
-	for {
-		var mode GLFWvidmode
-		var dm DEVMODEW
-		dm.dmSize = uint16(unsafe.Sizeof(dm))
-		n := EnumDisplaySettingsEx(&monitor.Win32.adapterName[0], modeIndex, &dm, 0)
-		if n == 0 {
-			break
-		}
-		if dm.dmSize == 0 {
-			break
-		}
-		modeIndex++
-		// Skip modes with less than 15 BPP
-		if dm.dmBitsPerPel < 15 {
-			continue
-		}
-		mode.Width = dm.dmPelsWidth
-		mode.Height = dm.dmPelsHeight
-		mode.RefreshRate = dm.dmDisplayFrequency
-		mode.RedBits, mode.GreenBits, mode.BlueBits = SplitBpp(dm.dmBitsPerPel)
-		i := 0
-		for ; i < count; i++ {
-			if glfwCompareVideoModes(&result[i], &mode) == 0 {
-				break
-			}
-		}
-		// Skip duplicate modes
-		if i < count {
-			continue
-		}
-		if monitor.Win32.modesPruned {
-			// Skip modes not supported by the connected displays
-			if ChangeDisplaySettingsEx(&monitor.Win32.adapterName[0], &dm, 0, CDS_TEST, uintptr(0)) != 0 {
-				continue
-			}
-		}
-		count++
-		result = append(result, mode)
-	}
-	if count == 0 {
-		// HACK: Report the current mode if no valid modes were found
-		result = append(result, GetVideoMode(monitor))
-		count = 1
-	}
-	return result
-}
-
-// Lexically compare video modes, used by qsort
-//
-func glfwCompareVideoModes(fp, sp *GLFWvidmode) int32 {
-	fbpp := fp.RedBits + fp.GreenBits + fp.BlueBits
-	sbpp := sp.RedBits + sp.GreenBits + sp.BlueBits
-	farea := fp.Width * fp.Height
-	sarea := sp.Width * sp.Height
-	// First sort on color bits per pixel
-	if fbpp != sbpp {
-		return fbpp - sbpp
-	}
-	// Then sort on screen area
-	if farea != sarea {
-		return farea - sarea
-	}
-	// Then sort on width
-	if fp.Width != sp.Width {
-		return fp.Width - sp.Width
-	}
-	// Lastly sort on refresh rate
-	return fp.RefreshRate - sp.RefreshRate
-}
-
-func glfwGetHMONITORContentScale(handle HMONITOR) (xscale float32, yscale float32) {
-	var xdpi, ydpi int
-	if IsWindows8Point1OrGreater() {
-		xdpi, ydpi = GetDpiForMonitor(handle, _MDT_EFFECTIVE_DPI)
-	} else {
-		dc := getDC(0)
-		xdpi = GetDeviceCaps(dc, _LOGPIXELSX)
-		ydpi = GetDeviceCaps(dc, _LOGPIXELSY)
-		releaseDC(0, dc)
-	}
-	return float32(xdpi) / _USER_DEFAULT_SCREEN_DPI, float32(ydpi) / _USER_DEFAULT_SCREEN_DPI
+	return m.modes
 }

@@ -224,7 +224,7 @@ func key_callback_cursor(window *glfw.Window, key glfw.Key, scancode int, action
 		} else {
 			// Set windowed
 			m := glfw.GetPrimaryMonitor()
-			mode := glfw.GetVideoMode(m)
+			mode := m.GetVideoMode()
 			x, y = window.GetPos()
 			w, h = window.GetSize()
 			window.SetMonitor(m, 0, 0, int(mode.Width), int(mode.Height), int(mode.RefreshRate))
