@@ -48,6 +48,8 @@ func printInfo(window *glfw.Window) {
 	fmt.Printf("Iconified: %v\n", iconified)
 	maximized := window.GetAttrib(glfw.Maximized)
 	fmt.Printf("Maximized: %v\n", maximized)
+	transparent := window.GetAttrib(glfw.TransparentFramebuffer)
+	fmt.Printf("Transparent: %v\n", transparent)
 }
 
 func window() {

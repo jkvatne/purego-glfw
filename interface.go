@@ -691,7 +691,9 @@ func (window *Window) SetCursorMode(mode int) {
 	if window.Focused() {
 		if mode == CursorDisabled {
 			_glfw.win32.restoreCursorPosX, _glfw.win32.restoreCursorPosY = window.GetCursorPos()
-			// TODO glfwCenterCursorInContentArea(window);
+			// Center Cursor In Content Area
+			x, y := window.GetCursorPos()
+			window.SetCursorPos(x/2, y/2)
 			if window.rawMouseMotion != 0 {
 				enableRawMouseMotion(window)
 			}

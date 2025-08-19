@@ -6,6 +6,7 @@ import (
 )
 
 const EDS_ROTATEDMODE = 0x00000004
+const CDS_TEST = 0x00000002
 
 // Monitor structure
 //
@@ -196,12 +197,12 @@ func GetVideoModes(monitor *Monitor) (result []GLFWvidmode) {
 		if i < count {
 			continue
 		}
-		// if monitor.modesPruned	{
-		// Skip modes not supported by the connected displays
-		// TODO if ChangeDisplaySettingsEx(monitor.win32.adapterName,	&dm,NULL,CDS_TEST,NULL) != DISP_CHANGE_SUCCESSFUL)	{
-		//	continue;
-		// }
-		// }
+		if monitor.modesPruned {
+			// Skip modes not supported by the connected displays
+			if ChangeDisplaySettingsEx(&monitor.adapterName[0], &dm, 0, CDS_TEST, uintptr(0)) {
+				continue
+			}
+		}
 		count++
 		result = append(result, mode)
 	}
@@ -234,4 +235,17 @@ func glfwCompareVideoModes(fp, sp *GLFWvidmode) int32 {
 	}
 	// Lastly sort on refresh rate
 	return fp.RefreshRate - sp.RefreshRate
+}
+
+func glfwGetHMONITORContentScale(handle HMONITOR) (xscale float32, yscale float32) {
+	var xdpi, ydpi int
+	if IsWindows8Point1OrGreater() {
+		xdpi, ydpi = GetDpiForMonitor(handle, mdt_EFFECTIVE_DPI)
+	} else {
+		dc := getDC(0)
+		xdpi = GetDeviceCaps(dc, _LOGPIXELSX)
+		ydpi = GetDeviceCaps(dc, _LOGPIXELSY)
+		releaseDC(0, dc)
+	}
+	return float32(xdpi) / _USER_DEFAULT_SCREEN_DPI, float32(ydpi) / _USER_DEFAULT_SCREEN_DPI
 }

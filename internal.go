@@ -3,6 +3,7 @@ package glfw
 import (
 	"errors"
 	"fmt"
+	"strconv"
 	"sync"
 	"syscall"
 	"unicode"
@@ -119,6 +120,8 @@ type _GLFWwindowWin32 = struct {
 	maximized      bool
 	transparent    bool // Whether to enable framebuffer transparency on DWM
 	scaleToMonitor bool
+	keyMenu        bool
+	showDefault    bool
 	width          int    // Cached size used to filter out duplicate events
 	height         int    // Cached size used to filter out duplicate events
 	highSurrogate  uint16 // The last recevied high surrogate when decoding pairs of UTF-16 messages
@@ -152,7 +155,11 @@ type _GLFWwndconfig = struct {
 	mousePassthrough bool
 	scaleToMonitor   bool
 	scaleFramebuffer bool
-	ns               struct {
+	win32            struct {
+		keymenu     bool
+		showDefault bool
+	}
+	ns struct {
 		retina    bool
 		frameName string
 	}
@@ -309,12 +316,46 @@ func glfwInputKey(window *_GLFWwindow, key Key, scancode int, action Action, mod
 	}
 }
 
+// Apply disabled cursor mode to a focused window
+//
+func disableCursor(window *Window) {
+	_glfw.win32.disabledCursorWindow = window
+	_glfw.win32.restoreCursorPosX, _glfw.win32.restoreCursorPosY = window.GetCursorPos()
+	updateCursorImage(window)
+	var width, height int32
+	glfwGetWindowSize(window, &width, &height)
+	window.SetCursorPos(float64(width)/2, float64(height)/2)
+	captureCursor(window)
+	if window.rawMouseMotion != 0 {
+		enableRawMouseMotion(window)
+	}
+}
+
+// Exit disabled cursor mode for the specified window
+//
+func enableCursor(window *Window) {
+	if window.rawMouseMotion != 0 {
+		disableRawMouseMotion(window)
+	}
+	_glfw.win32.disabledCursorWindow = nil
+	releaseCursor()
+	window.SetCursorPos(_glfw.win32.restoreCursorPosX, _glfw.win32.restoreCursorPosY)
+	updateCursorImage(window)
+}
+
 func glfwInputMouseClick(window *_GLFWwindow, button MouseButton, action Action, mods ModifierKey) {
 	// TODO if (!window.lockKeyMods)	mods &= ~(glfw_MOD_CAPS_LOCK | glfw_MOD_NUM_LOCK);
 	// TODO if (action == glfw_RELEASE && window.stickyMouseButtons) window.mouseButtons[button] = glfw_STICK; else window.mouseButtons[button] = (char) action;
 	if window.mouseButtonCallback != nil {
 		window.mouseButtonCallback(window, button, action, mods)
 	}
+}
+
+func glfwGetKeyScancode(key Key) int {
+	if key < KeySpace || key > KeyLast {
+		panic("glfwGetKeyScancode: Invalid key " + strconv.Itoa(int(key)))
+	}
+	return int(_glfw.win32.scancodes[key])
 }
 
 // Notifies shared code that a window has lost or received input focus
@@ -327,13 +368,12 @@ func glfwInputWindowFocus(window *_GLFWwindow, focused bool) {
 	}
 	if !focused {
 		// Force release of buttons
-		/* TODO
-		for k := Key(0);  k <= KeyLast;  k++ {
-			if (window.keys[k] == glfw_PRESS) {
-				scancode := glfwPlatformGetKeyScancode(k);
-				glfwInputKey(window, k, scancode, glfw_RELEASE, 0);
+		for k := Key(0); k <= KeyLast; k++ {
+			if window.keys[k] == Press {
+				scancode := glfwGetKeyScancode(k)
+				glfwInputKey(window, k, scancode, Release, 0)
 			}
-		}*/
+		}
 		for button := MouseButton(0); button <= MouseButtonLast; button++ {
 			if window.mouseButtons[button] == Press {
 				glfwInputMouseClick(window, button, Release, 0)
@@ -400,28 +440,28 @@ func windowProc(hwnd syscall.Handle, msg uint32, wParam, lParam uintptr) uintptr
 	}
 
 	switch msg {
-	case wm_CLOSE:
+	case _WM_CLOSE:
 		window.shouldClose = true
-	case wm_UNICHAR:
+	case _WM_UNICHAR:
 		if wParam == _UNICODE_NOCHAR {
-			// Tell the system that we accept wm_UNICHAR messages.
+			// Tell the system that we accept _WM_UNICHAR messages.
 			return True
 		}
 		fallthrough
-	case wm_CHAR, wm_SYSCHAR:
+	case _WM_CHAR, _WM_SYSCHAR:
 		if r := rune(wParam); unicode.IsPrint(r) {
 			if window.charCallback != nil {
 				window.charCallback(nil, r)
 			}
 		}
 		return True
-	case wm_DPICHANGED:
+	case _WM_DPICHANGED:
 		// Let Windows know we're prepared for runtime DPI changes.
 		return True
-	case wm_ERASEBKGND:
+	case _WM_ERASEBKGND:
 		// Avoid flickering between GPU content and background color.
 		return True
-	case wm_KEYDOWN, wm_KEYUP, wm_SYSKEYDOWN, wm_SYSKEYUP:
+	case _WM_KEYDOWN, _WM_KEYUP, _WM_SYSKEYDOWN, _WM_SYSKEYUP:
 		var key Key
 		action := Press
 		if (lParam>>16)&0x8000 != 0 {
@@ -454,10 +494,10 @@ func windowProc(hwnd syscall.Handle, msg uint32, wParam, lParam uintptr) uintptr
 					const DWORD time = GetMessageTime();
 
 					if (PeekMessageW(&next, NULL, 0, 0, pm_NOREMOVE)) {
-						if (next.message == wm_KEYDOWN ||
-							next.message == wm_SYSKEYDOWN ||
-							next.message == wm_KEYUP ||
-							next.message == wm_SYSKEYUP)
+						if (next.message == _WM_KEYDOWN ||
+							next.message == _WM_SYSKEYDOWN ||
+							next.message == _WM_KEYUP ||
+							next.message == _WM_SYSKEYUP)
 						{
 							if (next.wParam == VK_MENU &&
 								(HIWORD(next.lParam) & KF_EXTENDED) &&
@@ -489,17 +529,17 @@ func windowProc(hwnd syscall.Handle, msg uint32, wParam, lParam uintptr) uintptr
 		}
 		break
 
-	case wm_LBUTTONDOWN, wm_LBUTTONUP, wm_RBUTTONDOWN, wm_RBUTTONUP, wm_MBUTTONDOWN, wm_MBUTTONUP:
+	case _WM_LBUTTONDOWN, _WM_LBUTTONUP, _WM_RBUTTONDOWN, _WM_RBUTTONUP, _WM_MBUTTONDOWN, _WM_MBUTTONUP:
 		var button MouseButton
-		if msg == wm_LBUTTONDOWN || msg == wm_LBUTTONUP {
+		if msg == _WM_LBUTTONDOWN || msg == _WM_LBUTTONUP {
 			button = MouseButtonLeft
-		} else if msg == wm_RBUTTONDOWN || msg == wm_RBUTTONUP {
+		} else if msg == _WM_RBUTTONDOWN || msg == _WM_RBUTTONUP {
 			button = MouseButtonRight
-		} else if msg == wm_MBUTTONDOWN || msg == wm_MBUTTONUP {
+		} else if msg == _WM_MBUTTONDOWN || msg == _WM_MBUTTONUP {
 			button = MouseButtonMiddle
 		}
 		var action Action
-		if msg == wm_LBUTTONDOWN || msg == wm_RBUTTONDOWN || msg == wm_MBUTTONDOWN {
+		if msg == _WM_LBUTTONDOWN || msg == _WM_RBUTTONDOWN || msg == _WM_MBUTTONDOWN {
 			action = Press
 		} else {
 			action = Release
@@ -510,36 +550,45 @@ func windowProc(hwnd syscall.Handle, msg uint32, wParam, lParam uintptr) uintptr
 				break
 			}
 		}
-		// if i > MouseButtonLast {
-		// TODO SetCapture(hWnd);
-		// }
+		if i > MouseButtonLast {
+			SetCapture(window.Win32.handle)
+		}
 		glfwInputMouseClick(window, button, action, getKeyMods())
 		for i = MouseButtonFirst; i <= MouseButtonLast; i++ {
 			if window.mouseButtons[i] == Press {
 				break
 			}
 		}
-		// if (i > MouseButtonLast)
-		// TODO ReleaseCapture();
-		// }
+		if i > MouseButtonLast {
+			ReleaseCapture()
+		}
 
 		return 0
 
-	// TODO case wm_CANCELMODE:
+	// TODO case _WM_CANCELMODE:
 
-	case wm_SETFOCUS:
+	case _WM_SETFOCUS:
 		glfwInputWindowFocus(window, true)
 		// HACK: Do not disable cursor while the user is interacting with a caption button
-		// TODO if (window.Win32.frameAction) break;
-		// TODO if (window.cursorMode == glfw_CURSOR_DISABLED)	disableCursor(window);
+		if window.Win32.frameAction {
+			break
+		}
+		if window.cursorMode == CursorDisabled {
+			disableCursor(window)
+		}
 		return 0
-	case wm_KILLFOCUS:
-		// TODO if (window.cursorMode == glfw_CURSOR_DISABLED) enableCursor(window);
-		// TODO if (window.monitor && window.autoIconify) _glfwPlatformIconifyWindow(window);
+	case _WM_KILLFOCUS:
+		if window.cursorMode == CursorDisabled {
+			enableCursor(window)
+		}
+		if window.monitor != nil && window.autoIconify {
+			// Do  glfwIconifyWindow(window)
+			ShowWindow(window.Win32.handle, windows.SW_MINIMIZE)
+		}
 		glfwInputWindowFocus(window, false)
 		return 0
 
-	case wm_MOUSEMOVE:
+	case _WM_MOUSEMOVE:
 		x := float64(int(lParam & 0xffff))
 		y := float64(int((lParam >> 16) & 0xffff))
 		if !window.Win32.cursorTracked {
@@ -553,7 +602,9 @@ func windowProc(hwnd syscall.Handle, msg uint32, wParam, lParam uintptr) uintptr
 		if window.cursorMode == CursorDisabled {
 			dx := float64(x) - window.lastCursorPosX
 			dy := float64(y) - window.lastCursorPosY
-			// TODO if _glfw.Win32.disabledCursorWindow != window {			break			}
+			if _glfw.win32.disabledCursorWindow != window {
+				break
+			}
 			glfwInputCursorPos(window, window.virtualCursorPosX+dx, window.virtualCursorPosY+dy)
 		} else {
 			glfwInputCursorPos(window, x, y)
@@ -562,18 +613,18 @@ func windowProc(hwnd syscall.Handle, msg uint32, wParam, lParam uintptr) uintptr
 		window.lastCursorPosY = y
 		return 0
 
-	case wm_MOUSEWHEEL:
+	case _WM_MOUSEWHEEL:
 		glfwInputScroll(window, 0.0, float64(int16(wParam>>16))/120.0)
 		return 0
 
-	case wm_MOUSEHWHEEL:
+	case _WM_MOUSEHWHEEL:
 		glfwInputScroll(window, -float64(int16(wParam>>16))/120.0, 0.0)
 		return 0
 
-	case wm_PAINT:
+	case _WM_PAINT:
 		glfwInputWindowDamage(window)
 
-	case wm_SIZE:
+	case _WM_SIZE:
 		width := int(lParam & 0xFFFF)
 		height := int(lParam >> 16)
 		iconified := wParam == _SIZE_MINIMIZED
@@ -610,10 +661,10 @@ func windowProc(hwnd syscall.Handle, msg uint32, wParam, lParam uintptr) uintptr
 		window.Win32.maximized = maximized
 		return 0
 
-	case wm_GETMINMAXINFO:
+	case _WM_GETMINMAXINFO:
 		// TODO
 
-	case wm_SETCURSOR:
+	case _WM_SETCURSOR:
 		// TODO
 	}
 
@@ -624,9 +675,9 @@ func windowProc(hwnd syscall.Handle, msg uint32, wParam, lParam uintptr) uintptr
 func glfwPlatformPollEvents() {
 	var msg Msg
 	for PeekMessage(&msg, 0, 0, 0, pm_REMOVE) {
-		if msg.Message == wm_QUIT {
-			// NOTE: While GLFW does not itself post wm_QUIT, other processes may post it to this one, for example Task Manager
-			// HACK: Treat wm_QUIT as a close on all windows
+		if msg.Message == _WM_QUIT {
+			// NOTE: While GLFW does not itself post _WM_QUIT, other processes may post it to this one, for example Task Manager
+			// HACK: Treat _WM_QUIT as a close on all windows
 			window := _glfw.windowListHead
 			for window != nil {
 				glfwInputWindowCloseRequest(window)
@@ -642,7 +693,7 @@ func glfwPlatformPollEvents() {
 	// NOTE: Shift keys on Windows tend to "stick" when both are pressed as no key up message is generated by the first key release
 	// NOTE: Windows key is not reported as released by the Win+V hotkey. Other Win hotkeys are handled implicitly by _glfwInputWindowFocus
 	//       because they change the input focus
-	// NOTE: The other half of this is in the wm_*KEY* handler in windowProc
+	// NOTE: The other half of this is in the _WM_*KEY* handler in windowProc
 	/* TODO
 	hMonitor = GetActiveWindow();
 	if (hMonitor!=nil) {
@@ -664,7 +715,7 @@ func glfwPlatformPollEvents() {
 	if window!=nil {
 		var width, height int
 		glfwPlatformGetWindowSize(window, &width, &height);
-		// NOTE: Re-center the cursor only if it has moved since the last call, to avoid breaking glfwWaitEvents with wm_MOUSEMOVE
+		// NOTE: Re-center the cursor only if it has moved since the last call, to avoid breaking glfwWaitEvents with _WM_MOUSEMOVE
 		if window.lastCursorPosX != width / 2 || window.lastCursorPosY != height / 2 {
 			glfwPlatformSetCursorPos(window, width / 2, height / 2);
 		}
@@ -799,159 +850,6 @@ func createMonitor(adapter *DISPLAY_DEVICEW, display *DISPLAY_DEVICEW) *Monitor 
 	rect.Bottom = dm.dmPosition.Y + dm.dmPelsHeight
 	_ = EnumDisplayMonitors(0, &rect, NewEnumDisplayMonitorsCallback(enumMonitorCallback), uintptr(unsafe.Pointer(&monitor)))
 	return &monitor
-}
-
-const (
-	/* Printable keys */
-	glfw_KEY_SPACE         = 32
-	glfw_KEY_APOSTROPHE    = 39 /* ' */
-	glfw_KEY_COMMA         = 44 /* , */
-	glfw_KEY_MINUS         = 45 /* - */
-	glfw_KEY_PERIOD        = 46 /* . */
-	glfw_KEY_SLASH         = 47 /* / */
-	glfw_KEY_0             = 48
-	glfw_KEY_1             = 49
-	glfw_KEY_2             = 50
-	glfw_KEY_3             = 51
-	glfw_KEY_4             = 52
-	glfw_KEY_5             = 53
-	glfw_KEY_6             = 54
-	glfw_KEY_7             = 55
-	glfw_KEY_8             = 56
-	glfw_KEY_9             = 57
-	glfw_KEY_SEMICOLON     = 59 /* ; */
-	glfw_KEY_EQUAL         = 61 /* = */
-	glfw_KEY_A             = 65
-	glfw_KEY_B             = 66
-	glfw_KEY_C             = 67
-	glfw_KEY_D             = 68
-	glfw_KEY_E             = 69
-	glfw_KEY_F             = 70
-	glfw_KEY_G             = 71
-	glfw_KEY_H             = 72
-	glfw_KEY_I             = 73
-	glfw_KEY_J             = 74
-	glfw_KEY_K             = 75
-	glfw_KEY_L             = 76
-	glfw_KEY_M             = 77
-	glfw_KEY_N             = 78
-	glfw_KEY_O             = 79
-	glfw_KEY_P             = 80
-	glfw_KEY_Q             = 81
-	glfw_KEY_R             = 82
-	glfw_KEY_S             = 83
-	glfw_KEY_T             = 84
-	glfw_KEY_U             = 85
-	glfw_KEY_V             = 86
-	glfw_KEY_W             = 87
-	glfw_KEY_X             = 88
-	glfw_KEY_Y             = 89
-	glfw_KEY_Z             = 90
-	glfw_KEY_LEFT_BRACKET  = 91  /* [ */
-	glfw_KEY_BACKSLASH     = 92  /* \ */
-	glfw_KEY_RIGHT_BRACKET = 93  /* ] */
-	glfw_KEY_GRAVE_ACCENT  = 96  /* ` */
-	glfw_KEY_WORLD_1       = 161 /* non-US #1 */
-	glfw_KEY_WORLD_2       = 162 /* non-US #2 */
-
-	/* Function keys */
-	glfw_KEY_ESCAPE        = 256
-	glfw_KEY_ENTER         = 257
-	glfw_KEY_TAB           = 258
-	glfw_KEY_BACKSPACE     = 259
-	glfw_KEY_INSERT        = 260
-	glfw_KEY_DELETE        = 261
-	glfw_KEY_RIGHT         = 262
-	glfw_KEY_LEFT          = 263
-	glfw_KEY_DOWN          = 264
-	glfw_KEY_UP            = 265
-	glfw_KEY_PAGE_UP       = 266
-	glfw_KEY_PAGE_DOWN     = 267
-	glfw_KEY_HOME          = 268
-	glfw_KEY_END           = 269
-	glfw_KEY_CAPS_LOCK     = 280
-	glfw_KEY_SCROLL_LOCK   = 281
-	glfw_KEY_NUM_LOCK      = 282
-	glfw_KEY_PRINT_SCREEN  = 283
-	glfw_KEY_PAUSE         = 284
-	glfw_KEY_F1            = 290
-	glfw_KEY_F2            = 291
-	glfw_KEY_F3            = 292
-	glfw_KEY_F4            = 293
-	glfw_KEY_F5            = 294
-	glfw_KEY_F6            = 295
-	glfw_KEY_F7            = 296
-	glfw_KEY_F8            = 297
-	glfw_KEY_F9            = 298
-	glfw_KEY_F10           = 299
-	glfw_KEY_F11           = 300
-	glfw_KEY_F12           = 301
-	glfw_KEY_KP_0          = 320
-	glfw_KEY_KP_1          = 321
-	glfw_KEY_KP_2          = 322
-	glfw_KEY_KP_3          = 323
-	glfw_KEY_KP_4          = 324
-	glfw_KEY_KP_5          = 325
-	glfw_KEY_KP_6          = 326
-	glfw_KEY_KP_7          = 327
-	glfw_KEY_KP_8          = 328
-	glfw_KEY_KP_9          = 329
-	glfw_KEY_KP_DECIMAL    = 330
-	glfw_KEY_KP_DIVIDE     = 331
-	glfw_KEY_KP_MULTIPLY   = 332
-	glfw_KEY_KP_SUBTRACT   = 333
-	glfw_KEY_KP_ADD        = 334
-	glfw_KEY_KP_ENTER      = 335
-	glfw_KEY_KP_EQUAL      = 336
-	glfw_KEY_LEFT_SHIFT    = 340
-	glfw_KEY_LEFT_CONTROL  = 341
-	glfw_KEY_LEFT_ALT      = 342
-	glfw_KEY_LEFT_SUPER    = 343
-	glfw_KEY_RIGHT_SHIFT   = 344
-	glfw_KEY_RIGHT_CONTROL = 345
-	glfw_KEY_RIGHT_ALT     = 346
-	glfw_KEY_RIGHT_SUPER   = 347
-	glfw_KEY_MENU          = 348
-)
-
-// func ToUnicode(vk uint32, scancode uint32, state *[512]byte , chars, len, 0) {
-// r1,_,err := _ToUnicode.Call(uintptr(vk), uintptr(scancode), uintptr(state), uintptr(chars), size)
-// }
-
-// TODO :Updates key names according to the current keyboard layout
-func glfwUpdateKeyNamesWin32() {
-	for key := glfw_KEY_SPACE; key <= glfw_KEY_MENU; key++ {
-		/* TODO: Make readable key names
-		scancode := _glfw.win32.scancodes[key]
-		var vk uint16
-		if scancode == -1 {
-			continue
-		}
-		if key >= glfw_KEY_KP_0 && key <= glfw_KEY_KP_ADD {
-			vks := []uint16{VK_NUMPAD0, VK_NUMPAD1, VK_NUMPAD2, VK_NUMPAD3, VK_NUMPAD4, VK_NUMPAD5, VK_NUMPAD6, VK_NUMPAD7, VK_NUMPAD8, VK_NUMPAD9, VK_DECIMAL, VK_DIVIDE, VK_MULTIPLY, VK_SUBTRACT, VK_ADD}
-			vk = vks[key-glfw_KEY_KP_0]
-		} else {
-			r1, _, err := _MapVirtualKeyW.Call(uintptr(scancode), uintptr(MAPVK_VSC_TO_VK))
-			if !errors.Is(err, syscall.Errno(0)) {
-				panic("MapVirtualKeyW failed, " + err.Error())
-			}
-			vk = uint16(r1)
-		}
-		var state [256]uint8
-		var vk uint16
-		length := ToUnicode(vk, scancode, state, chars, sizeof(chars)/sizeof(WCHAR), 0);
-		if length == -1 {
-			// This is a dead key, so we need a second simulated key press
-			// to make it output its own character (usually a diacritic)
-			length = ToUnicode(vk, scancode, state, chars, sizeof(chars)/sizeof(WCHAR), 0);
-		}
-
-		if (length < 1) {
-			continue;
-		}
-		WideCharToMultiByte(CP_UTF8, 0, chars, 1, _glfw.win32.keynames[key], sizeof(_glfw.win32.keynames[key]), NULL, NULL);
-		*/
-	}
 }
 
 // Notifies shared code of a monitor connection or disconnection
@@ -1260,8 +1158,8 @@ func glfwSetWindowIcon(window *Window, count int, images []*GLFWimage) {
 		smallIcon = GetClassLongPtrW(window.Win32.handle, GCLP_HICONSM)
 	}
 
-	_ = SendMessage(window.Win32.handle, WM_SETICON, ICON_BIG, uint32(bigIcon))
-	_ = SendMessage(window.Win32.handle, WM_SETICON, ICON_SMALL, uint32(smallIcon))
+	_ = SendMessage(window.Win32.handle, _WM_SETICON, ICON_BIG, uint32(bigIcon))
+	_ = SendMessage(window.Win32.handle, _WM_SETICON, ICON_SMALL, uint32(smallIcon))
 
 	if window.Win32.bigIcon != 0 {
 		DestroyIcon(window.Win32.bigIcon)
@@ -1276,7 +1174,7 @@ func glfwSetWindowIcon(window *Window, count int, images []*GLFWimage) {
 	}
 }
 
-// enableRawMouseMotion enables WM_INPUT messages for the mouse for the specified window
+// enableRawMouseMotion enables _WM_INPUT messages for the mouse for the specified window
 func enableRawMouseMotion(window *Window) {
 	rid := RAWINPUTDEVICE{0x01, 0x02, 0, window.Win32.handle}
 	if !RegisterRawInputDevices(&rid, 1, uint32(unsafe.Sizeof(rid))) {
@@ -1284,7 +1182,7 @@ func enableRawMouseMotion(window *Window) {
 	}
 }
 
-// Disables WM_INPUT messages for the mouse
+// Disables _WM_INPUT messages for the mouse
 //
 func disableRawMouseMotion(window *Window) {
 	rid := RAWINPUTDEVICE{0x01, 0x02, _RIDEV_REMOVE, 0}
@@ -1405,13 +1303,10 @@ func glfwGetWindowAttrib(window *Window, attrib Hint) int32 {
 	case MousePassthrough:
 		return toInt(window.mousePassthrough)
 	case TransparentFramebuffer:
-		// return _glfw.platform.framebufferTransparent(window)
-		if !window.Win32.transparent {
+		if !window.Win32.transparent || !DwmIsCompositionEnabled() {
 			return 0
 		}
-		// TODO if (FAILED(DwmIsCompositionEnabled(&composition)) || !composition) return GLFW_FALSE;
-		// TODO return 1
-		return 0
+		return 1
 	case Resizable:
 		return toInt(window.resizable)
 	case Decorated:

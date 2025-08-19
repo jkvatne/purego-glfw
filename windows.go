@@ -86,7 +86,7 @@ var resources struct {
 func glfwPollEvents() {
 	var msg Msg
 	for PeekMessage(&msg, 0, 0, 0, pm_REMOVE) {
-		if msg.Message == wm_QUIT {
+		if msg.Message == _WM_QUIT {
 			window := _glfw.windowListHead
 			for window != nil {
 				glfwInputWindowCloseRequest(window)
@@ -104,7 +104,7 @@ func glfwPollEvents() {
 	// NOTE: Windows key is not reported as released by the Win+V hotkey
 	//       Other Win hotkeys are handled implicitly by _glfwInputWindowFocus
 	//       because they change the input focus
-	// NOTE: The other half of this is in the wm_*KEY* handler in windowProc
+	// NOTE: The other half of this is in the _WM_*KEY* handler in windowProc
 	handle := GetActiveWindow()
 	if handle != 0 {
 		window := (*Window)(unsafe.Pointer(GetProp(handle, "GLFW")))
@@ -121,17 +121,16 @@ func glfwPollEvents() {
 			}
 		}
 	}
-	/*
-		window := _glfw.disabledCursorWindow
-		if window != nil {
-			var width, height int
-			// TODO _glfwPlatformGetWindowSize(window, &width, &height);
-			// NOTE: Re-center the cursor only if it has moved since the last call,
-			//       to avoid breaking glfwWaitEvents with wm_MOUSEMOVE
-			if window.Win32.lastCursorPosX != width/2 || window.Win32.lastCursorPosY != height/2 {
-				// TODO _glfwPlatformSetCursorPos(window, width / 2, height / 2);
-			}
-		}*/
+	window := _glfw.win32.disabledCursorWindow
+	if window != nil {
+		var width, height int32
+		glfwGetWindowSize(window, &width, &height)
+		// NOTE: Re-center the cursor only if it has moved since the last call,
+		//       to avoid breaking glfwWaitEvents with _WM_MOUSEMOVE
+		if int32(window.lastCursorPosX) != width/2 || int32(window.lastCursorPosY) != height/2 {
+			window.SetCursorPos(float64(width)/2, float64(height)/2)
+		}
+	}
 }
 
 func getWindowStyle(window *_GLFWwindow) uint32 {
@@ -160,6 +159,8 @@ func getWindowExStyle(w *_GLFWwindow) uint32 {
 	return style
 }
 
+const IDI_APPLICATION = 32512
+
 func _glfwRegisterWindowClassWin32() error {
 	ws, _ := syscall.UTF16PtrFromString("GLFW")
 	wcls := WndClassEx{
@@ -170,12 +171,14 @@ func _glfwRegisterWindowClassWin32() error {
 		HIcon:         0,
 		LpszClassName: ws,
 	}
-	// TODO Load user-provided icon if available
-	// wcls.hIcon = LoadImageW(GetModuleHandleW(NULL),"glfw_ICON", IMAGE_ICON,	0, 0, LR_DEFAULTSIZE | LR_SHARED);
-	// if wcls.hIcon==0 {
-	// No user-provided icon found, load default icon
-	// wcls.hIcon = LoadImageW(NULL, IDI_APPLICATION, IMAGE_ICON,	0, 0, LR_DEFAULTSIZE | LR_SHARED);
-	// }
+	// Load user-provided icon if available
+	h, _ := GetModuleHandle()
+	wstr, _ := syscall.UTF16FromString("GLFW_ICON")
+	wcls.HIcon, _ = LoadImage(h, uintptr(unsafe.Pointer(&wstr[0])), _IMAGE_ICON, 0, 0, lr_DEFAULTSIZE|lr_SHARED)
+	if wcls.HIcon == 0 {
+		// No user-provided icon found, load default icon
+		wcls.HIcon, _ = LoadImage(0, IDI_APPLICATION, _IMAGE_ICON, 0, 0, lr_DEFAULTSIZE|lr_SHARED)
+	}
 	var err error
 	_glfw.class, err = RegisterClassEx(&wcls)
 	return err
@@ -232,6 +235,55 @@ func createNativeWindow(window *_GLFWwindow, wndconfig *_GLFWwndconfig, fbconfig
 		uintptr(unsafe.Pointer(wndconfig)))
 
 	SetProp(window.Win32.handle, "GLFW", uintptr(unsafe.Pointer(window)))
+	ChangeWindowMessageFilterEx(window.Win32.handle, _WM_DROPFILES, _MSGFLT_ALLOW, 0)
+	ChangeWindowMessageFilterEx(window.Win32.handle, _WM_COPYDATA, _MSGFLT_ALLOW, 0)
+	ChangeWindowMessageFilterEx(window.Win32.handle, _WM_COPYGLOBALDATA, _MSGFLT_ALLOW, 0)
+	window.Win32.scaleToMonitor = wndconfig.scaleToMonitor
+	window.Win32.keyMenu = wndconfig.win32.keymenu
+	window.Win32.showDefault = wndconfig.win32.showDefault
+	if window.monitor == nil {
+		rect := RECT{0, 0, wndconfig.width, wndconfig.height}
+		wp := WINDOWPLACEMENT{}
+		wp.length = uint32(unsafe.Sizeof(wp))
+		mh := monitorFromWindow(window.Win32.handle, _MONITOR_DEFAULTTONEAREST)
+
+		// Adjust window rect to account for DPI scaling of the window frame and
+		// (if enabled) DPI scaling of the content area
+		// This cannot be done until we know what monitor the window was placed on
+		// Only update the restored window rect as the window may be maximized
+		if wndconfig.scaleToMonitor {
+			xscale, yscale := glfwGetHMONITORContentScale(mh)
+			if xscale > 0.0 && yscale > 0.0 {
+				rect.Right = int32(float32(rect.Right) * xscale)
+				rect.Bottom = int32(float32(rect.Bottom) * yscale)
+			}
+		}
+		if IsWindows10Version1607OrGreater() {
+			AdjustWindowRectExForDpi(&rect, style, 0, exStyle, GetDpiForWindow(window.Win32.handle))
+		} else {
+			AdjustWindowRectEx(&rect, style, 0, exStyle)
+		}
+		GetWindowPlacement(window.Win32.handle, &wp)
+		OffsetRect(&rect, wp.rcNormalPosition.Left-rect.Left, wp.rcNormalPosition.Top-rect.Top)
+
+		wp.rcNormalPosition = rect
+		wp.showCmd = windows.SW_HIDE
+		SetWindowPlacement(window.Win32.handle, &wp)
+
+		// Adjust rect of maximized undecorated window, because by default Windows will
+		// make such a window cover the whole monitor instead of its workarea
+
+		if wndconfig.maximized && !wndconfig.decorated {
+			mi := GetMonitorInfo(mh)
+			SetWindowPos(window.Win32.handle, hwnd_TOPMOST,
+				mi.RcWork.Left,
+				mi.RcWork.Top,
+				mi.RcWork.Right-mi.RcWork.Left,
+				mi.RcWork.Bottom-mi.RcWork.Top,
+				SWP_NOACTIVATE|SWP_NOZORDER)
+		}
+
+	}
 	return err
 }
 
@@ -317,7 +369,9 @@ func glfwPlatformCreateWindow(window *_GLFWwindow, wndconfig *_GLFWwndconfig, ct
 		acquireMonitor(window)
 		fitToMonitor(window)
 		if wndconfig.centerCursor {
-			// TODO  _glfwCenterCursorInContentArea(window)
+			// Center Cursor In Content Area
+			x, y := window.GetCursorPos()
+			window.SetCursorPos(x/2, y/2)
 		}
 	} else if wndconfig.visible {
 		glfwShowWindow(window)
@@ -382,9 +436,9 @@ func glfwCreateWindow(width, height int32, title string, monitor *Monitor, share
 
 func helperWindowProc(hwnd syscall.Handle, msg uint32, wParam, lParam uintptr) uintptr {
 	/*	switch msg	{
-		case wm_DISPLAYCHANGE:
+		case _WM_DISPLAYCHANGE:
 		    _glfwPollMonitorsWin32();
-		case wm_DEVICECHANGE:
+		case _WM_DEVICECHANGE:
 			if (wParam == DBT_DEVICEARRIVAL) {
 				DEV_BROADCAST_HDR* dbh = (DEV_BROADCAST_HDR*) lParam;
 				if (dbh && dbh->dbch_devicetype == DBT_DEVTYP_DEVICEINTERFACE)
@@ -524,12 +578,12 @@ func glfwSetClipboardString(str string) {
 	clipboard.Write(clipboard.FmtText, []byte(str))
 }
 
-func monitorFromWindow(handle syscall.Handle, flags uint32) syscall.Handle {
+func monitorFromWindow(handle syscall.Handle, flags uint32) HMONITOR {
 	r1, _, err := _MonitorFromWindow.Call(uintptr(handle), uintptr(flags))
 	if err != nil && !errors.Is(err, syscall.Errno(0)) {
 		panic("MonitorFromWindow failed, " + err.Error())
 	}
-	return syscall.Handle(r1)
+	return HMONITOR(r1)
 }
 
 func glfwGetContentScale(w *Window) (float32, float32) {

@@ -10,6 +10,11 @@ import (
 )
 
 var (
+	dwmapi                   = windows.NewLazySystemDLL("dwmapi.dll")
+	_DwmIsCompositionEnabled = dwmapi.NewProc("DwmIsCompositionEnabled")
+)
+
+var (
 	gdi32                = windows.NewLazySystemDLL("gdi32.dll")
 	_GetDeviceCaps       = gdi32.NewProc("GetDeviceCaps")
 	_CreateDC            = gdi32.NewProc("CreateDCW")
@@ -56,7 +61,7 @@ var (
 	_GetDpiForWindow               = user32.NewProc("GetDpiForWindow")
 	_GetKeyState                   = user32.NewProc("GetKeyState")
 	_LoadCursor                    = user32.NewProc("LoadCursorW")
-	_LoadImage                     = user32.NewProc("LoadImageW")
+	_LoadImageW                    = user32.NewProc("LoadImageW")
 	_MonitorFromWindow             = user32.NewProc("MonitorFromWindow")
 	_PeekMessage                   = user32.NewProc("PeekMessageW")
 	_WaitMessage                   = user32.NewProc("WaitMessage")
@@ -98,6 +103,12 @@ var (
 	_IsWindowVisible               = user32.NewProc("IsWindowVisible")
 	_IsZoomed                      = user32.NewProc("IsZoomed")
 	_PostMessageW                  = user32.NewProc("PostMessageW")
+	_ChangeDisplaySettingsEx       = user32.NewProc("ChangeDisplaySettingsExW")
+	_ChangeWindowMessageFilterEx   = user32.NewProc("ChangeWindowMessageFilterEx")
+	_GetWindowPlacement            = user32.NewProc("GetWindowPlacement")
+	_SetWindowPlacement            = user32.NewProc("SetWindowPlacement")
+	_SetCapture                    = user32.NewProc("SetCapture")
+	_ReleaseCapture                = user32.NewProc("ReleaseCapture")
 )
 
 var (
@@ -136,6 +147,73 @@ const (
 	PROCESS_DPI_UNAWARE                        = 0
 	PROCESS_SYSTEM_DPI_AWARE                   = 1
 	PROCESS_PER_MONITOR_DPI_AWARE              = 2
+)
+
+const (
+	ws_CLIPCHILDREN     = 0x02000000
+	ws_CLIPSIBLINGS     = 0x04000000
+	ws_MAXIMIZE         = 0x01000000
+	ws_ICONIC           = 0x20000000
+	ws_VISIBLE          = 0x10000000
+	ws_OVERLAPPED       = 0x00000000
+	ws_CAPTION          = 0x00C00000
+	ws_SYSMENU          = 0x00080000
+	ws_THICKFRAME       = 0x00040000
+	ws_MINIMIZEBOX      = 0x00020000
+	ws_MAXIMIZEBOX      = 0x00010000
+	ws_POPUP            = 0x80000000
+	ws_OVERLAPPEDWINDOW = ws_OVERLAPPED | ws_CAPTION | ws_SYSMENU | ws_THICKFRAME | ws_MINIMIZEBOX | ws_MAXIMIZEBOX
+	ws_EX_APPWINDOW     = 0x40000
+	ws_EX_TOPMOST       = 0x00000008
+	ws_EX_LAYERED       = 0x00080000
+	ws_EX_TRANSPARENT   = 0x00000020
+)
+
+const (
+	_WM_CANCELMODE           = 0x001F
+	_WM_CHAR                 = 0x0102
+	_WM_SYSCHAR              = 0x0106
+	_WM_CLOSE                = 0x0010
+	_WM_CREATE               = 0x0001
+	_WM_DPICHANGED           = 0x02E0
+	_WM_DESTROY              = 0x0002
+	_WM_ERASEBKGND           = 0x0014
+	_WM_GETMINMAXINFO        = 0x0024
+	_WM_IME_COMPOSITION      = 0x010F
+	_WM_IME_ENDCOMPOSITION   = 0x010E
+	_WM_IME_STARTCOMPOSITION = 0x010D
+	_WM_KEYDOWN              = 0x0100
+	_WM_KEYUP                = 0x0101
+	_WM_KILLFOCUS            = 0x0008
+	_WM_LBUTTONDOWN          = 0x0201
+	_WM_LBUTTONUP            = 0x0202
+	_WM_MBUTTONDOWN          = 0x0207
+	_WM_MBUTTONUP            = 0x0208
+	_WM_MOUSEMOVE            = 0x0200
+	_WM_MOUSEWHEEL           = 0x020A
+	_WM_MOUSEHWHEEL          = 0x020E
+	_WM_NCACTIVATE           = 0x0086
+	_WM_NCHITTEST            = 0x0084
+	_WM_NCCALCSIZE           = 0x0083
+	_WM_PAINT                = 0x000F
+	_WM_QUIT                 = 0x0012
+	_WM_SETCURSOR            = 0x0020
+	_WM_SETFOCUS             = 0x0007
+	_WM_SHOWWINDOW           = 0x0018
+	_WM_SIZE                 = 0x0005
+	_WM_STYLECHANGED         = 0x007D
+	_WM_SYSKEYDOWN           = 0x0104
+	_WM_SYSKEYUP             = 0x0105
+	_WM_RBUTTONDOWN          = 0x0204
+	_WM_RBUTTONUP            = 0x0205
+	_WM_TIMER                = 0x0113
+	_WM_UNICHAR              = 0x0109
+	_WM_USER                 = 0x0400
+	_WM_WINDOWPOSCHANGED     = 0x0047
+	_WM_DROPFILES            = 0x0233
+	_WM_COPYDATA             = 0x004A
+	_WM_COPYGLOBALDATA       = 0x0049
+	_MSGFLT_ALLOW            = 1
 )
 
 type HDC syscall.Handle
@@ -233,6 +311,16 @@ type RAWINPUTDEVICE struct {
 	hwndTarget  syscall.Handle
 }
 
+type WINDOWPLACEMENT struct {
+	length           uint32
+	flags            uint32
+	showCmd          uint32
+	ptMinPosition    POINT
+	ptMaxPosition    POINT
+	rcNormalPosition RECT
+	rcDevice         RECT
+}
+
 func GetActiveWindow() syscall.Handle {
 	r, _, err := _GetActiveWindow.Call()
 	if !errors.Is(err, syscall.Errno(0)) {
@@ -281,10 +369,10 @@ func RegisterClassEx(cls *WndClassEx) (uint16, error) {
 	return uint16(a), nil
 }
 
-func LoadImage(hInst syscall.Handle, res uint32, typ uint32, cx, cy int, fuload uint32) (syscall.Handle, error) {
-	h, _, err := _LoadImage.Call(uintptr(hInst), uintptr(res), uintptr(typ), uintptr(cx), uintptr(cy), uintptr(fuload))
+func LoadImage(hInst syscall.Handle, res uintptr, typ uint32, cx, cy int, fuload uint32) (syscall.Handle, error) {
+	h, _, err := _LoadImageW.Call(uintptr(hInst), res, uintptr(typ), uintptr(cx), uintptr(cy), uintptr(fuload))
 	if h == 0 {
-		return 0, fmt.Errorf("LoadImageW failed: %v", err)
+		return 0, fmt.Errorf("LoadImage failed: %v", err)
 	}
 	return syscall.Handle(h), nil
 }
@@ -345,10 +433,7 @@ func DestroyWindow(h syscall.Handle) {
 }
 
 func UnregisterClass(class uint16, instance syscall.Handle) {
-	_, _, err := _UnregisterClass.Call(uintptr(class), uintptr(instance))
-	if !errors.Is(err, syscall.Errno(0)) {
-		// TODO panic("UnregisterClass failed, " + err.Error())
-	}
+	_, _, _ = _UnregisterClass.Call(uintptr(class), uintptr(instance))
 }
 
 func IsWindows10Version1607OrGreater() bool {
@@ -645,7 +730,7 @@ const (
 	SM_CYSMICON    = 50
 	GCLP_HICON     = -14
 	GCLP_HICONSM   = -34
-	WM_SETICON     = 0x0080
+	_WM_SETICON    = 0x0080
 	ICON_BIG       = 1
 	ICON_SMALL     = 0
 )
@@ -833,7 +918,7 @@ func IsZoomed(hwnd syscall.Handle) int32 {
 }
 
 func LoadCursor(cursorID uint16) syscall.Handle {
-	h, err := LoadImage(0, uint32(cursorID), _IMAGE_CURSOR, 0, 0, lr_DEFAULTSIZE|lr_SHARED)
+	h, err := LoadImage(0, uintptr(cursorID), _IMAGE_CURSOR, 0, 0, lr_DEFAULTSIZE|lr_SHARED)
 	if err != nil && !errors.Is(err, syscall.Errno(0)) {
 		panic("LoadCursor failed, " + err.Error())
 	}
@@ -845,4 +930,60 @@ func LoadCursor(cursorID uint16) syscall.Handle {
 
 func PostMessageW(hWnd syscall.Handle, msg uint32, wParam, lParam uintptr) {
 	_, _, _ = _PostMessageW.Call(uintptr(hWnd), uintptr(msg), uintptr(wParam), uintptr(lParam))
+}
+
+func ChangeDisplaySettingsEx(name *uint16, mode *DEVMODEW, hWnd syscall.Handle, flags uint32, lParam uintptr) bool {
+	r, _, err := _ChangeDisplaySettingsEx.Call(uintptr(unsafe.Pointer(name)), uintptr(unsafe.Pointer(mode)), uintptr(hWnd), uintptr(flags), lParam)
+	if !errors.Is(err, syscall.Errno(0)) {
+		panic("IsZoomed failed, " + err.Error())
+	}
+	return r == 0
+}
+
+func DwmIsCompositionEnabled() bool {
+	var flag uint32
+	r, _, err := _DwmIsCompositionEnabled.Call(uintptr(unsafe.Pointer(&flag)))
+	if err != nil && !errors.Is(err, syscall.Errno(0)) {
+		return false
+	}
+	return r != 0
+}
+
+func ChangeWindowMessageFilterEx(hWnd syscall.Handle, msg uint32, action uint32, filter uintptr) bool {
+	r, _, err := _ChangeWindowMessageFilterEx.Call(uintptr(hWnd), uintptr(msg), uintptr(action), filter)
+	if err != nil && !errors.Is(err, syscall.Errno(0)) {
+		return false
+	}
+	return r != 0
+}
+
+func GetWindowPlacement(hWnd syscall.Handle, wp *WINDOWPLACEMENT) bool {
+	r, _, err := _GetWindowPlacement.Call(uintptr(hWnd), uintptr(unsafe.Pointer(wp)))
+	if err != nil && !errors.Is(err, syscall.Errno(0)) {
+		return false
+	}
+	return r != 0
+}
+
+func SetWindowPlacement(hWnd syscall.Handle, wp *WINDOWPLACEMENT) bool {
+	r, _, err := _SetWindowPlacement.Call(uintptr(hWnd), uintptr(unsafe.Pointer(wp)))
+	if err != nil && !errors.Is(err, syscall.Errno(0)) {
+		return false
+	}
+	return r != 0
+}
+
+func OffsetRect(r *RECT, dx, dy int32) {
+	r.Top += dy
+	r.Left += dx
+	r.Bottom += dy
+	r.Right += dx
+}
+
+func SetCapture(hWnd syscall.Handle) {
+	_, _, _ = _SetCapture.Call(uintptr(hWnd))
+}
+
+func ReleaseCapture() {
+	_, _, _ = _ReleaseCapture.Call()
 }

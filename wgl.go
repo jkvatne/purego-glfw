@@ -57,7 +57,7 @@ func swapIntervalWGL(interval int) {
 	window.context.wgl.interval = interval
 	// if window.monitor == nil {
 	// HACK: Disable WGL swap interval when desktop composition is enabled on Windows Vista and 7 to avoid interfering with DWM vsync
-	// Windows Vista is not supported in purego version
+	// Windows Vista is not supported in purego
 	// if (!IsWindows8OrGreater() && IsWindowsVistaOrGreater()) {
 	//	enabled := false
 	// if (SUCCEEDED(DwmIsCompositionEnabled(&enabled)) && enabled)
