@@ -317,7 +317,7 @@ func glfwDestroyWindow(w *Window) {
 func glfwTerminate() {
 	/* TODO
 	   if (_glfw.Win32.deviceNotificationHandle) {
-	   	UnregisterDeviceNotification(_glfw.Win32.deviceNotificationHandle);
+	   	UnregisterDeviceNotification(_glfw.Win32.deviceNotificationHandle)
 	   }
 	*/
 	DestroyWindow(_glfw.win32.helperWindowHandle)
@@ -437,16 +437,16 @@ func glfwCreateWindow(width, height int32, title string, monitor *Monitor, share
 func helperWindowProc(hwnd syscall.Handle, msg uint32, wParam, lParam uintptr) uintptr {
 	/*	switch msg	{
 		case _WM_DISPLAYCHANGE:
-		    _glfwPollMonitorsWin32();
+		    _glfwPollMonitorsWin32()
 		case _WM_DEVICECHANGE:
 			if (wParam == DBT_DEVICEARRIVAL) {
-				DEV_BROADCAST_HDR* dbh = (DEV_BROADCAST_HDR*) lParam;
+				DEV_BROADCAST_HDR* dbh = (DEV_BROADCAST_HDR*) lParam
 				if (dbh && dbh->dbch_devicetype == DBT_DEVTYP_DEVICEINTERFACE)
-				_glfwDetectJoystickConnectionWin32();
+				_glfwDetectJoystickConnectionWin32()
 			} else if (wParam == DBT_DEVICEREMOVECOMPLETE)	{
-				DEV_BROADCAST_HDR* dbh = (DEV_BROADCAST_HDR*) lParam;
+				DEV_BROADCAST_HDR* dbh = (DEV_BROADCAST_HDR*) lParam
 				if (dbh && dbh->dbch_devicetype == DBT_DEVTYP_DEVICEINTERFACE) {
-					_glfwDetectJoystickDisconnectionWin32();
+					_glfwDetectJoystickDisconnectionWin32()
 				}
 			}
 
@@ -499,12 +499,11 @@ func createHelperWindow() error {
 
 	// TODO Register for HID device notifications
 	/*		dbi DEV_BROADCAST_DEVICEINTERFACE_W
-			ZeroMemory(&dbi, sizeof(dbi));
-			dbi.dbcc_size = sizeof(dbi);
-			dbi.dbcc_devicetype = DBT_DEVTYP_DEVICEINTERFACE;
-			dbi.dbcc_classguid = GUID_DEVINTERFACE_HID;
+			dbi.dbcc_size = sizeof(dbi)
+			dbi.dbcc_devicetype = DBT_DEVTYP_DEVICEINTERFACE
+			dbi.dbcc_classguid = GUID_DEVINTERFACE_HID
 			_glfw.win32.deviceNotificationHandle =	RegisterDeviceNotificationW(_glfw.win32.helperWindowHandle,
-					(DEV_BROADCAST_HDR*) &dbi,	DEVICE_NOTIFY_WINDOW_HANDLE);
+					(DEV_BROADCAST_HDR*) &dbi,	DEVICE_NOTIFY_WINDOW_HANDLE)
 		}*/
 	var msg Msg
 	for PeekMessage(&msg, _glfw.win32.helperWindowHandle, 0, 0, pm_REMOVE) {
@@ -618,7 +617,7 @@ func glfwSetWindowMonitor(window *Window, monitor *Monitor, xpos int32, ypos int
 	window.videoMode.Width = width
 	window.videoMode.Height = height
 	window.videoMode.RefreshRate = refreshRate
-	// This is _glfw.platform.setWindowMonitor(window, monitor, xpos, ypos, width, height,	RefreshRate);
+	// This is _glfw.platform.setWindowMonitor(window, monitor, xpos, ypos, width, height,	RefreshRate)
 	if window.monitor == monitor {
 		if monitor != nil {
 			if monitor.window == window {
@@ -688,9 +687,10 @@ func glfwSetWindowMonitor(window *Window, monitor *Monitor, xpos int32, ypos int
 }
 
 func glfwPollMonitors() {
-	/* disconnectedCount := _glfw.monitorCount;
+	/* TODO
+	disconnectedCount := _glfw.monitorCount
 	if (disconnectedCount) {
-		disconnected = _glfw_calloc(_glfw.monitorCount, sizeof(Monitor*));
+		disconnected = _glfw_calloc(_glfw.monitorCount, sizeof(Monitor*))
 		memcpy(disconnected, _glfw.monitors, _glfw.monitorCount * sizeof(Monitor*));
 	} */
 	// var disconnected []*Monitor = _glfw.monitors
