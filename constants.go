@@ -4,78 +4,280 @@ import (
 	"syscall"
 )
 
-// WGL Constants
+const SM_CXICON = 11
+const SM_CXSMICON = 49
+
+type CIEXYZTRIPLE struct {
+	ciexyzX int32
+	ciexyzY int32
+	ciexyzZ int32
+}
+type BITMAPV5HEADER struct {
+	bV5Size          uint32
+	bV5Width         int32
+	bV5Height        int32
+	bV5Planes        uint16
+	bV5BitCount      uint16
+	bV5Compression   uint32
+	bV5SizeImage     uint32
+	bV5XPelsPerMeter int32
+	bV5YPelsPerMeter int32
+	bV5ClrUsed       uint32
+	bV5ClrImportant  uint32
+	bV5RedMask       uint32
+	bV5GreenMask     uint32
+	bV5BlueMask      uint32
+	bV5AlphaMask     uint32
+	bV5CSType        uint32
+	bV5Endpoints     CIEXYZTRIPLE
+	bV5GammaRed      uint32
+	bV5GammaGreen    uint32
+	bV5GammaBlue     uint32
+	bV5Intent        uint32
+	bV5ProfileData   uint32
+	bV5ProfileSize   uint32
+	bV5Reserved      uint32
+}
+
 const (
-	wgl_NUMBER_PIXEL_FORMATS_ARB                = 0x2000
-	wgl_DRAW_TO_WINDOW_ARB                      = 0x2001
-	wgl_DRAW_TO_BITMAP_ARB                      = 0x2002
-	wgl_ACCELERATION_ARB                        = 0x2003
-	wgl_NEED_PALETTE_ARB                        = 0x2004
-	wgl_NEED_SYSTEM_PALETTE_ARB                 = 0x2005
-	wgl_SWAP_LAYER_BUFFERS_ARB                  = 0x2006
-	wgl_SWAP_METHOD_ARB                         = 0x2007
-	wgl_NUMBER_OVERLAYS_ARB                     = 0x2008
-	wgl_NUMBER_UNDERLAYS_ARB                    = 0x2009
-	wgl_TRANSPARENT_ARB                         = 0x200A
-	wgl_TRANSPARENT_RED_VALUE_ARB               = 0x2037
-	wgl_TRANSPARENT_GREEN_VALUE_ARB             = 0x2038
-	wgl_TRANSPARENT_BLUE_VALUE_ARB              = 0x2039
-	wgl_TRANSPARENT_ALPHA_VALUE_ARB             = 0x203A
-	wgl_TRANSPARENT_INDEX_VALUE_ARB             = 0x203B
-	wgl_SHARE_DEPTH_ARB                         = 0x200C
-	wgl_SHARE_STENCIL_ARB                       = 0x200D
-	wgl_SHARE_ACCUM_ARB                         = 0x200E
-	wgl_SUPPORT_GDI_ARB                         = 0x200F
-	wgl_SUPPORT_OPENGL_ARB                      = 0x2010
-	wgl_DOUBLE_BUFFER_ARB                       = 0x2011
-	wgl_STEREO_ARB                              = 0x2012
-	wgl_PIXEL_TYPE_ARB                          = 0x2013
-	wgl_COLOR_BITS_ARB                          = 0x2014
-	wgl_RED_BITS_ARB                            = 0x2015
-	wgl_RED_SHIFT_ARB                           = 0x2016
-	wgl_GREEN_BITS_ARB                          = 0x2017
-	wgl_GREEN_SHIFT_ARB                         = 0x2018
-	wgl_BLUE_BITS_ARB                           = 0x2019
-	wgl_BLUE_SHIFT_ARB                          = 0x201A
-	wgl_ALPHA_BITS_ARB                          = 0x201B
-	wgl_ALPHA_SHIFT_ARB                         = 0x201C
-	wgl_ACCUM_BITS_ARB                          = 0x201D
-	wgl_ACCUM_RED_BITS_ARB                      = 0x201E
-	wgl_ACCUM_GREEN_BITS_ARB                    = 0x201F
-	wgl_ACCUM_BLUE_BITS_ARB                     = 0x2020
-	wgl_ACCUM_ALPHA_BITS_ARB                    = 0x2021
-	wgl_DEPTH_BITS_ARB                          = 0x2022
-	wgl_STENCIL_BITS_ARB                        = 0x2023
-	wgl_AUX_BUFFERS_ARB                         = 0x2024
-	wgl_NO_ACCELERATION_ARB                     = 0x2025
-	wgl_GENERIC_ACCELERATION_ARB                = 0x2026
-	wgl_FULL_ACCELERATION_ARB                   = 0x2027
-	wgl_SWAP_EXCHANGE_ARB                       = 0x2028
-	wgl_SWAP_COPY_ARB                           = 0x2029
-	wgl_SWAP_UNDEFINED_ARB                      = 0x202A
-	wgl_TYPE_RGBA_ARB                           = 0x202B
-	wgl_TYPE_COLORINDEX_ARB                     = 0x202C
-	wgl_SAMPLES_ARB                             = 0x2042
-	wgl_FRAMEBUFFER_SRGB_CAPABLE_ARB            = 0x20a9
-	wgl_COLORSPACE_EXT                          = 0x309d
-	wgl_COLORSPACE_SRGB_EXT                     = 0x3089
-	wgl_CONTEXT_DEBUG_BIT_ARB                   = 0x00000001
-	wgl_CONTEXT_FORWARD_COMPATIBLE_BIT_ARB      = 0x00000002
-	wgl_CONTEXT_PROFILE_MASK_ARB                = 0x9126
-	wgl_CONTEXT_CORE_PROFILE_BIT_ARB            = 0x00000001
-	wgl_CONTEXT_COMPATIBILITY_PROFILE_BIT_ARB   = 0x00000002
-	wgl_CONTEXT_MAJOR_VERSION_ARB               = 0x2091
-	wgl_CONTEXT_MINOR_VERSION_ARB               = 0x2092
-	wgl_CONTEXT_FLAGS_ARB                       = 0x2094
-	wgl_CONTEXT_ES2_PROFILE_BIT_EXT             = 0x00000004
-	wgl_CONTEXT_ROBUST_ACCESS_BIT_ARB           = 0x00000004
-	wgl_LOSE_CONTEXT_ON_RESET_ARB               = 0x8252
-	wgl_CONTEXT_RESET_NOTIFICATION_STRATEGY_ARB = 0x8256
-	wgl_NO_RESET_NOTIFICATION_ARB               = 0x8261
-	wgl_CONTEXT_RELEASE_BEHAVIOR_ARB            = 0x2097
-	wgl_CONTEXT_RELEASE_BEHAVIOR_NONE_ARB       = 0
-	wgl_CONTEXT_OPENGL_NO_ERROR_ARB             = 0x31b3
-	wgl_CONTEXT_RELEASE_BEHAVIOR_FLUSH_ARB      = 0x2098
+	BI_BITFIELDS   = 3
+	DIB_RGB_COLORS = 0
+	SM_CYICON      = 12
+	SM_CYSMICON    = 50
+	GCLP_HICON     = -14
+	GCLP_HICONSM   = -34
+	_WM_SETICON    = 0x0080
+	ICON_BIG       = 1
+	ICON_SMALL     = 0
+)
+
+type BITMAPINFO struct {
+	biSize          uint32
+	biWidth         uint32
+	biHeight        uint32
+	biPlanes        uint16
+	biBitCount      uint16
+	biCompression   uint32
+	biSizeImage     uint32
+	biXPelsPerMeter int32
+	biYPelsPerMeter int32
+	biClrUsed       uint32
+	biClrImportant  uint32
+	bmiColors       []uint32
+}
+type ICONINFO struct {
+	fIcon    bool
+	xHotspot int32
+	yHotspot int32
+	hbmMask  syscall.Handle
+	hbmColor syscall.Handle
+}
+
+type HDC syscall.Handle
+type HMONITOR syscall.Handle
+type HANDLE syscall.Handle
+
+type MONITORINFO struct {
+	CbSize    uint32
+	RcMonitor RECT
+	RcWork    RECT
+	DwFlags   uint32
+}
+type RECT struct {
+	Left, Top, Right, Bottom int32
+}
+
+type Msg struct {
+	Hwnd     syscall.Handle
+	Message  uint32
+	WParam   uintptr
+	LParam   uintptr
+	Time     uint32
+	Pt       Point
+	LPrivate uint32
+}
+
+type Point struct {
+	X, Y int32
+}
+
+type DISPLAY_DEVICEW struct {
+	cb           uint32
+	DeviceName   [32]uint16
+	DeviceString [128]uint16
+	StateFlags   uint32
+	DeviceID     [128]uint16
+	DeviceKey    [128]uint16
+}
+
+type WndClassEx struct {
+	CbSize        uint32
+	Style         uint32
+	LpfnWndProc   uintptr
+	CnClsExtra    int32
+	CbWndExtra    int32
+	HInstance     syscall.Handle
+	HIcon         syscall.Handle
+	HCursor       syscall.Handle
+	HbrBackground syscall.Handle
+	LpszMenuName  *uint16
+	LpszClassName *uint16
+	HIconSm       syscall.Handle
+}
+
+type DEVMODEW = struct {
+	mDeviceName          [32]uint16
+	dmSpecVersion        uint16
+	dmDriverVersion      uint16
+	dmSize               uint16
+	dmDriverExtra        uint16
+	dmFields             uint32
+	dmPosition           POINTL
+	dmDisplayOrientation uint32
+	dmDisplayFixedOutput uint32
+	dmColor              uint16
+	dmDuplex             uint16
+	dmYResolution        uint16
+	dmTTOption           uint16
+	dmCollate            uint16
+	dmFormName           [32]uint16
+	dmLogPixels          uint16
+	dmBitsPerPel         int32
+	dmPelsWidth          int32
+	dmPelsHeight         int32
+	dmDisplayFlags       uint32
+	dmDisplayFrequency   int32
+	dmICMMethod          uint32
+	dmICMIntent          uint32
+	dmMediaType          uint32
+	dmDitherType         uint32
+	dmReserved1          uint32
+	dmReserved2          uint32
+	dmPanningWidth       uint32
+	dmPanningHeight      uint32
+}
+
+type POINTL = struct {
+	X, Y int32
+}
+
+type RAWINPUTDEVICE struct {
+	usUsagePage uint16
+	usUsage     uint16
+	dwFlags     uint32
+	hwndTarget  syscall.Handle
+}
+
+type WINDOWPLACEMENT struct {
+	length           uint32
+	flags            uint32
+	showCmd          uint32
+	ptMinPosition    POINT
+	ptMaxPosition    POINT
+	rcNormalPosition RECT
+	rcDevice         RECT
+}
+
+type _OSVERSIONINFOEXW struct {
+	dwOSVersionInfoSize uint32
+	dwMajorVersion      uint32
+	dwMinorVersion      uint32
+	dwBuildNumber       uint32
+	dwPlatformId        uint32
+	szCSDVersion        [128]uint16
+	wServicePackMajor   uint16
+	wServicePackMinor   uint16
+	wSuiteMask          uint16
+	wProductType        uint8
+	wReserved           uint8
+}
+
+const (
+	VER_MAJORVERSION     = 0x0000002
+	VER_MINORVERSION     = 0x0000001
+	VER_BUILDNUMBER      = 0x0000004
+	VER_SERVICEPACKMAJOR = 0x00000020
+	WIN32_WINNT_WINBLUE  = 0x0603
+)
+
+const (
+	DPI_AWARENESS_CONTEXT_UNAWARE              = 0xFFFFFFFFFFFFFFFF
+	DPI_AWARENESS_CONTEXT_SYSTEM_AWARE         = 0xFFFFFFFFFFFFFFFE
+	DPI_AWARENESS_CONTEXT_PER_MONITOR_AWARE    = 0xFFFFFFFFFFFFFFFD
+	DPI_AWARENESS_CONTEXT_PER_MONITOR_AWARE_V2 = 0xFFFFFFFFFFFFFFFC
+	DPI_AWARENESS_CONTEXT_UNAWARE_GDISCALED    = 0xFFFFFFFFFFFFFFFB
+	PROCESS_DPI_UNAWARE                        = 0
+	PROCESS_SYSTEM_DPI_AWARE                   = 1
+	PROCESS_PER_MONITOR_DPI_AWARE              = 2
+)
+
+const (
+	ws_CLIPCHILDREN     = 0x02000000
+	ws_CLIPSIBLINGS     = 0x04000000
+	ws_MAXIMIZE         = 0x01000000
+	ws_ICONIC           = 0x20000000
+	ws_VISIBLE          = 0x10000000
+	ws_OVERLAPPED       = 0x00000000
+	ws_CAPTION          = 0x00C00000
+	ws_SYSMENU          = 0x00080000
+	ws_THICKFRAME       = 0x00040000
+	ws_MINIMIZEBOX      = 0x00020000
+	ws_MAXIMIZEBOX      = 0x00010000
+	ws_POPUP            = 0x80000000
+	ws_OVERLAPPEDWINDOW = ws_OVERLAPPED | ws_CAPTION | ws_SYSMENU | ws_THICKFRAME | ws_MINIMIZEBOX | ws_MAXIMIZEBOX
+	ws_EX_APPWINDOW     = 0x40000
+	ws_EX_TOPMOST       = 0x00000008
+	ws_EX_LAYERED       = 0x00080000
+	ws_EX_TRANSPARENT   = 0x00000020
+)
+
+const (
+	_WM_CANCELMODE           = 0x001F
+	_WM_CHAR                 = 0x0102
+	_WM_SYSCHAR              = 0x0106
+	_WM_CLOSE                = 0x0010
+	_WM_CREATE               = 0x0001
+	_WM_DPICHANGED           = 0x02E0
+	_WM_DESTROY              = 0x0002
+	_WM_ERASEBKGND           = 0x0014
+	_WM_GETMINMAXINFO        = 0x0024
+	_WM_IME_COMPOSITION      = 0x010F
+	_WM_IME_ENDCOMPOSITION   = 0x010E
+	_WM_IME_STARTCOMPOSITION = 0x010D
+	_WM_KEYDOWN              = 0x0100
+	_WM_KEYUP                = 0x0101
+	_WM_KILLFOCUS            = 0x0008
+	_WM_LBUTTONDOWN          = 0x0201
+	_WM_LBUTTONUP            = 0x0202
+	_WM_MBUTTONDOWN          = 0x0207
+	_WM_MBUTTONUP            = 0x0208
+	_WM_MOUSEMOVE            = 0x0200
+	_WM_MOUSEWHEEL           = 0x020A
+	_WM_MOUSEHWHEEL          = 0x020E
+	_WM_MOUSELEAVE           = 0x02A3
+	_WM_MOUSEHOVER           = 0x02A1
+	_WM_NCACTIVATE           = 0x0086
+	_WM_NCHITTEST            = 0x0084
+	_WM_NCCALCSIZE           = 0x0083
+	_WM_PAINT                = 0x000F
+	_WM_QUIT                 = 0x0012
+	_WM_SETCURSOR            = 0x0020
+	_WM_SETFOCUS             = 0x0007
+	_WM_SHOWWINDOW           = 0x0018
+	_WM_SIZE                 = 0x0005
+	_WM_STYLECHANGED         = 0x007D
+	_WM_SYSKEYDOWN           = 0x0104
+	_WM_SYSKEYUP             = 0x0105
+	_WM_RBUTTONDOWN          = 0x0204
+	_WM_RBUTTONUP            = 0x0205
+	_WM_TIMER                = 0x0113
+	_WM_UNICHAR              = 0x0109
+	_WM_USER                 = 0x0400
+	_WM_WINDOWPOSCHANGED     = 0x0047
+	_WM_DROPFILES            = 0x0233
+	_WM_COPYDATA             = 0x004A
+	_WM_COPYGLOBALDATA       = 0x0049
+	_MSGFLT_ALLOW            = 1
 )
 
 // Windows constants

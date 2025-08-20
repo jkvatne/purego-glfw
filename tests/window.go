@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"os"
 	"runtime"
+	"time"
 
 	"github.com/go-gl/gl/all-core/gl"
 	glfw "github.com/jkvatne/purego-glfw"
@@ -20,6 +21,8 @@ func key_callback_window(window *glfw.Window, key glfw.Key, scancode int, action
 }
 
 func printInfo(window *glfw.Window) {
+	x, y := window.GetPos()
+	fmt.Printf("Window position x=%d, y=%d\n", x, y)
 	w, h = window.GetFramebufferSize()
 	fmt.Printf("Window Framebuffer Size:%dx%d\n", w, h)
 	sx, sy := window.GetContentScale()
@@ -68,14 +71,15 @@ func window() {
 	gl.Init()
 	glfw.SwapInterval(1)
 	glfw.SetTime(0)
-	for !window.ShouldClose() {
-		gl.ClearColor(100, 100, 120, 256)
+	for !window.ShouldClose() && glfw.GetTime() < 3.0 {
+		gl.ClearColor(0, 1, 0, 1)
 		gl.Clear(gl.COLOR_BUFFER_BIT)
 		window.SwapBuffers()
 		glfw.PollEvents()
-		if glfw.GetTime() > 2.0 {
+		if glfw.GetTime() > 1.0 && glfw.GetTime() < 1.2 {
 			printInfo(window)
-			break
+			window.RequestAttention()
+			time.Sleep(time.Millisecond * 200)
 		}
 	}
 	window.Destroy()

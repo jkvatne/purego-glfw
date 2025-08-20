@@ -11,6 +11,79 @@ import (
 	"golang.org/x/sys/windows"
 )
 
+const (
+	wgl_NUMBER_PIXEL_FORMATS_ARB                = 0x2000
+	wgl_DRAW_TO_WINDOW_ARB                      = 0x2001
+	wgl_DRAW_TO_BITMAP_ARB                      = 0x2002
+	wgl_ACCELERATION_ARB                        = 0x2003
+	wgl_NEED_PALETTE_ARB                        = 0x2004
+	wgl_NEED_SYSTEM_PALETTE_ARB                 = 0x2005
+	wgl_SWAP_LAYER_BUFFERS_ARB                  = 0x2006
+	wgl_SWAP_METHOD_ARB                         = 0x2007
+	wgl_NUMBER_OVERLAYS_ARB                     = 0x2008
+	wgl_NUMBER_UNDERLAYS_ARB                    = 0x2009
+	wgl_TRANSPARENT_ARB                         = 0x200A
+	wgl_TRANSPARENT_RED_VALUE_ARB               = 0x2037
+	wgl_TRANSPARENT_GREEN_VALUE_ARB             = 0x2038
+	wgl_TRANSPARENT_BLUE_VALUE_ARB              = 0x2039
+	wgl_TRANSPARENT_ALPHA_VALUE_ARB             = 0x203A
+	wgl_TRANSPARENT_INDEX_VALUE_ARB             = 0x203B
+	wgl_SHARE_DEPTH_ARB                         = 0x200C
+	wgl_SHARE_STENCIL_ARB                       = 0x200D
+	wgl_SHARE_ACCUM_ARB                         = 0x200E
+	wgl_SUPPORT_GDI_ARB                         = 0x200F
+	wgl_SUPPORT_OPENGL_ARB                      = 0x2010
+	wgl_DOUBLE_BUFFER_ARB                       = 0x2011
+	wgl_STEREO_ARB                              = 0x2012
+	wgl_PIXEL_TYPE_ARB                          = 0x2013
+	wgl_COLOR_BITS_ARB                          = 0x2014
+	wgl_RED_BITS_ARB                            = 0x2015
+	wgl_RED_SHIFT_ARB                           = 0x2016
+	wgl_GREEN_BITS_ARB                          = 0x2017
+	wgl_GREEN_SHIFT_ARB                         = 0x2018
+	wgl_BLUE_BITS_ARB                           = 0x2019
+	wgl_BLUE_SHIFT_ARB                          = 0x201A
+	wgl_ALPHA_BITS_ARB                          = 0x201B
+	wgl_ALPHA_SHIFT_ARB                         = 0x201C
+	wgl_ACCUM_BITS_ARB                          = 0x201D
+	wgl_ACCUM_RED_BITS_ARB                      = 0x201E
+	wgl_ACCUM_GREEN_BITS_ARB                    = 0x201F
+	wgl_ACCUM_BLUE_BITS_ARB                     = 0x2020
+	wgl_ACCUM_ALPHA_BITS_ARB                    = 0x2021
+	wgl_DEPTH_BITS_ARB                          = 0x2022
+	wgl_STENCIL_BITS_ARB                        = 0x2023
+	wgl_AUX_BUFFERS_ARB                         = 0x2024
+	wgl_NO_ACCELERATION_ARB                     = 0x2025
+	wgl_GENERIC_ACCELERATION_ARB                = 0x2026
+	wgl_FULL_ACCELERATION_ARB                   = 0x2027
+	wgl_SWAP_EXCHANGE_ARB                       = 0x2028
+	wgl_SWAP_COPY_ARB                           = 0x2029
+	wgl_SWAP_UNDEFINED_ARB                      = 0x202A
+	wgl_TYPE_RGBA_ARB                           = 0x202B
+	wgl_TYPE_COLORINDEX_ARB                     = 0x202C
+	wgl_SAMPLES_ARB                             = 0x2042
+	wgl_FRAMEBUFFER_SRGB_CAPABLE_ARB            = 0x20a9
+	wgl_COLORSPACE_EXT                          = 0x309d
+	wgl_COLORSPACE_SRGB_EXT                     = 0x3089
+	wgl_CONTEXT_DEBUG_BIT_ARB                   = 0x00000001
+	wgl_CONTEXT_FORWARD_COMPATIBLE_BIT_ARB      = 0x00000002
+	wgl_CONTEXT_PROFILE_MASK_ARB                = 0x9126
+	wgl_CONTEXT_CORE_PROFILE_BIT_ARB            = 0x00000001
+	wgl_CONTEXT_COMPATIBILITY_PROFILE_BIT_ARB   = 0x00000002
+	wgl_CONTEXT_MAJOR_VERSION_ARB               = 0x2091
+	wgl_CONTEXT_MINOR_VERSION_ARB               = 0x2092
+	wgl_CONTEXT_FLAGS_ARB                       = 0x2094
+	wgl_CONTEXT_ES2_PROFILE_BIT_EXT             = 0x00000004
+	wgl_CONTEXT_ROBUST_ACCESS_BIT_ARB           = 0x00000004
+	wgl_LOSE_CONTEXT_ON_RESET_ARB               = 0x8252
+	wgl_CONTEXT_RESET_NOTIFICATION_STRATEGY_ARB = 0x8256
+	wgl_NO_RESET_NOTIFICATION_ARB               = 0x8261
+	wgl_CONTEXT_RELEASE_BEHAVIOR_ARB            = 0x2097
+	wgl_CONTEXT_RELEASE_BEHAVIOR_NONE_ARB       = 0
+	wgl_CONTEXT_OPENGL_NO_ERROR_ARB             = 0x31b3
+	wgl_CONTEXT_RELEASE_BEHAVIOR_FLUSH_ARB      = 0x2098
+)
+
 var (
 	opengl32 = windows.NewLazySystemDLL("opengl32.dll")
 )
