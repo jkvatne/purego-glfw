@@ -76,24 +76,23 @@ func (m *Monitor) GetWorkarea() (x, y, width, height int) {
 
 // GetContentScale function retrieves the content scale for the specified monitor.
 // The content scale is the ratio between the current DPI and the platform's
-// default DPI. If you scale all pixel dimensions by this scale then your content
-// should appear at an appropriate size. This is especially important for text
-// and any UI elements.
-//
-// This function must only be called from the main thread.
+// default DPI. .
 func (m *Monitor) GetContentScale() (float32, float32) {
 	return glfwGetMonitorContentScale(m)
 }
 
+// GetMonitorName returns the name of the given monitor
 func (m *Monitor) GetMonitorName() string {
 	s := GoStr(&m.name[0])
 	return s
 }
 
+// GetVideoMode returns the current video mode of the monitor
 func (monitor *Monitor) GetVideoMode() GLFWvidmode {
 	return glfwGetVideoMode(monitor)
 }
 
+// GetVideoModes returns a slice with all the monitor's video modes
 func (m *Monitor) GetVideoModes() []GLFWvidmode {
 	if !refreshVideoModes(m) {
 		return nil

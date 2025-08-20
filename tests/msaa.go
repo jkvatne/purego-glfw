@@ -11,14 +11,11 @@ import (
 	"strings"
 	"unsafe"
 
-	"github.com/jkvatne/jkvgui/gl"
+	"github.com/go-gl/gl/all-core/gl"
 	glfw "github.com/jkvatne/purego-glfw"
 )
 
-// static const vec2 vertices[4] = {{ -0.6f, -0.6f },{  0.6f, -0.6f },{  0.6f,  0.6f },{ -0.6f,  0.6f }};
 var vertices2 = [8]float32{-0.6, 0.6, 0.6, -0.6, -0.6, -0.6, 0.6, 0.6}
-
-// {-0.6, -0.6, 0.6, -0.6, 0.6, 0.6, -0.6, 0.6}
 
 var vertex_shader_text2 = `
 #version 110

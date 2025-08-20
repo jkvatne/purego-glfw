@@ -156,6 +156,7 @@ type _GLFWwndconfig = struct {
 	decorated        bool
 	focused          bool
 	autoIconify      bool
+	stereo           bool
 	floating         bool
 	maximized        bool
 	centerCursor     bool
@@ -196,6 +197,7 @@ type hints = struct {
 	window      _GLFWwndconfig
 	context     _GLFWctxconfig
 	refreshRate int32
+	stereo      int32
 }
 
 type _GLFWfbconfig = struct {
@@ -211,6 +213,7 @@ type _GLFWfbconfig = struct {
 	accumAlphaBits int32
 	auxBuffers     int32
 	samples        int32
+	stereo         bool
 	sRGB           bool
 	doublebuffer   bool
 	transparent    bool

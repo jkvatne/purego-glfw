@@ -5,7 +5,7 @@ import (
 	"os"
 	"runtime"
 
-	"github.com/jkvatne/jkvgui/gl"
+	"github.com/go-gl/gl/all-core/gl"
 	glfw "github.com/jkvatne/purego-glfw"
 )
 
@@ -27,7 +27,7 @@ func title() {
 	glfw.SwapInterval(1)
 	glfw.SetTime(0)
 	window.SetTitle("English 日本語 русский язык 官話")
-	for !window.ShouldClose() && glfw.GetTime() < 2000.0 {
+	for !window.ShouldClose() && glfw.GetTime() < 2.0 {
 		gl.ClearColor(100, 100, 0, 256)
 		gl.Clear(gl.COLOR_BUFFER_BIT)
 		window.SwapBuffers()

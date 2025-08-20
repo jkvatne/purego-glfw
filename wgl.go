@@ -499,6 +499,9 @@ func choosePixelFormatWGL(window *_GLFWwindow, ctxconfig *_GLFWctxconfig, fbconf
 			u.accumBlueBits = FIND_ATTRIB_VALUE(wgl_ACCUM_BLUE_BITS_ARB)
 			u.accumAlphaBits = FIND_ATTRIB_VALUE(wgl_ACCUM_ALPHA_BITS_ARB)
 			u.auxBuffers = FIND_ATTRIB_VALUE(wgl_AUX_BUFFERS_ARB)
+			if FIND_ATTRIB_VALUE(wgl_STEREO_ARB) != 0 {
+				u.stereo = true
+			}
 			if _glfw.wgl.ARB_multisample {
 				u.samples = FIND_ATTRIB_VALUE(wgl_SAMPLES_ARB)
 			}
@@ -543,6 +546,9 @@ func choosePixelFormatWGL(window *_GLFWwindow, ctxconfig *_GLFWctxconfig, fbconf
 			u.accumBlueBits = int32(pfd.cAccumBlueBits)
 			u.accumAlphaBits = int32(pfd.cAccumAlphaBits)
 			u.auxBuffers = int32(pfd.cAuxBuffers)
+			if pfd.dwFlags&PFD_STEREO != 0 {
+				u.stereo = true
+			}
 		}
 		u.handle = uintptr(pixelFormat)
 		usableCount++

@@ -222,6 +222,8 @@ func WindowHint(hint Hint, v int) error {
 		_glfw.hints.framebuffer.accumAlphaBits = value
 	case AuxBuffers:
 		_glfw.hints.framebuffer.auxBuffers = value
+	case Stereo:
+		_glfw.hints.stereo = value
 	case DoubleBuffer:
 		_glfw.hints.framebuffer.doublebuffer = value != 0
 	case TransparentFramebuffer:

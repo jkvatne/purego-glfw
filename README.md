@@ -1,15 +1,19 @@
-# GLFW 3.3 for pure Go 
+# GLFW for Windows in pure Go 
 
 ## Introduction
 
-This is a translation of the official glfw for Go, from C to Go
+This is a translation of the official glfw from C to Go.
+It implements the same interface as https://github.com/go-gl/v3.3
+The C code comes from https://github.com/glfw/glfw
 
 Only Windows is currently because the other platforms can easily use the
 orignal glfw. On Windows there is often problems using the CGO functions.
 This code can be used without any C compiler. It is pure Go.
 
-NB: The software is not production ready, and may contain serious errors.
-Some functions may be missing. Please report any errors found.
+Some of the original tests are also translated, and seems to run fine.
+
+The software is mostly complete. Some functions may be missing.
+Please report any errors found.
 
 ## Installation
 
@@ -33,7 +37,7 @@ This is used to import the types LazyDLL and LazyProc.
 
 ## Limitations
 
-- Only standard OpenGl revision 3 is supported. No Vulcan or OpenGL ES.
-- Only Windows 10 or later is supported (Can perhaps work on Windows 7 and 8).
-- Only the default video mode is supported. Full-screen apps will use the system configurated resolution. (Usualy the native monitor resolution)
-
+- Only standard OpenGl is supported. No Vulcan or OpenGL ES.
+- Only Windows 10 or later is supported (Can perhaps work on Windows 8).
+- Monitor connect/disconnect is not supported while the app is running
+- Joystick is not supported

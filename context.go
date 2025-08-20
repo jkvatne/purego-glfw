@@ -9,25 +9,54 @@ import (
 )
 
 func glfwIsValidContextConfig(ctxconfig *_GLFWctxconfig) error {
-	if (ctxconfig.major < 1 || ctxconfig.minor < 0) ||
-		(ctxconfig.major == 1 && ctxconfig.minor > 5) ||
-		(ctxconfig.major == 2 && ctxconfig.minor > 1) ||
-		(ctxconfig.major == 3 && ctxconfig.minor > 3) {
-		return fmt.Errorf("Invalid OpenGL version %d.%d", ctxconfig.major, ctxconfig.minor)
+	if ctxconfig.source != NativeContextAPI && ctxconfig.source != EGLContextAPI && ctxconfig.source != OSMesaContextAPI {
+		return errors.New("Invalid context creation API")
+	}
+	if ctxconfig.client != NoAPI && ctxconfig.client != OpenGLAPI && ctxconfig.client != OpenGLESAPI {
+		return errors.New("Invalid cclient API")
+	}
+	if ctxconfig.share != nil {
+		if ctxconfig.client == NoAPI || ctxconfig.share.context.client == OpenGLAPI {
+			return errors.New("No context API")
+		}
+		if ctxconfig.client != ctxconfig.share.context.client {
+			return errors.New("Context creation APIs do not match between contexts")
+		}
+	}
+	if ctxconfig.client == OpenGLAPI {
+		if (ctxconfig.major < 1 || ctxconfig.minor < 0) ||
+			(ctxconfig.major == 1 && ctxconfig.minor > 5) ||
+			(ctxconfig.major == 2 && ctxconfig.minor > 1) ||
+			(ctxconfig.major == 3 && ctxconfig.minor > 3) {
+			return fmt.Errorf("Invalid OpenGL version %d.%d", ctxconfig.major, ctxconfig.minor)
+		}
+		if ctxconfig.profile != 0 {
+			if ctxconfig.profile != OpenGLCoreProfile && ctxconfig.profile != OpenGLCompatProfile {
+				return fmt.Errorf("Invalid OpenGL profile")
+			}
+			if ctxconfig.major <= 2 || ctxconfig.major == 3 && ctxconfig.minor < 2 {
+				// Desktop OpenGL context profiles are only defined for version 3.2 and above
+				return fmt.Errorf("Context profiles are only defined for OpenGL version 3.2 and above")
+			}
+			if ctxconfig.forward && ctxconfig.major <= 2 {
+				// Forward-compatible contexts are only defined for OpenGL version 3.0 and above
+				return fmt.Errorf("Forward-compatibility is only defined for OpenGL version 3.0 and above")
+			}
+		}
+	} else if ctxconfig.client == OpenGLESAPI {
+		if ctxconfig.major < 1 || ctxconfig.minor < 0 || ctxconfig.major == 1 && ctxconfig.minor > 1 || ctxconfig.major == 2 && ctxconfig.minor > 0 {
+			// OpenGL ES 1.0 is the smallest valid version
+			// OpenGL ES 1.x series ended with version 1.1
+			// OpenGL ES 2.x series ended with version 2.0
+			// For now, let everything else through
+			return fmt.Errorf("Invalid OpenGL ES version %i.%i", ctxconfig.major, ctxconfig.minor)
+		}
 	}
 
-	if ctxconfig.profile != 0 {
-		if ctxconfig.profile != OpenGLCoreProfile && ctxconfig.profile != OpenGLCompatProfile {
-			return fmt.Errorf("Invalid OpenGL profile 0x%08X", ctxconfig.profile)
+	if ctxconfig.robustness != 0 {
+		if ctxconfig.robustness != NoResetNotification && ctxconfig.robustness != LoseContextOnReset {
+			return fmt.Errorf("Invalid context robustness mode 0x%08X", ctxconfig.robustness)
 		}
-		if ctxconfig.major <= 2 || (ctxconfig.major == 3 && ctxconfig.minor < 2) {
-			// Desktop OpenGL context profiles are only defined for version 3.2 and above
-			return fmt.Errorf("Context profiles are only defined for OpenGL version 3.2 and above")
-		}
-	}
-	if ctxconfig.forward && ctxconfig.major <= 2 {
-		// Forward-compatible contexts are only defined for OpenGL version 3.0 and above
-		return fmt.Errorf("Forward-compatibility is only defined for OpenGL version 3.0 and above")
 	}
 	return nil
 }
@@ -145,6 +174,7 @@ func glfwRefreshContextAttribs(window *_GLFWwindow, ctxconfig *_GLFWctxconfig) e
 	for s := range prefixes {
 		if strings.HasPrefix(version, prefixes[s]) {
 			version = strings.TrimPrefix(version, prefixes[s])
+			window.context.client = OpenGLESAPI
 		}
 	}
 	i := 0

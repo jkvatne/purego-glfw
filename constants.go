@@ -235,10 +235,11 @@ type PIXELFORMATDESCRIPTOR = struct {
 }
 
 const (
+	PFD_TYPE_RGBA      = 0x00
 	PFD_DRAW_TO_WINDOW = 0x04
 	PFD_SUPPORT_OPENGL = 0x20
 	PFD_DOUBLEBUFFER   = 0x01
-	PFD_TYPE_RGBA      = 0x00
+	PFD_STEREO         = 0x02
 )
 const (
 	SWP_NOSIZE         = 0x0001
