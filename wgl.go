@@ -14,29 +14,11 @@ import (
 const (
 	wgl_NUMBER_PIXEL_FORMATS_ARB                = 0x2000
 	wgl_DRAW_TO_WINDOW_ARB                      = 0x2001
-	wgl_DRAW_TO_BITMAP_ARB                      = 0x2002
 	wgl_ACCELERATION_ARB                        = 0x2003
-	wgl_NEED_PALETTE_ARB                        = 0x2004
-	wgl_NEED_SYSTEM_PALETTE_ARB                 = 0x2005
-	wgl_SWAP_LAYER_BUFFERS_ARB                  = 0x2006
-	wgl_SWAP_METHOD_ARB                         = 0x2007
-	wgl_NUMBER_OVERLAYS_ARB                     = 0x2008
-	wgl_NUMBER_UNDERLAYS_ARB                    = 0x2009
-	wgl_TRANSPARENT_ARB                         = 0x200A
-	wgl_TRANSPARENT_RED_VALUE_ARB               = 0x2037
-	wgl_TRANSPARENT_GREEN_VALUE_ARB             = 0x2038
-	wgl_TRANSPARENT_BLUE_VALUE_ARB              = 0x2039
-	wgl_TRANSPARENT_ALPHA_VALUE_ARB             = 0x203A
-	wgl_TRANSPARENT_INDEX_VALUE_ARB             = 0x203B
-	wgl_SHARE_DEPTH_ARB                         = 0x200C
-	wgl_SHARE_STENCIL_ARB                       = 0x200D
-	wgl_SHARE_ACCUM_ARB                         = 0x200E
-	wgl_SUPPORT_GDI_ARB                         = 0x200F
 	wgl_SUPPORT_OPENGL_ARB                      = 0x2010
 	wgl_DOUBLE_BUFFER_ARB                       = 0x2011
 	wgl_STEREO_ARB                              = 0x2012
 	wgl_PIXEL_TYPE_ARB                          = 0x2013
-	wgl_COLOR_BITS_ARB                          = 0x2014
 	wgl_RED_BITS_ARB                            = 0x2015
 	wgl_RED_SHIFT_ARB                           = 0x2016
 	wgl_GREEN_BITS_ARB                          = 0x2017
@@ -54,13 +36,7 @@ const (
 	wgl_STENCIL_BITS_ARB                        = 0x2023
 	wgl_AUX_BUFFERS_ARB                         = 0x2024
 	wgl_NO_ACCELERATION_ARB                     = 0x2025
-	wgl_GENERIC_ACCELERATION_ARB                = 0x2026
-	wgl_FULL_ACCELERATION_ARB                   = 0x2027
-	wgl_SWAP_EXCHANGE_ARB                       = 0x2028
-	wgl_SWAP_COPY_ARB                           = 0x2029
-	wgl_SWAP_UNDEFINED_ARB                      = 0x202A
 	wgl_TYPE_RGBA_ARB                           = 0x202B
-	wgl_TYPE_COLORINDEX_ARB                     = 0x202C
 	wgl_SAMPLES_ARB                             = 0x2042
 	wgl_FRAMEBUFFER_SRGB_CAPABLE_ARB            = 0x20a9
 	wgl_COLORSPACE_EXT                          = 0x309d
@@ -85,6 +61,26 @@ const (
 )
 
 var (
+	attribs     [40]int32
+	values      [40]int32
+	attribCount int
+)
+
+func ADD_ATTRIB(a int32) {
+	attribs[attribCount] = a
+	attribCount++
+}
+
+func FIND_ATTRIB_VALUE(a int32) int32 {
+	for i := 0; i < attribCount; i++ {
+		if attribs[i] == a {
+			return values[i]
+		}
+	}
+	panic("WGL: Unknown pixel format attribute requested")
+}
+
+var (
 	opengl32 = windows.NewLazySystemDLL("opengl32.dll")
 )
 
@@ -97,28 +93,12 @@ func wglGetProcAddress(name string) uintptr {
 	if !errors.Is(err, syscall.Errno(0)) {
 		panic("wglGetProcAddr " + err.Error() + "\n")
 	}
-	if r == 0 {
-		panic("wglGetProcAddr failed for \"" + name + "\"\n")
-	}
 	return uintptr(unsafe.Pointer(r))
 }
 
 func swapBuffersWGL(window *_GLFWwindow) {
-	if window.monitor == nil {
-		// HACK: Use DwmFlush when desktop composition is enabled on Windows Vista and 7
-		// Windows Vista is not supported in purego version
-		/*	if !IsWindows8OrGreater() && IsWindowsVistaOrGreater() {
-			enabled := FALSE;
-			if DwmIsCompositionEnabled(&enabled) && enabled	{
-				count := abs(window->context.wgl.interval);
-				for (count--) {
-					DwmFlush();
-				}
-			}
-		}*/
-	}
 	_, _, _ = _SwapBuffers.Call(uintptr(window.context.wgl.dc))
-	// Ignore errors becaus it
+	// Ignore errors becaus it sometimes fails without reason
 }
 
 func swapIntervalWGL(interval int) {
@@ -128,15 +108,6 @@ func swapIntervalWGL(interval int) {
 	}
 	window := (*Window)(unsafe.Pointer(p))
 	window.context.wgl.interval = interval
-	// if window.monitor == nil {
-	// HACK: Disable WGL swap interval when desktop composition is enabled on Windows Vista and 7 to avoid interfering with DWM vsync
-	// Windows Vista is not supported in purego
-	// if (!IsWindows8OrGreater() && IsWindowsVistaOrGreater()) {
-	//	enabled := false
-	// if (SUCCEEDED(DwmIsCompositionEnabled(&enabled)) && enabled)
-	//	interval = 0;
-	// }
-	// }
 	if _glfw.wgl.EXT_swap_control {
 		syscall.SyscallN(_glfw.wgl.SwapIntervalEXT, uintptr(interval))
 	}
@@ -176,13 +147,7 @@ func getCurrentContext() HANDLE {
 func makeCurrent(dc HDC, handle HANDLE) bool {
 	r1, _, err := _glfw.wgl.wglMakeCurrent.Call(uintptr(dc), uintptr(handle))
 	if !errors.Is(err, syscall.Errno(0)) {
-		slog.Error("makeCurrent failed", "Error", err.Error(), "dc", dc, "hMonitor", handle)
-	}
-	if r1 == 0 {
-		err = syscall.GetLastError()
-		if err != nil {
-			panic(err)
-		}
+		panic("MmakeCurrent failed, " + err.Error())
 	}
 	return r1 != 0
 }
@@ -192,10 +157,6 @@ func setPixelFormat(dc HDC, iPixelFormat int32, pfd *PIXELFORMATDESCRIPTOR) int 
 	if !errors.Is(err, syscall.Errno(0)) {
 		panic("wglSetPixelFormat failed, " + err.Error())
 	}
-	if ret == 0 {
-		err = syscall.GetLastError()
-		panic("wglSetPixelFormat failed" + err.Error())
-	}
 	return int(ret)
 }
 
@@ -203,10 +164,6 @@ func choosePixelFormat(dc HDC, pfd *PIXELFORMATDESCRIPTOR) int32 {
 	ret, _, err := _ChoosePixelFormat.Call(uintptr(unsafe.Pointer(dc)), uintptr(unsafe.Pointer(pfd)))
 	if !errors.Is(err, syscall.Errno(0)) {
 		panic("wglSetPixewglChoosePixelFormatlFormat failed, " + err.Error())
-	}
-	if ret == 0 {
-		err = syscall.GetLastError()
-		panic("wglChoosePixelFormat failed, " + err.Error())
 	}
 	return int32(ret)
 }
@@ -254,11 +211,9 @@ func getProcAddressWGL(procname string) uintptr {
 	if proc != 0 {
 		return proc
 	}
-	// return _glfwPlatformGetModuleSymbol(_glfw.wgl.instance, procname)
 	return opengl32.NewProc(procname).Addr()
 }
 
-// _glfwInitWGL will Initialize the Windows GL library
 func _glfwInitWGL() error {
 	var pfd PIXELFORMATDESCRIPTOR
 	if _glfw.wgl.instance != nil {
@@ -347,24 +302,6 @@ func describePixelFormat(dc HDC, iPixelFormat int32, nBytes int, ppfd *PIXELFORM
 		r1 = 0
 	}
 	return int32(r1)
-}
-
-var attribs [40]int32
-var values [40]int32
-var attribCount int
-
-func ADD_ATTRIB(a int32) {
-	attribs[attribCount] = a
-	attribCount++
-}
-
-func FIND_ATTRIB_VALUE(a int32) int32 {
-	for i := 0; i < attribCount; i++ {
-		if attribs[i] == a {
-			return values[i]
-		}
-	}
-	panic("WGL: Unknown pixel format attribute requested")
 }
 
 func glfwCreateContextWGL(window *_GLFWwindow, ctxconfig *_GLFWctxconfig, fbconfig *_GLFWfbconfig) error {
@@ -599,9 +536,9 @@ func choosePixelFormatWGL(window *_GLFWwindow, ctxconfig *_GLFWctxconfig, fbconf
 			if (pfd.dwFlags&PFD_DRAW_TO_WINDOW) == 0 || (pfd.dwFlags&PFD_SUPPORT_OPENGL) == 0 {
 				continue
 			}
-			// if pfd.dwFlags&PFD_GENERIC_ACCELERATED == 0 && pfd.dwFlags&PFD_GENERIC_FORMAT == 0 {
-			//	continue
-			// }
+			if pfd.dwFlags&PFD_GENERIC_ACCELERATED == 0 && pfd.dwFlags&PFD_GENERIC_FORMAT == 0 {
+				continue
+			}
 			if pfd.iPixelType != PFD_TYPE_RGBA {
 				continue
 			}
