@@ -20,40 +20,40 @@ type ErrorCallbackFunc func(e int, description string)
 // when the cursor is moved. The callback is provided with the position relative
 // to the upper-left corner of the client area of the Window.
 func (w *Window) SetCursorPosCallback(cbfun CursorPosCallback) (previous CursorPosCallback) {
-	w.cursorPosCallback = cbfun
-	return nil
+	w.cursorPosCallback, previous = cbfun, w.cursorPosCallback
+	return previous
 }
 
 // SetKeyCallback sets the key callback which is called when a key is pressed, repeated or released.
 func (w *Window) SetKeyCallback(cbfun KeyCallback) (previous KeyCallback) {
-	w.keyCallback = cbfun
-	return nil
+	w.keyCallback, previous = cbfun, w.keyCallback
+	return previous
 }
 
 // SetCharCallback sets the character callback which is called when a Unicode character is input.
 func (w *Window) SetCharCallback(cbfun CharCallback) (previous CharCallback) {
-	w.charCallback = cbfun
-	return nil
+	w.charCallback, previous = cbfun, w.charCallback
+	return previous
 }
 
 // SetDropCallback sets the drop callback
 func (w *Window) SetDropCallback(cbfun DropCallback) (previous DropCallback) {
-	w.dropCallback = cbfun
-	return nil
+	w.dropCallback, previous = cbfun, w.dropCallback
+	return previous
 }
 
 // SetContentScaleCallback function sets the Window content scale callback of
 // the specified Window, which is called when the content scale of the specified Window changes.
-func (w *Window) SetContentScaleCallback(cbfun ContentScaleCallback) ContentScaleCallback {
-	w.contentScaleCallback = cbfun
-	return nil
+func (w *Window) SetContentScaleCallback(cbfun ContentScaleCallback) (previous ContentScaleCallback) {
+	w.contentScaleCallback, previous = cbfun, w.contentScaleCallback
+	return previous
 }
 
 // SetRefreshCallback sets the refresh callback of the Window, which
 // is called when the client area of the Window needs to be redrawn,
 func (w *Window) SetRefreshCallback(cbfun RefreshCallback) (previous RefreshCallback) {
-	w.refreshCallback = cbfun
-	return nil
+	w.refreshCallback, previous = cbfun, w.refreshCallback
+	return previous
 }
 
 // SetFocusCallback sets the focus callback of the Window, which is called when
@@ -63,29 +63,29 @@ func (w *Window) SetRefreshCallback(cbfun RefreshCallback) (previous RefreshCall
 // and mouse button release events will be generated for all such that had been
 // pressed. For more information, see SetKeyCallback and SetMouseButtonCallback.
 func (w *Window) SetFocusCallback(cbfun FocusCallback) (previous FocusCallback) {
-	w.focusCallback = cbfun
-	return nil
+	w.focusCallback, previous = cbfun, w.focusCallback
+	return previous
 }
 
 // SetSizeCallback sets the size callback of the Window, which is called when
 // the Window is resized. The callback is provided with the size, in screen
 // coordinates, of the client area of the Window.
 func (w *Window) SetSizeCallback(cbfun SizeCallback) (previous SizeCallback) {
-	w.sizeCallback = cbfun
-	return nil
+	w.sizeCallback, previous = cbfun, w.sizeCallback
+	return previous
 }
 
 // SetFramebufferSizeCallback sets the size callback of the Window, which is called when
 // the Window is resized. The callback is provided with the size, in screen
 // coordinates, of the client area of the Window.
 func (w *Window) SetFramebufferSizeCallback(cbfun SizeCallback) (previous SizeCallback) {
-	w.framebufferSizeCallback = cbfun
-	return nil
+	w.framebufferSizeCallback, previous = cbfun, w.framebufferSizeCallback
+	return previous
 }
 
 func (w *Window) SetIconifyCallback(cbfun IconifyCallback) (previous IconifyCallback) {
-	w.iconifyCallback = cbfun
-	return nil
+	w.iconifyCallback, previous = cbfun, w.iconifyCallback
+	return previous
 }
 
 // SetMouseButtonCallback sets the mouse button callback which is called when a
@@ -97,22 +97,27 @@ func (w *Window) SetIconifyCallback(cbfun IconifyCallback) (previous IconifyCall
 // the window has lost focus, i.e. Focused will be false and the focus
 // callback will have already been called.
 func (w *Window) SetMouseButtonCallback(cbfun MouseButtonCallback) (previous MouseButtonCallback) {
-	w.mouseButtonCallback = cbfun
-	return nil
+	w.mouseButtonCallback, previous = cbfun, w.mouseButtonCallback
+	return previous
 }
 
 // SetScrollCallback sets the scroll callback which is called when a scrolling
 // device is used, such as a mouse wheel or scrolling area of a touchpad.
 func (w *Window) SetScrollCallback(cbfun ScrollCallback) (previous ScrollCallback) {
-	w.scrollCallback = cbfun
-	return nil
+	w.scrollCallback, previous = cbfun, w.scrollCallback
+	return previous
 }
 
-func (w *Window) SetWindowCloseCallback(cbfun WindowCloseCallback) {
-	w.windowCloseCallback = cbfun
+// SetWindowCloseCallback will set set the close callback of the specified window, which is
+// called when the user attempts to close the window, for example by clicking
+// the close widget in the title bar.
+func (w *Window) SetWindowCloseCallback(cbfun WindowCloseCallback) (previous WindowCloseCallback) {
+	w.windowCloseCallback, previous = cbfun, w.windowCloseCallback
+	return previous
 }
 
-func SetErrorCallback(cbfun ErrorCallbackFunc) (old ErrorCallbackFunc) {
-	_glfw.errorCallback, old = cbfun, _glfw.errorCallback
-	return old
+// SetErrorCallback is not used
+func SetErrorCallback(cbfun ErrorCallbackFunc) (previous ErrorCallbackFunc) {
+	_glfw.errorCallback, previous = cbfun, _glfw.errorCallback
+	return previous
 }

@@ -898,7 +898,6 @@ func createMonitor(adapter *DISPLAY_DEVICEW, display *DISPLAY_DEVICEW) *Monitor 
 	var dm DEVMODEW
 
 	dm.dmSize = uint16(unsafe.Sizeof(dm))
-	fmt.Printf("dmSize=%d, pointl=%d\n", dm.dmSize, unsafe.Sizeof(dm.dmPosition))
 	EnumDisplaySettingsEx(&adapter.DeviceName[0], ENUM_CURRENT_SETTINGS, &dm, 0)
 	pName, _ := syscall.UTF16PtrFromString("DISPLAY")
 	ret, _, err := _CreateDC.Call(uintptr(unsafe.Pointer(pName)), uintptr(unsafe.Pointer(&adapter.DeviceName)), 0, 0)
