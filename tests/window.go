@@ -55,7 +55,7 @@ func printInfo(window *glfw.Window) {
 	fmt.Printf("Transparent: %v\n", transparent)
 }
 
-func window() {
+func windowinfo() {
 	fmt.Printf("\nPrint some window info\n")
 	runtime.LockOSThread()
 	if err := glfw.Init(); err != nil {

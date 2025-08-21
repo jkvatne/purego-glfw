@@ -9,10 +9,10 @@ import (
 	glfw "github.com/jkvatne/purego-glfw"
 )
 
-// UTF-8 window title test
+// UTF-8 window tear_title test
 
 func title() {
-	fmt.Printf("Windows title should show non-latin utf characters\n")
+	fmt.Printf("Windows tear_title should show non-latin utf characters\n")
 	runtime.LockOSThread()
 	if err := glfw.Init(); err != nil {
 		panic(err)
@@ -35,5 +35,5 @@ func title() {
 	}
 	window.Destroy()
 	glfw.Terminate()
-	fmt.Printf("Window title test finished\n")
+	fmt.Printf("Window tear_title test finished\n")
 }

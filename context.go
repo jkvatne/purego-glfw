@@ -225,7 +225,7 @@ func glfwRefreshContextAttribs(window *_GLFWwindow, ctxconfig *_GLFWctxconfig) e
 			}
 			if (flags & _GL_CONTEXT_FLAG_DEBUG_BIT) != 0 {
 				window.context.debug = true
-			} else if extensionSupported("GL_ARB_debug_output") && ctxconfig.debug {
+			} else if ExtensionSupported("GL_ARB_debug_output") && ctxconfig.debug {
 				// HACK: This is a workaround for older drivers (pre KHR_debug)
 				//       not setting the debug bit in the context flags for
 				//       debug contexts
@@ -243,7 +243,7 @@ func glfwRefreshContextAttribs(window *_GLFWwindow, ctxconfig *_GLFWctxconfig) e
 				window.context.profile = OpenGLCompatProfile
 			} else if (mask & _GL_CONTEXT_CORE_PROFILE_BIT) != 0 {
 				window.context.profile = OpenGLCoreProfile
-			} else if extensionSupported("GL_ARB_compatibility") {
+			} else if ExtensionSupported("GL_ARB_compatibility") {
 				// HACK: This is a workaround for the compatibility profile bit
 				//       not being set in the context flags if an OpenGL 3.2+
 				//       context was created without having requested a specific
@@ -252,7 +252,7 @@ func glfwRefreshContextAttribs(window *_GLFWwindow, ctxconfig *_GLFWctxconfig) e
 			}
 		}
 		// Read back robustness strategy
-		if extensionSupported("GL_ARB_robustness") {
+		if ExtensionSupported("GL_ARB_robustness") {
 			// NOTE: We avoid using the context flags for detection, as they are
 			//       only present from 3.0 while the extension applies from 1.1
 			var strategy int
@@ -265,7 +265,7 @@ func glfwRefreshContextAttribs(window *_GLFWwindow, ctxconfig *_GLFWctxconfig) e
 		}
 	} else {
 		// Read back robustness strategy
-		if extensionSupported("GL_EXT_robustness") {
+		if ExtensionSupported("GL_EXT_robustness") {
 			// NOTE: The values of these constants match those of the OpenGL ARB one, so we can reuse them here
 			var strategy int
 			getIntegerv(window, _GL_RESET_NOTIFICATION_STRATEGY_ARB, &strategy)
@@ -277,7 +277,7 @@ func glfwRefreshContextAttribs(window *_GLFWwindow, ctxconfig *_GLFWctxconfig) e
 		}
 	}
 
-	if extensionSupported("GL_KHR_context_flush_control") {
+	if ExtensionSupported("GL_KHR_context_flush_control") {
 		var behavior int
 		getIntegerv(window, _GL_CONTEXT_RELEASE_BEHAVIOR, &behavior)
 		if behavior == 0 {
@@ -330,7 +330,7 @@ func glfwSwapBuffers(window *_GLFWwindow) {
 	window.context.swapBuffers(window)
 }
 
-func extensionSupported(extension string) bool {
+func ExtensionSupported(extension string) bool {
 	p := glfwPlatformGetTls(&_glfw.contextSlot)
 	if p == 0 {
 		return false

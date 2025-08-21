@@ -7,10 +7,10 @@ import (
 var testname string
 
 func main() {
-	flag.StringVar(&testname, "t", "", "Test can be: title, msaa, reopen, timeout, monitor")
+	flag.StringVar(&testname, "t", "", "Test can be: tear_title, msaa, reopen, timeout, monitor")
 	flag.Parse()
 	switch testname {
-	case "title":
+	case "tear_title":
 		title()
 	case "reopen":
 		reopen()
@@ -27,9 +27,11 @@ func main() {
 	case "cursor":
 		cursor()
 	case "window":
-		window()
+		windowinfo()
 	case "opacity":
 		opacity()
+	case "tearing":
+		tearing()
 	default:
 		opacity()
 		title()
@@ -38,7 +40,7 @@ func main() {
 		reopen()
 		icon()
 		threads()
-		window()
+		windowinfo()
 		monitor()
 		cursor()
 	}
