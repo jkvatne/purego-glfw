@@ -6,6 +6,15 @@ import (
 	"syscall"
 )
 
+type MSG struct {
+	hwnd    syscall.Handle
+	message uint16
+	wParam  uint16
+	lParam  uint32
+	time    uint32
+	pt      POINT
+}
+
 const SM_CXICON = 11
 const SM_CXSMICON = 49
 
@@ -91,7 +100,7 @@ type RECT struct {
 
 type Msg struct {
 	Hwnd     syscall.Handle
-	Message  uint32
+	Message  uint16
 	WParam   uintptr
 	LParam   uintptr
 	Time     uint32

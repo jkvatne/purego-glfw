@@ -517,30 +517,19 @@ func windowProc(hwnd syscall.Handle, msg uint32, wParam, lParam uintptr) uintptr
 				// Right side keys have the extended key bit set
 				key = KeyRightControl
 			} else {
-				/* TODO
 				// NOTE: Alt Gr sends Left Ctrl followed by Right Alt
-				// HACK: We only want one event for Alt Gr, so if we detect
-				//       this sequence we discard this Left Ctrl message now
-				//       and later report Right Alt normally
-				MSG next;
-				const DWORD time = GetMessageTime();
-
-				if (PeekMessageW(&next, NULL, 0, 0, _PM_NOREMOVE)) {
-					if (next.message == _WM_KEYDOWN ||
-						next.message == _WM_SYSKEYDOWN ||
-						next.message == _WM_KEYUP ||
-						next.message == _WM_SYSKEYUP)
-					{
-						if (next.wParam == VK_MENU &&
-							(HIWORD(next.lParam) & KF_EXTENDED) &&
-							next.time == time)
-						{
+				// HACK: We only want one event for Alt Gr, so if we detect this sequence we discard
+				// this Left Ctrl message now and later report Right Alt normally
+				var next Msg
+				time := GetMessageTime()
+				if PeekMessage(&next, 0, 0, 0, _PM_NOREMOVE) {
+					if next.Message == _WM_KEYDOWN || next.Message == _WM_SYSKEYDOWN || next.Message == _WM_KEYUP || next.Message == _WM_SYSKEYUP {
+						if (next.WParam == VK_MENU && (next.LParam>>16)&_KF_EXTENDED != 0) && next.Time == time {
 							// Next message is Right Alt down so discard this
-							break;
+							break
 						}
 					}
 				}
-				*/
 				// This is a regular Left Ctrl message
 				key = KeyLeftControl
 			}

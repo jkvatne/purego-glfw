@@ -131,6 +131,7 @@ var x, y, w, h int
 var index int
 
 func key_callback_cursor(window *glfw.Window, key glfw.Key, scancode int, action glfw.Action, mods glfw.ModifierKey) {
+	fmt.Printf("Key %v, action %v, mods %v\n", key, action, mods)
 	if action != glfw.Press {
 		return
 	}

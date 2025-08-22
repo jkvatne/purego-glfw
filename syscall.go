@@ -112,6 +112,7 @@ var (
 	_ReleaseCapture                = user32.NewProc("ReleaseCapture")
 	_TrackMouseEvent               = user32.NewProc("TrackMouseEvent")
 	_FlashWindow                   = user32.NewProc("FlashWindow")
+	_GetMessageTime                = user32.NewProc("GetMessageTime")
 )
 
 var (
@@ -727,4 +728,9 @@ func TrackMouseEvent(tme *TRACKMOUSEEVENT) {
 
 func FlashWindow(hWnd syscall.Handle, invert uint32) {
 	_, _, _ = _FlashWindow.Call(uintptr(hWnd), uintptr(invert))
+}
+
+func GetMessageTime() uint32 {
+	r, _, _ := _GetMessageTime.Call()
+	return uint32(r)
 }
