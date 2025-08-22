@@ -113,6 +113,8 @@ var (
 	_TrackMouseEvent               = user32.NewProc("TrackMouseEvent")
 	_FlashWindow                   = user32.NewProc("FlashWindow")
 	_GetMessageTime                = user32.NewProc("GetMessageTime")
+	_RegisterDeviceNotificationW   = user32.NewProc("RegisterDeviceNotificationW")
+	_UnregisterDeviceNotificationW = user32.NewProc("UnregisterDeviceNotification")
 )
 
 var (
@@ -147,7 +149,7 @@ func SetProp(handle syscall.Handle, key string, data uintptr) {
 	}
 }
 
-func GetKeyState(nVirtKey int) uint16 {
+func GetKeyState(nVirtKey Key) uint16 {
 	c, _, _ := _GetKeyState.Call(uintptr(nVirtKey))
 	return uint16(c)
 }
@@ -733,4 +735,19 @@ func FlashWindow(hWnd syscall.Handle, invert uint32) {
 func GetMessageTime() uint32 {
 	r, _, _ := _GetMessageTime.Call()
 	return uint32(r)
+}
+
+func UnregisterDeviceNotification(h syscall.Handle) {
+	_, _, err := _UnregisterDeviceNotificationW.Call(uintptr(h))
+	if err != nil && !errors.Is(err, syscall.Errno(0)) {
+		panic("UnregisterDeviceNotification failed, " + err.Error())
+	}
+}
+
+func RegisterDeviceNotificationW(h syscall.Handle, filter *DEV_BROADCAST_DEVICEINTERFACE_W, flags int) syscall.Handle {
+	r, _, err := _RegisterDeviceNotificationW.Call(uintptr(h), uintptr(unsafe.Pointer(filter)), uintptr(flags))
+	if err != nil && !errors.Is(err, syscall.Errno(0)) {
+		panic("RegisterDeviceNotificationW failed, " + err.Error())
+	}
+	return syscall.Handle(r)
 }

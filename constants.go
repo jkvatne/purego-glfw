@@ -487,3 +487,23 @@ const (
 	IDC_APPSTARTING = 32650 // Standard arrow and small hourglass
 	IDC_HELP        = 32651 // Arrow and question mark
 )
+
+type GUID struct {
+	Data1 uint32
+	Data2 uint16
+	Data3 uint16
+	Data4 [8]uint8
+}
+
+type DEV_BROADCAST_DEVICEINTERFACE_W struct {
+	dbcc_size       uint32
+	dbcc_devicetype uint32
+	dbcc_reserved   uint32
+	dbcc_classguid  GUID
+	dbcc_name       *uint16
+}
+
+const (
+	DBT_DEVTYP_DEVICEINTERFACE  = 0x00000005
+	DEVICE_NOTIFY_WINDOW_HANDLE = 0x00000000
+)
