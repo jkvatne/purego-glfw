@@ -37,7 +37,7 @@ This is used to import the types LazyDLL and LazyProc.
 
 ## Limitations
 
-- Only standard OpenGl is supported. No Vulcan or OpenGL ES.
+- Only standard OpenGl is supported. No Vulkan or OpenGL ES.
 - Only Windows 10 or later is supported (Can perhaps work on Windows 8).
 - Monitor connect/disconnect is not supported while the app is running
 - Joystick is not supported

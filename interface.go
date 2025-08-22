@@ -86,30 +86,30 @@ const (
 
 // Values for the ClientAPI hint.
 const (
-	OpenGLAPI   int32 = 0x00030001
-	OpenGLESAPI int32 = 0x00030002
-	NoAPI       int32 = 0
+	OpenGLAPI   = 0x00030001
+	OpenGLESAPI = 0x00030002
+	NoAPI       = 0
 )
 
 // Values for ContextCreationAPI hint.
 const (
-	NativeContextAPI int32 = 0x00036001
-	EGLContextAPI    int32 = 0x00036002
-	OSMesaContextAPI int32 = 0x00036003
+	NativeContextAPI = 0x00036001
+	EGLContextAPI    = 0x00036002
+	OSMesaContextAPI = 0x00036003
 )
 
 // Values for the ContextRobustness hint.
 const (
-	NoRobustness        int32 = 0
-	NoResetNotification int32 = 0x00031001
-	LoseContextOnReset  int32 = 0x00031002
+	NoRobustness        = 0
+	NoResetNotification = 0x00031001
+	LoseContextOnReset  = 0x00031002
 )
 
 // Values for ContextReleaseBehavior hint.
 const (
-	AnyReleaseBehavior   int32 = 0
-	ReleaseBehaviorFlush int32 = 0x00035001
-	ReleaseBehaviorNone  int32 = 0x00035002
+	AnyReleaseBehavior   = 0
+	ReleaseBehaviorFlush = 0x00035001
+	ReleaseBehaviorNone  = 0x00035002
 )
 
 // Other values.

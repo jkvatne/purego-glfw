@@ -1,5 +1,7 @@
 package glfw
 
+// constants.go contains the local, non-exported constants for win32
+
 import (
 	"syscall"
 )
