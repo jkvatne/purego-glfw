@@ -7,8 +7,6 @@ import (
 	"syscall"
 	"time"
 	"unsafe"
-
-	"golang.design/x/clipboard"
 )
 
 // Window related hints/attributes.
@@ -645,14 +643,14 @@ func Init() error {
 	}
 	_glfw.initialized = true
 	_glfw.hints.init = _GLFWinitconfig{}
-	err := clipboard.Init()
-	if err != nil {
-		panic(err)
-	}
-	if err = glfwPlatformInit(); err != nil {
+	// err := clipboard.Init()
+	// if err != nil {
+	//		panic(err)
+	//	}
+	if err := glfwPlatformInit(); err != nil {
 		return err
 	}
-	err = glfwPlatformCreateTls(&_glfw.errorSlot)
+	err := glfwPlatformCreateTls(&_glfw.errorSlot)
 	if err != nil {
 		return err
 	}

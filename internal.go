@@ -10,7 +10,6 @@ import (
 	"unicode/utf16"
 	"unsafe"
 
-	"golang.design/x/clipboard"
 	"golang.org/x/sys/windows"
 )
 
@@ -830,12 +829,12 @@ const (
 	DISPLAY_DEVICE_DISCONNECT  = 0x02000000
 )
 
+var CurrentMonitor *Monitor
+
 func createMonitor(adapter *DISPLAY_DEVICEW, display *DISPLAY_DEVICEW) *Monitor {
-	var monitor Monitor
-	var widthMM, heightMM int
 	var rect RECT
 	var dm DEVMODEW
-
+	monitor := new(Monitor)
 	dm.dmSize = uint16(unsafe.Sizeof(dm))
 	EnumDisplaySettingsEx(&adapter.DeviceName[0], ENUM_CURRENT_SETTINGS, &dm, 0)
 	pName, _ := syscall.UTF16PtrFromString("DISPLAY")
@@ -845,18 +844,25 @@ func createMonitor(adapter *DISPLAY_DEVICEW, display *DISPLAY_DEVICEW) *Monitor 
 	}
 	dc := HDC(ret)
 	if IsWindows8Point1OrGreater() {
-		widthMM = GetDeviceCaps(dc, HORZSIZE)
-		heightMM = GetDeviceCaps(dc, VERTSIZE)
+		monitor.widthMM = GetDeviceCaps(dc, HORZSIZE)
+		monitor.heightMM = GetDeviceCaps(dc, VERTSIZE)
 	} else {
-		widthMM = int(float64(dm.dmPelsWidth) * 25.4 / float64(GetDeviceCaps(dc, _LOGPIXELSX)))
-		heightMM = int(float64(dm.dmPelsHeight) * 25.4 / float64(GetDeviceCaps(dc, _LOGPIXELSY)))
+		monitor.widthMM = int(float64(dm.dmPelsWidth) * 25.4 / float64(GetDeviceCaps(dc, _LOGPIXELSX)))
+		monitor.heightMM = int(float64(dm.dmPelsHeight) * 25.4 / float64(GetDeviceCaps(dc, _LOGPIXELSY)))
+	}
+	if display != nil {
+		var ws = display.DeviceName[:]
+		s := syscall.UTF16ToString(ws)
+		copy(monitor.name[:], s)
+	} else if adapter != nil {
+		var ws = adapter.DeviceName[:]
+		s := syscall.UTF16ToString(ws)
+		copy(monitor.name[:], s)
 	}
 	ret, _, err = _DeleteDC.Call(uintptr(dc))
 	if !errors.Is(err, syscall.Errno(0)) {
 		panic("CreateDC failed, " + err.Error())
 	}
-	monitor.heightMM = heightMM
-	monitor.widthMM = widthMM
 
 	if adapter.StateFlags&DISPLAY_DEVICE_MODESPRUNED != 0 {
 		monitor.Win32.modesPruned = true
@@ -870,7 +876,6 @@ func createMonitor(adapter *DISPLAY_DEVICEW, display *DISPLAY_DEVICEW) *Monitor 
 			monitor.Win32.displayName[i] = display.DeviceName[i]
 		}
 	}
-	//	WideCharToMultiByte(CP_UTF8, 0, display.DeviceName, -1, monitor.win32.publicDisplayName, sizeof(monitor.win32.publicDisplayName), NULL, NULL)
 	if display != nil {
 		monitor.Win32.publicDisplayName = string(utf16.Decode(display.DeviceName[:]))
 		monitor.Win32.publicAdapterName = string(utf16.Decode(adapter.DeviceName[:]))
@@ -879,8 +884,34 @@ func createMonitor(adapter *DISPLAY_DEVICEW, display *DISPLAY_DEVICEW) *Monitor 
 	rect.Top = dm.dmPosition.Y
 	rect.Right = dm.dmPosition.X + dm.dmPelsWidth
 	rect.Bottom = dm.dmPosition.Y + dm.dmPelsHeight
-	_ = EnumDisplayMonitors(0, &rect, NewEnumDisplayMonitorsCallback(enumMonitorCallback), uintptr(unsafe.Pointer(&monitor)))
-	return &monitor
+	fmt.Printf("Device name=%v\n", display.DeviceName)
+	fmt.Printf("monitor.name=%s\n", monitor.name)
+	CurrentMonitor = monitor
+	_ = EnumDisplayMonitors(0, &rect, NewEnumDisplayMonitorsCallback(enumMonitorCallback), uintptr(unsafe.Pointer(monitor)))
+	return monitor
+}
+
+func enumMonitorCallback(hmon HMONITOR, hdc HDC, bounds RECT, lParam uintptr) bool {
+	if uintptr(unsafe.Pointer(CurrentMonitor)) == lParam {
+		CurrentMonitor.Win32.hMonitor = hmon
+	}
+	return true
+}
+
+// NewEnumDisplayMonitorsCallback is used in EnumDisplayMonitors to create the callback.
+func NewEnumDisplayMonitorsCallback(callback func(monitor HMONITOR, hdc HDC, bounds RECT, lParam uintptr) bool) uintptr {
+	return syscall.NewCallbackCDecl(
+		func(monitor HMONITOR, hdc HDC, bounds *RECT, lParam uintptr) uintptr {
+			var r RECT
+			if bounds != nil {
+				r = *bounds
+			}
+			if callback(monitor, hdc, r, lParam) {
+				return 1
+			}
+			return 0
+		},
+	)
 }
 
 // Notifies shared code of a monitor connection or disconnection
@@ -957,12 +988,11 @@ func glfwChooseVideoMode(monitor *Monitor, desired *GLFWvidmode) *GLFWvidmode {
 	var rateDiff, leastRateDiff int32 = _INT_MAX, _INT_MAX
 	var colorDiff, leastColorDiff int32 = _INT_MAX, _INT_MAX
 	var current GLFWvidmode
-	var closest *GLFWvidmode
+	var closest GLFWvidmode
 
 	if !refreshVideoModes(monitor) {
 		return nil
 	}
-
 	for i := 0; i < len(monitor.modes); i++ {
 		current = monitor.modes[i]
 		colorDiff = 0
@@ -983,24 +1013,22 @@ func glfwChooseVideoMode(monitor *Monitor, desired *GLFWvidmode) *GLFWvidmode {
 		}
 		if (colorDiff < leastColorDiff) || (colorDiff == leastColorDiff && sizeDiff < leastSizeDiff) ||
 			(colorDiff == leastColorDiff && sizeDiff == leastSizeDiff && rateDiff < leastRateDiff) {
-			closest = &current
+			closest = current
 			leastSizeDiff = sizeDiff
 			leastRateDiff = rateDiff
 			leastColorDiff = colorDiff
 		}
 	}
-	return closest
+	return &closest
 }
 
 // Change the current video mode
 //
 func glfwSetVideoMode(monitor *Monitor, desired *GLFWvidmode) error {
 	best := glfwChooseVideoMode(monitor, desired)
-	if best == nil {
-		fmt.Printf("NIL")
-	}
 	current := monitor.GetVideoMode()
 	if glfwCompareVideoModes(&current, best) == 0 {
+		fmt.Printf("glfwCompareVideoModes returned 0, could not set video mode\n")
 		return nil
 	}
 	var dm DEVMODEW
@@ -1795,6 +1823,7 @@ func glfwPlatformCreateWindow(window *_GLFWwindow, wndconfig *_GLFWwndconfig, ct
 		}
 	}
 	if window.monitor != nil {
+		window.monitor.window = nil
 		glfwShowWindow(window)
 		glfwFocusWindow(window)
 		acquireMonitor(window)
@@ -1999,14 +2028,14 @@ func glfwGetWindowSize(window *_GLFWwindow, width *int32, height *int32) {
 // contains or is convertible to a UTF-8 encoded string.
 // This function may only be called from the main thread.
 func glfwGetClipboardString() string {
-	b := clipboard.Read(clipboard.FmtText)
-	return string(b)
+	// b := clipboard.Read(clipboard.FmtText)
+	return "" // string(b)
 }
 
 // SetClipboardString sets the system clipboard to the specified UTF-8 encoded string.
 // This function may only be called from the main thread.
 func glfwSetClipboardString(str string) {
-	clipboard.Write(clipboard.FmtText, []byte(str))
+	// clipboard.Write(clipboard.FmtText, []byte(str))
 }
 
 func monitorFromWindow(handle syscall.Handle, flags uint32) HMONITOR {
@@ -2135,7 +2164,8 @@ func glfwPollMonitors() {
 		if (adapter.StateFlags & _DISPLAY_DEVICE_PRIMARY_DEVICE) != 0 {
 			adapterType = InsertFirst
 		}
-		for displayIndex := 0; ; displayIndex++ {
+		displayIndex := 0
+		for ; ; displayIndex++ {
 			var display DISPLAY_DEVICEW
 			display.cb = uint32(unsafe.Sizeof(display))
 			if !EnumDisplayDevices(uintptr(unsafe.Pointer(&adapter.DeviceName)), displayIndex, &display, 0) {
@@ -2152,7 +2182,8 @@ func glfwPollMonitors() {
 
 			glfwInputMonitor(monitor, glfw_CONNECTED, adapterType)
 			adapterType = InsertLast
-
+		}
+		if displayIndex == 0 {
 			// HACK: If an active adapter does not have any display devices, add it directly as a monitor
 			var i int
 			if displayIndex == 0 {
@@ -2167,7 +2198,7 @@ func glfwPollMonitors() {
 				continue
 			}
 
-			monitor = createMonitor(&adapter, nil)
+			monitor := createMonitor(&adapter, nil)
 			if monitor == nil {
 				return
 			}
@@ -2334,30 +2365,4 @@ func glfwGetVideoMode(monitor *Monitor) GLFWvidmode {
 	mode.RefreshRate = dm.dmDisplayFrequency
 	mode.RedBits, mode.GreenBits, mode.BlueBits = splitBpp(dm.dmBitsPerPel)
 	return mode
-}
-
-func enumMonitorCallback(monitor HMONITOR, hdc HDC, bounds RECT, lParam uintptr) bool {
-	m := (*Monitor)(unsafe.Pointer(lParam))
-	m.Win32.hMonitor = monitor
-	m.Win32.hDc = hdc
-	m.Win32.Bounds = bounds
-	// monitorInfo := GetMonitorInfo(m.hMonitor)
-	// Monitors = append(Monitors, &m)
-	return true
-}
-
-// NewEnumDisplayMonitorsCallback is used in EnumDisplayMonitors to create the callback.
-func NewEnumDisplayMonitorsCallback(callback func(monitor HMONITOR, hdc HDC, bounds RECT, lParam uintptr) bool) uintptr {
-	return syscall.NewCallback(
-		func(monitor HMONITOR, hdc HDC, bounds *RECT, lParam uintptr) uintptr {
-			var r RECT
-			if bounds != nil {
-				r = *bounds
-			}
-			if callback(monitor, hdc, r, lParam) {
-				return 1
-			}
-			return 0
-		},
-	)
 }

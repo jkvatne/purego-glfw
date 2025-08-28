@@ -23,7 +23,6 @@ type Monitor struct {
 
 type _GLFWMonitorWin32 struct {
 	hMonitor          HMONITOR
-	hDc               HDC
 	Bounds            RECT
 	adapterName       [32]uint16
 	displayName       [32]uint16

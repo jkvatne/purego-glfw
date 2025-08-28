@@ -4,13 +4,57 @@ package main
 
 import (
 	"fmt"
-	"math/rand/v2"
 	"os"
 	"runtime"
 
 	"github.com/go-gl/gl/all-core/gl"
 	glfw "github.com/jkvatne/purego-glfw"
 )
+
+type coldef struct {
+	name string
+	r    float32
+	g    float32
+	b    float32
+}
+
+var colors = []coldef{
+	{name: "Red", r: 1, g: 0, b: 0},
+	{name: "Green", r: 0, g: 1, b: 0},
+	{name: "Blue", r: 0, g: 0, b: 1},
+	{name: "White", r: 1, g: 1, b: 1},
+	{name: "Yellow", r: 1, g: 1, b: 0},
+	{name: "Cyan", r: 0, g: 1, b: 1},
+	{name: "Magenta", r: 1, g: 0, b: 1},
+	{name: "Red", r: 1, g: 0, b: 0},
+	{name: "Green", r: 0, g: 1, b: 0},
+	{name: "Blue", r: 0, g: 0, b: 1},
+	{name: "White", r: 1, g: 1, b: 1},
+	{name: "Yellow", r: 1, g: 1, b: 0},
+	{name: "Cyan", r: 0, g: 1, b: 1},
+	{name: "Magenta", r: 1, g: 0, b: 1},
+	{name: "Red", r: 1, g: 0, b: 0},
+	{name: "Green", r: 0, g: 1, b: 0},
+	{name: "Blue", r: 0, g: 0, b: 1},
+	{name: "White", r: 1, g: 1, b: 1},
+	{name: "Yellow", r: 1, g: 1, b: 0},
+	{name: "Cyan", r: 0, g: 1, b: 1},
+	{name: "Magenta", r: 1, g: 0, b: 1},
+	{name: "Red", r: 1, g: 0, b: 0},
+	{name: "Green", r: 0, g: 1, b: 0},
+	{name: "Blue", r: 0, g: 0, b: 1},
+	{name: "White", r: 1, g: 1, b: 1},
+	{name: "Yellow", r: 1, g: 1, b: 0},
+	{name: "Cyan", r: 0, g: 1, b: 1},
+	{name: "Magenta", r: 1, g: 0, b: 1},
+	{name: "Red", r: 1, g: 0, b: 0},
+	{name: "Green", r: 0, g: 1, b: 0},
+	{name: "Blue", r: 0, g: 0, b: 1},
+	{name: "White", r: 1, g: 1, b: 1},
+	{name: "Yellow", r: 1, g: 1, b: 0},
+	{name: "Cyan", r: 0, g: 1, b: 1},
+	{name: "Magenta", r: 1, g: 0, b: 1},
+}
 
 func euclid(a, b int32) int32 {
 	if b != 0 {
@@ -39,6 +83,7 @@ func framebuffer_size_callback(window *glfw.Window, width int, height int) {
 func key_callback4(window *glfw.Window, key glfw.Key, scancode int, action glfw.Action, mods glfw.ModifierKey) {
 	if key == glfw.KeyEscape {
 		window.SetShouldClose(true)
+		os.Exit(1)
 	}
 }
 
@@ -61,75 +106,80 @@ func list_modes(monitor *glfw.Monitor) {
 		width_mm, height_mm, float64(mode.Width)*25.4/float64(width_mm), mode.Width, mode.Height)
 	fmt.Printf("Monitor work area: %d x %d starting at %d, %d\n\n",
 		workarea_width, workarea_height, workarea_x, workarea_y)
-	fmt.Printf("Modes:\n")
 	for i := 0; i < len(modes); i++ {
 		fmt.Printf("%3d: %s", i, format_mode(&modes[i]))
 		if mode == modes[i] {
-			fmt.Printf(" (current mode)\n")
+			fmt.Printf(" (current mode)")
 		}
 		fmt.Printf("\n")
 	}
 }
 
-func test_modes(monitor *glfw.Monitor) {
+func test_mode(monitor *glfw.Monitor, i int, timeShownSec float64) {
 	modes := monitor.GetVideoModes()
-	for i := 0; i < len(modes); i++ {
-		mode := modes[i]
-		_ = glfw.WindowHint(glfw.Samples, 1)
-		_ = glfw.WindowHint(glfw.RedBits, int(mode.RedBits))
-		_ = glfw.WindowHint(glfw.GreenBits, int(mode.GreenBits))
-		_ = glfw.WindowHint(glfw.BlueBits, int(mode.BlueBits))
-		_ = glfw.WindowHint(glfw.RefreshRate, int(mode.RefreshRate))
-
-		fmt.Printf("Testing mode %d on monitor %s: %s\n", i, monitor.GetMonitorName(), format_mode(&mode))
-		window, err := glfw.CreateWindow(int(mode.Width), int(mode.Height), "Video Mode Test", monitor, nil)
-		if err != nil {
-			fmt.Printf("Failed to enter mode %d: %s\n", i, format_mode(&mode))
-			continue
-		}
-		window.SetFramebufferSizeCallback(framebuffer_size_callback)
-		window.SetKeyCallback(key_callback)
-		window.MakeContextCurrent()
-		err = gl.Init()
-		if err != nil {
-			fmt.Printf("Failed to enter mode %d: %s\n", i, format_mode(&mode))
-		}
-		glfw.SwapInterval(1)
-		glfw.SetTime(0.0)
-		gl.ClearColor(rand.Float32(), rand.Float32(), rand.Float32(), 1)
-		for glfw.GetTime() < 0.2 {
-			gl.Clear(gl.COLOR_BUFFER_BIT)
-			window.SwapBuffers()
-			glfw.PollEvents()
-			if window.ShouldClose() {
-				fmt.Printf("User terminated program\n")
-				glfw.Terminate()
-				os.Exit(0)
-			}
-		}
-		var current glfw.GLFWvidmode
-		gl.GetIntegerv(gl.RED_BITS, &current.RedBits)
-		gl.GetIntegerv(gl.GREEN_BITS, &current.GreenBits)
-		gl.GetIntegerv(gl.BLUE_BITS, &current.BlueBits)
-		w, h := window.GetSize()
-		current.Width, current.Height = int32(w), int32(h)
-		if current.RedBits != mode.RedBits || current.GreenBits != mode.GreenBits || current.BlueBits != mode.BlueBits {
-			fmt.Printf("*** Color bit mismatch: (%d %d %d) instead of (%d %d %id)\n",
-				current.RedBits, current.GreenBits, current.BlueBits,
-				mode.RedBits, mode.GreenBits, mode.BlueBits)
-		}
-		if current.Width != mode.Width || current.Height != mode.Height {
-			fmt.Printf("*** Size mismatch: %dx%d instead of %dx%d\n",
-				current.Width, current.Height,
-				mode.Width, mode.Height)
-		}
-		window.Destroy()
-		window = nil
-		glfw.PollEvents()
+	if i >= len(modes) {
+		fmt.Printf("Trying to test mode %d, but monitor has only %d modes\n", i, len(modes))
+		return
 	}
+	mode := modes[i]
+	_ = glfw.WindowHint(glfw.Samples, 1)
+	_ = glfw.WindowHint(glfw.RedBits, int(mode.RedBits))
+	_ = glfw.WindowHint(glfw.GreenBits, int(mode.GreenBits))
+	_ = glfw.WindowHint(glfw.BlueBits, int(mode.BlueBits))
+	_ = glfw.WindowHint(glfw.RefreshRate, int(mode.RefreshRate))
+
+	fmt.Printf("Testing mode %d on monitor %s: %s color=%s\n", i, monitor.GetMonitorName(), format_mode(&mode), colors[i].name)
+	window, err := glfw.CreateWindow(int(mode.Width), int(mode.Height), "Video Mode Test", monitor, nil)
+	if err != nil {
+		fmt.Printf("Failed to enter mode %d: %s\n", i, format_mode(&mode))
+		return
+	}
+	window.SetFramebufferSizeCallback(framebuffer_size_callback)
+	window.SetKeyCallback(key_callback)
+	window.MakeContextCurrent()
+	err = gl.Init()
+	if err != nil {
+		fmt.Printf("Failed to enter mode %d: %s\n", i, format_mode(&mode))
+	}
+	glfw.SwapInterval(1)
+	glfw.SetTime(0.0)
+	// gl.ClearColor(rand.Float32(), rand.Float32(), rand.Float32(), 1)
+	gl.ClearColor(colors[i].r, colors[i].g, colors[i].b, 1.0)
+	for glfw.GetTime() < timeShownSec && !window.ShouldClose() {
+		gl.Clear(gl.COLOR_BUFFER_BIT)
+		window.SwapBuffers()
+		glfw.PollEvents()
+		if window.ShouldClose() {
+			fmt.Printf("User terminated program\n")
+			glfw.Terminate()
+			os.Exit(0)
+		}
+	}
+	var current glfw.GLFWvidmode
+
+	gl.GetIntegerv(gl.RED_BITS, &current.RedBits)
+	gl.GetIntegerv(gl.GREEN_BITS, &current.GreenBits)
+	gl.GetIntegerv(gl.BLUE_BITS, &current.BlueBits)
+	if current.RedBits != mode.RedBits || current.GreenBits != mode.GreenBits || current.BlueBits != mode.BlueBits {
+		fmt.Printf("*** Color bit mismatch: (%d %d %d) instead of (%d %d %id)\n",
+			current.RedBits, current.GreenBits, current.BlueBits,
+			mode.RedBits, mode.GreenBits, mode.BlueBits)
+	}
+
+	w, h := window.GetSize()
+	current.Width, current.Height = int32(w), int32(h)
+	if current.Width != mode.Width || current.Height != mode.Height {
+		fmt.Printf("*** Size mismatch: %dx%d instead of %dx%d\n",
+			current.Width, current.Height,
+			mode.Width, mode.Height)
+	}
+	window.Destroy()
+	window = nil
+	glfw.PollEvents()
 }
 
 func monitor() {
+
 	fmt.Printf("\nMonitor test started\n")
 	runtime.LockOSThread()
 	glfw.SetErrorCallback(error_callback)
@@ -138,13 +188,27 @@ func monitor() {
 		panic("glfw.Init error: " + err.Error())
 	}
 
-	mons := glfw.GetMonitors()
-	for i := 0; i < len(mons); i++ {
-		list_modes(mons[i])
+	monitors := glfw.GetMonitors()
+	for i := 0; i < len(monitors); i++ {
+		list_modes(monitors[i])
 	}
-	for i := 1; i < len(mons); i++ {
-		test_modes(mons[i])
-	}
+	fmt.Println("\npress escape to exit")
+	// NB: On some monitors it takes up to 5 sec for the mode to be shown.
+	// The following tests are testing just 4 modes, 2 on primary and 2 on secondary
+	// It depends on the existance of the mode on the actual monitors.
+	test_mode(monitors[1], 25, 6.0)
+	test_mode(monitors[1], 34, 6.0)
+	test_mode(monitors[0], 19, 6.0)
+	test_mode(monitors[0], 27, 6.0)
+	/*	for i := 0; i < len(monitors); i++ {
+		modes := monitors[i].GetVideoModes()
+		fmt.Printf("\nTesting modes on %s\n", monitor.GetMonitorName())
+		for j := 0; j < len(modes); j++ {
+			// NB: On some monitors it takes up to 5 sec for the mode to be shown.
+			test_mode(monitors[i],  j, 6.0)
+		}
+	} */
+
 	glfw.Terminate()
 	fmt.Printf("Monitor test finished\n")
 }

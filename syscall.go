@@ -356,7 +356,7 @@ func EnumDisplayMonitors(hdc HDC, clip *RECT, lpfnEnum uintptr, data uintptr) er
 		uintptr(hdc),
 		uintptr(unsafe.Pointer(clip)),
 		lpfnEnum,
-		uintptr(unsafe.Pointer(data)),
+		data,
 	)
 	if ret == 0 {
 		return fmt.Errorf("w32.EnumDisplayMonitors returned FALSE")
