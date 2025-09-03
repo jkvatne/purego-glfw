@@ -127,8 +127,8 @@ func test_mode(monitor *glfw.Monitor, i int, timeShownSec float64) {
 	_ = glfw.WindowHint(glfw.GreenBits, int(mode.GreenBits))
 	_ = glfw.WindowHint(glfw.BlueBits, int(mode.BlueBits))
 	_ = glfw.WindowHint(glfw.RefreshRate, int(mode.RefreshRate))
-
-	fmt.Printf("Testing mode %d on monitor %s: %s color=%s\n", i, monitor.GetMonitorName(), format_mode(&mode), colors[i].name)
+	color := colors[i%len(colors)]
+	fmt.Printf("Testing mode %d on monitor %s: %s color=%s\n", i, monitor.GetMonitorName(), format_mode(&mode), color)
 	window, err := glfw.CreateWindow(int(mode.Width), int(mode.Height), "Video Mode Test", monitor, nil)
 	if err != nil {
 		fmt.Printf("Failed to enter mode %d: %s\n", i, format_mode(&mode))
@@ -143,8 +143,7 @@ func test_mode(monitor *glfw.Monitor, i int, timeShownSec float64) {
 	}
 	glfw.SwapInterval(1)
 	glfw.SetTime(0.0)
-	// gl.ClearColor(rand.Float32(), rand.Float32(), rand.Float32(), 1)
-	gl.ClearColor(colors[i].r, colors[i].g, colors[i].b, 1.0)
+	gl.ClearColor(color.r, color.g, color.b, 1.0)
 	for glfw.GetTime() < timeShownSec && !window.ShouldClose() {
 		gl.Clear(gl.COLOR_BUFFER_BIT)
 		window.SwapBuffers()
@@ -196,18 +195,12 @@ func monitor() {
 	// NB: On some monitors it takes up to 5 sec for the mode to be shown.
 	// The following tests are testing just 4 modes, 2 on primary and 2 on secondary
 	// It depends on the existance of the mode on the actual monitors.
-	test_mode(monitors[1], 25, 6.0)
-	test_mode(monitors[1], 34, 6.0)
-	test_mode(monitors[0], 19, 6.0)
-	test_mode(monitors[0], 27, 6.0)
-	/*	for i := 0; i < len(monitors); i++ {
-		modes := monitors[i].GetVideoModes()
-		fmt.Printf("\nTesting modes on %s\n", monitor.GetMonitorName())
-		for j := 0; j < len(modes); j++ {
-			// NB: On some monitors it takes up to 5 sec for the mode to be shown.
-			test_mode(monitors[i],  j, 6.0)
-		}
-	} */
+	modes := monitors[1].GetVideoModes()
+	test_mode(monitors[1], 25, 5.0)
+	test_mode(monitors[1], len(modes)-1, 50)
+	modes = monitors[0].GetVideoModes()
+	test_mode(monitors[0], 19, 5.0)
+	test_mode(monitors[0], len(modes)-1, 5.0)
 
 	glfw.Terminate()
 	fmt.Printf("Monitor test finished\n")
