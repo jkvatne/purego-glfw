@@ -128,7 +128,7 @@ func test_mode(monitor *glfw.Monitor, i int, timeShownSec float64) {
 	_ = glfw.WindowHint(glfw.BlueBits, int(mode.BlueBits))
 	_ = glfw.WindowHint(glfw.RefreshRate, int(mode.RefreshRate))
 	color := colors[i%len(colors)]
-	fmt.Printf("Testing mode %d on monitor %s: %s color=%s\n", i, monitor.GetMonitorName(), format_mode(&mode), color)
+	fmt.Printf("Testing mode %d on monitor %s: %s color=%v\n", i, monitor.GetMonitorName(), format_mode(&mode), color)
 	window, err := glfw.CreateWindow(int(mode.Width), int(mode.Height), "Video Mode Test", monitor, nil)
 	if err != nil {
 		fmt.Printf("Failed to enter mode %d: %s\n", i, format_mode(&mode))
@@ -195,11 +195,13 @@ func monitor() {
 	// NB: On some monitors it takes up to 5 sec for the mode to be shown.
 	// The following tests are testing just 4 modes, 2 on primary and 2 on secondary
 	// It depends on the existance of the mode on the actual monitors.
-	modes := monitors[1].GetVideoModes()
-	test_mode(monitors[1], 25, 5.0)
-	test_mode(monitors[1], len(modes)-1, 50)
-	modes = monitors[0].GetVideoModes()
-	test_mode(monitors[0], 19, 5.0)
+	if len(monitors) > 1 {
+		modes := monitors[1].GetVideoModes()
+		test_mode(monitors[1], min(25, len(modes)-1), 5.0)
+		test_mode(monitors[1], len(modes)-1, 5.0)
+	}
+	modes := monitors[0].GetVideoModes()
+	test_mode(monitors[0], min(19, len(modes)-1), 5.0)
 	test_mode(monitors[0], len(modes)-1, 5.0)
 
 	glfw.Terminate()

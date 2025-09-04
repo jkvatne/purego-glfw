@@ -45,6 +45,7 @@ var (
 	track_cursor     = false
 	standard_cursors [10]*glfw.Cursor
 	tracking_cursor  *glfw.Cursor
+	hasKeyPress      bool
 )
 
 func star(x float64, y float64, t float64) float64 {
@@ -107,7 +108,7 @@ func create_tracking_cursor() *glfw.Cursor {
 }
 
 func cursor_position_callback(window *glfw.Window, x float64, y float64) {
-	fmt.Printf("%0.3f: Cursor position: %f %f (%+f %+f)\n",
+	fmt.Printf("%0.3f: Cursor position callback: %f %f (%+f %+f)\n",
 		glfw.GetTime(),
 		x, y, x-cursor_x, y-cursor_y)
 	cursor_x = x
@@ -115,6 +116,13 @@ func cursor_position_callback(window *glfw.Window, x float64, y float64) {
 }
 
 var usage string = `
+
+Testing cursors
+---------------
+If no key is pressed, the program will loop through all 
+available cursors and disable/hide/show the cursor.
+Then it will terminate.
+
 A Animated yellow star cursor
 N Normal cursor mode
 D Disabled (invisible) cursor mode
@@ -132,6 +140,7 @@ var index int
 
 func key_callback_cursor(window *glfw.Window, key glfw.Key, scancode int, action glfw.Action, mods glfw.ModifierKey) {
 	fmt.Printf("Key %v, action %v, mods %v\n", key, action, mods)
+	hasKeyPress = true
 	if action != glfw.Press {
 		return
 	}
@@ -237,6 +246,8 @@ func key_callback_cursor(window *glfw.Window, key glfw.Key, scancode int, action
 type vec4 [4]float32
 
 func cursor() {
+	fmt.Printf(usage)
+
 	// type mat4x4 [4]vec4
 	var (
 		star_cursors                                           [CURSOR_FRAME_COUNT]*glfw.Cursor
@@ -275,7 +286,6 @@ func cursor() {
 
 	glfw.WindowHint(glfw.ContextVersionMajor, 2)
 	glfw.WindowHint(glfw.ContextVersionMinor, 0)
-
 	window, err := glfw.CreateWindow(640, 480, "Cursor Test", nil, nil)
 	if err != nil {
 		glfw.Terminate()
@@ -310,6 +320,10 @@ func cursor() {
 	gl.VertexAttribPointer(uint32(vpos_location), 2, gl.FLOAT, false, 8, nil)
 	gl.UseProgram(program)
 
+	fmt.Println("Centers cursor in window")
+	x, y := window.GetSize()
+	window.SetCursorPos(float64(x/2), float64(y/2))
+
 	cursor_x, cursor_y = window.GetCursorPos()
 	fmt.Printf("Cursor position: %f %f\n", cursor_x, cursor_y)
 	window.SetCursorPosCallback(cursor_position_callback)
@@ -319,6 +333,26 @@ func cursor() {
 		if glfw.GetTime() > 1.0 {
 			glfw.SetTime(0)
 			index = index + 1
+			if !hasKeyPress {
+				if index == len(standard_cursors) {
+					fmt.Println("Cursor disabled")
+					window.SetInputMode(glfw.CursorMode, glfw.CursorDisabled)
+				} else if index == len(standard_cursors)+1 {
+					fmt.Println("Cursor hidden")
+					window.SetInputMode(glfw.CursorMode, glfw.CursorHidden)
+				} else if index == len(standard_cursors)+2 {
+					fmt.Println("Cursor normal")
+					window.SetInputMode(glfw.CursorMode, glfw.CursorNormal)
+				} else if index == len(standard_cursors)+3 {
+					fmt.Println("Cursor captured")
+					window.SetInputMode(glfw.CursorMode, glfw.CursorCaptured)
+				} else if index >= len(standard_cursors)+4 {
+					fmt.Println("Cursor test finished")
+					break
+				} else {
+					fmt.Printf("Testing cursor type %d\n", index)
+				}
+			}
 			if index >= len(standard_cursors) {
 				animate_cursor = true
 			} else {

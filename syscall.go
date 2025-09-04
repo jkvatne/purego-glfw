@@ -234,7 +234,10 @@ func DestroyWindow(h syscall.Handle) {
 }
 
 func UnregisterClass(class uint16, instance syscall.Handle) {
-	_, _, _ = _UnregisterClass.Call(uintptr(class), uintptr(instance))
+	_, _, err := _UnregisterClass.Call(uintptr(class), uintptr(instance))
+	if !errors.Is(err, syscall.Errno(0)) {
+		panic("UnregisterClass failed, " + err.Error())
+	}
 }
 
 func IsWindows10Version1607OrGreater() bool {
@@ -282,7 +285,8 @@ func IsWindows8Point1OrGreater() bool {
 func SetProcessDpiAwareness() {
 	if IsWindows10Version1703OrGreater() {
 		_, _, err := _SetProcessDpiAwarenessContext.Call(uintptr(DPI_AWARENESS_CONTEXT_PER_MONITOR_AWARE_V2))
-		if !errors.Is(err, syscall.Errno(0)) {
+		// We will getr error 5=Access denied if the awareness is already set. So ignore this error.
+		if !errors.Is(err, syscall.Errno(0)) && !errors.Is(err, syscall.Errno(5)) {
 			panic("SetProcessDpiAwarenessContext failed, " + err.Error())
 		}
 	} else if IsWindows8Point1OrGreater() {
@@ -449,7 +453,7 @@ func glfwPlatformDestroyTls(tls *_GLFWtls) {
 
 func glfwPlatformCreateTls(tls *_GLFWtls) error {
 	if tls.allocated {
-		return fmt.Errorf("glfwPlatformCreateTls: already allocated")
+		return nil // Tls is already allocated")
 	}
 	tls.index = TlsAlloc()
 	if tls.index == 4294967295 { // TLS_OUT_OF_INDEXES
@@ -579,8 +583,9 @@ func ClipCursor(rect *RECT) {
 	}
 }
 
-func SetCursorPos(x, y int32) {
-	_, _, err := _SetCursorPos.Call(uintptr(x), uintptr(y))
+// SetCursorPos will move the cursor to the given screen coordinate
+func SetCursorPos(screenX, screenY int32) {
+	_, _, err := _SetCursorPos.Call(uintptr(screenX), uintptr(screenY))
 	if !errors.Is(err, syscall.Errno(0)) {
 		panic("SetCursorPos failed, " + err.Error())
 	}

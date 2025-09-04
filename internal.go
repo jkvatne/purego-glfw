@@ -884,8 +884,9 @@ func createMonitor(adapter *DISPLAY_DEVICEW, display *DISPLAY_DEVICEW) *Monitor 
 	rect.Top = dm.dmPosition.Y
 	rect.Right = dm.dmPosition.X + dm.dmPelsWidth
 	rect.Bottom = dm.dmPosition.Y + dm.dmPelsHeight
-	fmt.Printf("Device name=%v\n", display.DeviceName)
-	fmt.Printf("monitor.name=%s\n", monitor.name)
+	s := syscall.UTF16ToString(display.DeviceName[:])
+	fmt.Printf("Device name=%s\n", s)
+	fmt.Printf("monitor name=%s\n", monitor.GetMonitorName())
 	CurrentMonitor = monitor
 	_ = EnumDisplayMonitors(0, &rect, NewEnumDisplayMonitorsCallback(enumMonitorCallback), uintptr(unsafe.Pointer(monitor)))
 	return monitor
@@ -1529,6 +1530,7 @@ func glfwSetSizeLimits(w *Window, minw, minh, maxw, maxh int) {
 	MoveWindow(w.Win32.handle, area.Left, area.Top, area.Right-area.Left, area.Bottom-area.Top, true)
 }
 
+// glfwSetCursorPos will set the cursor to the given screen coordinates.
 func glfwSetCursorPos(window *Window, x, y float64) {
 	pos := POINT{int32(x), int32(y)}
 	// Store the new position so it can be recognized later
@@ -1776,16 +1778,20 @@ func glfwDestroyWindow(w *Window) {
 }
 
 func glfwTerminate() {
+	_glfw.initialized = false
 	if _glfw.win32.deviceNotificationHandle != 0 {
 		UnregisterDeviceNotification(_glfw.win32.deviceNotificationHandle)
 	}
-	DestroyWindow(_glfw.win32.helperWindowHandle)
-	_glfw.win32.helperWindowHandle = 0
 
 	if _glfw.win32.mainWindowClass != 0 {
 		UnregisterClass(_glfw.win32.mainWindowClass, _glfw.win32.instance)
 		_glfw.win32.mainWindowClass = 0
 	}
+	DestroyWindow(_glfw.win32.helperWindowHandle)
+	if _glfw.win32.helperWindowClass != 0 {
+		UnregisterClass(_glfw.win32.helperWindowClass, _glfw.win32.instance)
+	}
+	_glfw.win32.helperWindowHandle = 0
 }
 
 func glfwPlatformInit() error {
@@ -1830,8 +1836,8 @@ func glfwPlatformCreateWindow(window *_GLFWwindow, wndconfig *_GLFWwndconfig, ct
 		fitToMonitor(window)
 		if wndconfig.centerCursor {
 			// Center Cursor In Content Area
-			x, y := window.GetCursorPos()
-			window.SetCursorPos(x/2, y/2)
+			x, y := window.GetPos()
+			window.SetCursorPos(float64(x/2), float64(y/2))
 		}
 	} else if wndconfig.visible {
 		glfwShowWindow(window)

@@ -103,7 +103,6 @@ func tearing() {
 		fmt.Printf("Failed to initialize gl: %v", err)
 	}
 	set_swap_interval(window, 0)
-	last_time := glfw.GetTime()
 	swap_tear = glfw.ExtensionSupported("WGL_EXT_swap_control_tear") || glfw.ExtensionSupported("GLX_EXT_swap_control_tear")
 	fmt.Printf("Extension for controling tear is %v\n", swap_tear)
 	gl.GenBuffers(1, &vertex_buffer2)
@@ -132,7 +131,7 @@ func tearing() {
 
 	gl.EnableVertexAttribArray(uint32(vpos_location))
 	gl.VertexAttribPointer(uint32(vpos_location), 2, gl.FLOAT, false, 4, nil)
-
+	glfw.SetTime(0)
 	for !window.ShouldClose() {
 		position := math.Cos(float64(glfw.GetTime())*4.0) * 0.75
 		width, height := window.GetFramebufferSize()
@@ -148,10 +147,9 @@ func tearing() {
 		glfw.PollEvents()
 		frame_count++
 		current_time := glfw.GetTime()
-		if current_time-last_time > 0.0 {
-			frame_rate = float64(frame_count) / (current_time - last_time)
-			frame_count = 0
-			last_time = current_time
+		if glfw.GetTime() > 5.0 {
+			frame_rate = float64(frame_count) / current_time
+			break
 		}
 		update_window_title(window)
 	}
