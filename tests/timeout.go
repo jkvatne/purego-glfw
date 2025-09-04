@@ -4,15 +4,16 @@ package main
 
 import (
 	"fmt"
+	"os"
 	"runtime"
 
-	"github.com/go-gl/gl/all-core/gl"
 	glfw "github.com/jkvatne/purego-glfw"
+	"github.com/neclepsio/gl/all-core/gl"
 	"golang.org/x/exp/rand"
 )
 
 func error_callback(error int, description string) {
-	fmt.Printf("Error: %s\n", description)
+	fmt.Printf("Error %d: %s\n", error, description)
 }
 
 func key_callback3(window *glfw.Window, key glfw.Key, scancode int, action glfw.Action, mods glfw.ModifierKey) {
@@ -35,8 +36,13 @@ func timeout() {
 		fmt.Printf("Could not create window: %v\n", err)
 	}
 	window.MakeContextCurrent()
-	gl.Init()
-	window.SetKeyCallback(key_callback)
+	err = gl.Init()
+	if err != nil {
+		glfw.Terminate()
+		fmt.Printf("Could not init gl: %v\n", err)
+		os.Exit(2)
+	}
+	window.SetKeyCallback(key_callback3)
 	glfw.SetTime(0)
 	for !window.ShouldClose() && glfw.GetTime() < 5.0 {
 		width, height := window.GetFramebufferSize()

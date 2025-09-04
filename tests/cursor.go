@@ -7,8 +7,8 @@ import (
 	"runtime"
 	"unsafe"
 
-	"github.com/go-gl/gl/all-core/gl"
 	glfw "github.com/jkvatne/purego-glfw"
+	"github.com/neclepsio/gl/all-core/gl"
 )
 
 // Cursor & input mode tests
@@ -78,35 +78,6 @@ func create_cursor(t float64) *glfw.Cursor {
 	return glfw.CreateCursor(img, 32, 32)
 }
 
-func create_tracking_cursor() *glfw.Cursor {
-	img := image.NewNRGBA(image.Rect(0, 0, 32, 32))
-	var i int
-	for y := 0; y < img.Bounds().Dy(); y++ {
-		for x := 0; x < img.Bounds().Dx(); x++ {
-			if x == 7 || y == 7 {
-				img.Pix[i] = 255
-				i++
-				img.Pix[i] = 0
-				i++
-				img.Pix[i] = 0
-				i++
-				img.Pix[i] = 255
-				i++
-			} else {
-				img.Pix[i] = 0
-				i++
-				img.Pix[i] = 0
-				i++
-				img.Pix[i] = 0
-				i++
-				img.Pix[i] = 0
-				i++
-			}
-		}
-	}
-	return glfw.CreateCursor(img, 7, 7)
-}
-
 func cursor_position_callback(window *glfw.Window, x float64, y float64) {
 	fmt.Printf("%0.3f: Cursor position callback: %f %f (%+f %+f)\n",
 		glfw.GetTime(),
@@ -115,7 +86,7 @@ func cursor_position_callback(window *glfw.Window, x float64, y float64) {
 	cursor_y = y
 }
 
-var usage string = `
+var usage = `
 
 Testing cursors
 ---------------
@@ -181,7 +152,7 @@ func key_callback_cursor(window *glfw.Window, key glfw.Key, scancode int, action
 		}
 	case glfw.KeySpace:
 		swap_interval = 1 - swap_interval
-		fmt.Printf("( swap interval: %i ))\n", swap_interval)
+		fmt.Printf("( swap interval: %d ))\n", swap_interval)
 		glfw.SwapInterval(swap_interval)
 	case glfw.KeyW:
 		wait_events = !wait_events
@@ -243,8 +214,6 @@ func key_callback_cursor(window *glfw.Window, key glfw.Key, scancode int, action
 	}
 }
 
-type vec4 [4]float32
-
 func cursor() {
 	fmt.Printf(usage)
 
@@ -284,8 +253,8 @@ func cursor() {
 		standard_cursors[i] = glfw.CreateStandardCursor(shapes[i])
 	}
 
-	glfw.WindowHint(glfw.ContextVersionMajor, 2)
-	glfw.WindowHint(glfw.ContextVersionMinor, 0)
+	_ = glfw.WindowHint(glfw.ContextVersionMajor, 2)
+	_ = glfw.WindowHint(glfw.ContextVersionMinor, 0)
 	window, err := glfw.CreateWindow(640, 480, "Cursor Test", nil, nil)
 	if err != nil {
 		glfw.Terminate()
@@ -293,7 +262,11 @@ func cursor() {
 	}
 
 	window.MakeContextCurrent()
-	gl.Init()
+	err = gl.Init()
+	if err != nil {
+		glfw.Terminate()
+		fmt.Printf("gl Init error, " + err.Error())
+	}
 	gl.GenBuffers(1, &vertex_buffer)
 	gl.BindBuffer(gl.ARRAY_BUFFER, vertex_buffer)
 	vertex_shader = gl.CreateShader(gl.VERTEX_SHADER)
@@ -383,7 +356,7 @@ func cursor() {
 
 		window.SwapBuffers()
 		if animate_cursor {
-			i := int((glfw.GetTime() * 30.0)) % CURSOR_FRAME_COUNT
+			i := int(glfw.GetTime()*30.0) % CURSOR_FRAME_COUNT
 			if current_frame != star_cursors[i] {
 				window.SetCursor(star_cursors[i])
 				current_frame = star_cursors[i]

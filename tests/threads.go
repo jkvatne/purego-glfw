@@ -5,10 +5,11 @@ import (
 	"math"
 	"os"
 	"runtime"
+	"sync"
 	"time"
 
-	"github.com/go-gl/gl/all-core/gl"
 	glfw "github.com/jkvatne/purego-glfw"
+	"github.com/neclepsio/gl/all-core/gl"
 )
 
 var running bool
@@ -36,6 +37,8 @@ func key_callback5(window *glfw.Window, key glfw.Key, scancode int, action glfw.
 	}
 }
 
+var m sync.Mutex
+
 func thread_main(self *Thread) {
 	runtime.LockOSThread()
 	self.window.MakeContextCurrent()
@@ -46,7 +49,9 @@ func thread_main(self *Thread) {
 		gl.ClearColor(self.r*v, self.g*v, self.b*v, 0)
 		gl.Clear(gl.COLOR_BUFFER_BIT)
 		self.window.SwapBuffers()
+		m.Lock()
 		self.id = glfw.GetCurrentThreadId()
+		m.Unlock()
 		time.Sleep(time.Millisecond * 10)
 	}
 }
@@ -95,24 +100,28 @@ func threads() {
 	fmt.Printf("Window count %d\n", count)
 	fmt.Printf("CPU count=%d\n", runtime.NumCPU())
 	fmt.Printf("ProcCount=%d\n", runtime.GOMAXPROCS(0))
-	// glfwSetErrorCallback(error_callback);
+	glfw.SetErrorCallback(error_callback)
 	err := glfw.Init()
 	if err != nil {
 		panic(err.Error())
 	}
 	for i := 0; i < count; i++ {
-		glfw.WindowHint(glfw.PositionX, threadDefs[i].x)
-		glfw.WindowHint(glfw.PositionY, threadDefs[i].y)
+		_ = glfw.WindowHint(glfw.PositionX, threadDefs[i].x)
+		_ = glfw.WindowHint(glfw.PositionY, threadDefs[i].y)
 		threadDefs[i].window, err = glfw.CreateWindow(400, 120, threadDefs[i].title, nil, nil)
 		if threadDefs[i].done {
 			glfw.Terminate()
 			os.Exit(1)
 		}
-		threadDefs[i].window.SetKeyCallback(key_callback)
+		threadDefs[i].window.SetKeyCallback(key_callback5)
 	}
 
 	threadDefs[0].window.MakeContextCurrent()
-	gl.Init()
+	err = gl.Init()
+	if err != nil {
+		glfw.Terminate()
+		fmt.Printf("gl Init error, " + err.Error())
+	}
 	glfw.DetachCurrentContext()
 	running = true
 	for i := 0; i < count; i++ {
@@ -126,8 +135,10 @@ func threads() {
 			if threadDefs[i].window.ShouldClose() {
 				running = false
 			}
+			// RACE:
+			m.Lock()
 			fmt.Printf("%7d", threadDefs[i].id)
-
+			m.Unlock()
 		}
 		fmt.Printf("\n")
 		time.Sleep(time.Millisecond * 1000)

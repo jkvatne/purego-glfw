@@ -47,24 +47,23 @@ const (
 
 // Framebuffer related hints.
 const (
-	ContextRevision        Hint = 0x00022004
-	RedBits                Hint = 0x00021001 // Specifies the desired bit depth of the default framebuffer.
-	GreenBits              Hint = 0x00021002 // Specifies the desired bit depth of the default framebuffer.
-	BlueBits               Hint = 0x00021003 // Specifies the desired bit depth of the default framebuffer.
-	AlphaBits              Hint = 0x00021004 // Specifies the desired bit depth of the default framebuffer.
-	DepthBits              Hint = 0x00021005 // Specifies the desired bit depth of the default framebuffer.
-	StencilBits            Hint = 0x00021006 // Specifies the desired bit depth of the default framebuffer.
-	AccumRedBits           Hint = 0x00021007 // Specifies the desired bit depth of the accumulation buffer.
-	AccumGreenBits         Hint = 0x00021008 // Specifies the desired bit depth of the accumulation buffer.
-	AccumBlueBits          Hint = 0x00021009 // Specifies the desired bit depth of the accumulation buffer.
-	AccumAlphaBits         Hint = 0x0002100A // Specifies the desired bit depth of the accumulation buffer.
-	AuxBuffers             Hint = 0x0002100B // Specifies the desired number of auxiliary buffers.
-	Stereo                 Hint = 0x0002100C // Specifies whether to use stereoscopic rendering. Hard constraint.
-	Samples                Hint = 0x0002100D // Specifies the desired number of samples to use for multisampling. Zero disables multisampling.
-	SRGBCapable            Hint = 0x0002100E // Specifies whether the framebuffer should be sRGB capable.
-	RefreshRate            Hint = 0x0002100F // Specifies the desired refresh rate for full screen windows. If set to zero, the highest available refresh rate will be used. This hint is ignored for windowed mode windows.
-	DoubleBuffer           Hint = 0x00021010 // Specifies whether the framebuffer should be double buffered. You nearly always want to use double buffering. This is a hard constraint.
-	CocoaGraphicsSwitching Hint = 0x00023003 // Specifies whether to in Automatic Graphics Switching, i.e. to allow the system to choose the integrated GPU for the OpenGL context and move it between GPUs if necessary or whether to force it to always run on the discrete GPU.
+	ContextRevision Hint = 0x00022004
+	RedBits         Hint = 0x00021001 // Specifies the desired bit depth of the default framebuffer.
+	GreenBits       Hint = 0x00021002 // Specifies the desired bit depth of the default framebuffer.
+	BlueBits        Hint = 0x00021003 // Specifies the desired bit depth of the default framebuffer.
+	AlphaBits       Hint = 0x00021004 // Specifies the desired bit depth of the default framebuffer.
+	DepthBits       Hint = 0x00021005 // Specifies the desired bit depth of the default framebuffer.
+	StencilBits     Hint = 0x00021006 // Specifies the desired bit depth of the default framebuffer.
+	AccumRedBits    Hint = 0x00021007 // Specifies the desired bit depth of the accumulation buffer.
+	AccumGreenBits  Hint = 0x00021008 // Specifies the desired bit depth of the accumulation buffer.
+	AccumBlueBits   Hint = 0x00021009 // Specifies the desired bit depth of the accumulation buffer.
+	AccumAlphaBits  Hint = 0x0002100A // Specifies the desired bit depth of the accumulation buffer.
+	AuxBuffers      Hint = 0x0002100B // Specifies the desired number of auxiliary buffers.
+	Stereo          Hint = 0x0002100C // Specifies whether to use stereoscopic rendering. Hard constraint.
+	Samples         Hint = 0x0002100D // Specifies the desired number of samples to use for multisampling. Zero disables multisampling.
+	SRGBCapable     Hint = 0x0002100E // Specifies whether the framebuffer should be sRGB capable.
+	RefreshRate     Hint = 0x0002100F // Specifies the desired refresh rate for full screen windows. If set to zero, the highest available refresh rate will be used. This hint is ignored for windowed mode windows.
+	DoubleBuffer    Hint = 0x00021010 // Specifies whether the framebuffer should be double buffered. You nearly always want to use double buffering. This is a hard constraint.
 )
 
 // Naming related hints. (Use with glfw.WindowHintString)
@@ -76,7 +75,6 @@ const (
 )
 
 const (
-	OpenGlAnyProfile    = 0
 	OpenGLCoreProfile   = 0x00032001
 	OpenGLCompatProfile = 0x00032002
 	AnyPosition         = int32(-0x80000000)
@@ -98,14 +96,12 @@ const (
 
 // Values for the ContextRobustness hint.
 const (
-	NoRobustness        = 0
 	NoResetNotification = 0x00031001
 	LoseContextOnReset  = 0x00031002
 )
 
 // Values for ContextReleaseBehavior hint.
 const (
-	AnyReleaseBehavior   = 0
 	ReleaseBehaviorFlush = 0x00035001
 	ReleaseBehaviorNone  = 0x00035002
 )
@@ -304,14 +300,14 @@ func WindowHintString(hint Hint, value string) {
 // GetClipboardString returns the contents of the system clipboard
 // if it contains or is convertible to a UTF-8 encoded string.
 // This function may only be called from the main thread.
-func GetClipboardString() string {
+func GetClipboardString() (string, error) {
 	return glfwGetClipboardString()
 }
 
 // SetClipboardString sets the system clipboard to the specified UTF-8 encoded string.
 // This function may only be called from the main thread.
-func SetClipboardString(str string) {
-	glfwSetClipboardString(str)
+func SetClipboardString(str string) error {
+	return glfwSetClipboardString(str)
 }
 
 func CreateCursor(image image.Image, xhot int, yhot int) *Cursor {
@@ -735,15 +731,13 @@ func (window *Window) SetInputMode(mode int, value int) {
 		if window.stickyKeys == (value != 0) {
 			return
 		}
-		if value == 0 {
-			// Release all sticky keys
-			for i := 0; i <= KeyLast; i++ {
-				if window.keys[i] == Stick {
-					window.keys[i] = Release
-				}
+		// Release all sticky keys
+		for i := 0; i <= KeyLast; i++ {
+			if window.keys[i] == Stick {
+				window.keys[i] = Release
 			}
-			window.stickyKeys = value != 0
 		}
+		window.stickyKeys = value != 0
 	case StickyMouseButtons:
 		value = min(1, max(0, value))
 		if window.stickyMouseButtons == (value != 0) {
@@ -756,7 +750,7 @@ func (window *Window) SetInputMode(mode int, value int) {
 					window.mouseButtons[i] = Release
 				}
 			}
-			window.stickyMouseButtons = value != 0
+			window.stickyMouseButtons = false
 		}
 	case LockKeyMods:
 		value = min(1, max(0, value))

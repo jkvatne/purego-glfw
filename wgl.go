@@ -101,12 +101,25 @@ func swapBuffersWGL(window *_GLFWwindow) {
 	// Ignore errors becaus it sometimes fails without reason
 }
 
-func swapIntervalWGL(interval int) {
+func getCurrentWindow() *_GLFWwindow {
 	p := glfwPlatformGetTls(&_glfw.contextSlot)
-	if p == 0 {
+	window := _glfw.windowListHead
+	for window != nil {
+		if uintptr(unsafe.Pointer(window)) == p {
+			return window
+		}
+		window = window.next
+	}
+	return nil
+}
+
+func swapIntervalWGL(interval int) {
+	// p := glfwPlatformGetTls(&_glfw.contextSlot)
+	// window := (*Window)(unsafe.Pointer(p))
+	window := getCurrentWindow()
+	if window == nil {
 		panic("swapIntervalWGL failed, window is nil\n")
 	}
-	window := (*Window)(unsafe.Pointer(p))
 	window.context.wgl.interval = interval
 	if _glfw.wgl.EXT_swap_control {
 		syscall.SyscallN(_glfw.wgl.SwapIntervalEXT, uintptr(interval))

@@ -7,18 +7,18 @@ import (
 	"os"
 	"runtime"
 
-	"github.com/go-gl/gl/all-core/gl"
 	glfw "github.com/jkvatne/purego-glfw"
+	"github.com/neclepsio/gl/all-core/gl"
 )
 
-type coldef struct {
+type colDef struct {
 	name string
 	r    float32
 	g    float32
 	b    float32
 }
 
-var colors = []coldef{
+var colors = []colDef{
 	{name: "Red", r: 1, g: 0, b: 0},
 	{name: "Green", r: 0, g: 1, b: 0},
 	{name: "Blue", r: 0, g: 0, b: 1},
@@ -63,7 +63,7 @@ func euclid(a, b int32) int32 {
 	return a
 }
 
-func format_mode(mode *glfw.GLFWvidmode) string {
+func formatMode(mode *glfw.GLFWvidmode) string {
 	gcd := euclid(mode.Width, mode.Height)
 	s := fmt.Sprintf("%d x %d x %d (%d:%d) (%d %d %d) %d Hz",
 		mode.Width, mode.Height,
@@ -76,11 +76,11 @@ func format_mode(mode *glfw.GLFWvidmode) string {
 }
 
 func framebuffer_size_callback(window *glfw.Window, width int, height int) {
-	fmt.Printf("Framebuffer resized to %ix%i\n", width, height)
+	fmt.Printf("Framebuffer resized to %dx%d\n", width, height)
 	gl.Viewport(0, 0, int32(width), int32(height))
 }
 
-func key_callback4(window *glfw.Window, key glfw.Key, scancode int, action glfw.Action, mods glfw.ModifierKey) {
+func keyCallback4(window *glfw.Window, key glfw.Key, scancode int, action glfw.Action, mods glfw.ModifierKey) {
 	if key == glfw.KeyEscape {
 		window.SetShouldClose(true)
 		os.Exit(1)
@@ -92,22 +92,22 @@ func list_modes(monitor *glfw.Monitor) {
 	modes := monitor.GetVideoModes()
 	x, y := monitor.GetPos()
 	width_mm, height_mm := monitor.GetPhysicalSize()
-	xscale, yscale := monitor.GetContentScale()
-	workarea_x, workarea_y, workarea_width, workarea_height := monitor.GetWorkarea()
+	xScale, yScale := monitor.GetContentScale()
+	workAreaX, workAreaY, workAreaWidth, workAreaHeight := monitor.GetWorkarea()
 	ps := "secondary"
 	if monitor == glfw.GetPrimaryMonitor() {
 		ps = "primary"
 	}
 	fmt.Printf("Name: %s (%s)\n", monitor.GetMonitorName(), ps)
-	fmt.Printf("Current mode: %s\n", format_mode(&mode))
+	fmt.Printf("Current mode: %s\n", formatMode(&mode))
 	fmt.Printf("Virtual position: %d, %d\n", x, y)
-	fmt.Printf("Content scale: %f x %f\n", xscale, yscale)
+	fmt.Printf("Content scale: %f x %f\n", xScale, yScale)
 	fmt.Printf("Physical size: %d x %d mm (%0.2f dpi at %d x %d)\n",
 		width_mm, height_mm, float64(mode.Width)*25.4/float64(width_mm), mode.Width, mode.Height)
 	fmt.Printf("Monitor work area: %d x %d starting at %d, %d\n\n",
-		workarea_width, workarea_height, workarea_x, workarea_y)
+		workAreaWidth, workAreaHeight, workAreaX, workAreaY)
 	for i := 0; i < len(modes); i++ {
-		fmt.Printf("%3d: %s", i, format_mode(&modes[i]))
+		fmt.Printf("%3d: %s", i, formatMode(&modes[i]))
 		if mode == modes[i] {
 			fmt.Printf(" (current mode)")
 		}
@@ -128,18 +128,18 @@ func test_mode(monitor *glfw.Monitor, i int, timeShownSec float64) {
 	_ = glfw.WindowHint(glfw.BlueBits, int(mode.BlueBits))
 	_ = glfw.WindowHint(glfw.RefreshRate, int(mode.RefreshRate))
 	color := colors[i%len(colors)]
-	fmt.Printf("Testing mode %d on monitor %s: %s color=%v\n", i, monitor.GetMonitorName(), format_mode(&mode), color)
+	fmt.Printf("Testing mode %d on monitor %s: %s color=%v\n", i, monitor.GetMonitorName(), formatMode(&mode), color)
 	window, err := glfw.CreateWindow(int(mode.Width), int(mode.Height), "Video Mode Test", monitor, nil)
 	if err != nil {
-		fmt.Printf("Failed to enter mode %d: %s\n", i, format_mode(&mode))
+		fmt.Printf("Failed to enter mode %d: %s\n", i, formatMode(&mode))
 		return
 	}
 	window.SetFramebufferSizeCallback(framebuffer_size_callback)
-	window.SetKeyCallback(key_callback)
+	window.SetKeyCallback(keyCallback4)
 	window.MakeContextCurrent()
 	err = gl.Init()
 	if err != nil {
-		fmt.Printf("Failed to enter mode %d: %s\n", i, format_mode(&mode))
+		fmt.Printf("Failed to enter mode %d: %s\n", i, formatMode(&mode))
 	}
 	glfw.SwapInterval(1)
 	glfw.SetTime(0.0)
@@ -160,7 +160,7 @@ func test_mode(monitor *glfw.Monitor, i int, timeShownSec float64) {
 	gl.GetIntegerv(gl.GREEN_BITS, &current.GreenBits)
 	gl.GetIntegerv(gl.BLUE_BITS, &current.BlueBits)
 	if current.RedBits != mode.RedBits || current.GreenBits != mode.GreenBits || current.BlueBits != mode.BlueBits {
-		fmt.Printf("*** Color bit mismatch: (%d %d %d) instead of (%d %d %id)\n",
+		fmt.Printf("*** Color bit mismatch: (%d %d %d) instead of (%d %d %d)\n",
 			current.RedBits, current.GreenBits, current.BlueBits,
 			mode.RedBits, mode.GreenBits, mode.BlueBits)
 	}
@@ -178,15 +178,13 @@ func test_mode(monitor *glfw.Monitor, i int, timeShownSec float64) {
 }
 
 func monitor() {
-
 	fmt.Printf("\nMonitor test started\n")
 	runtime.LockOSThread()
-	glfw.SetErrorCallback(error_callback)
 	err := glfw.Init()
 	if err != nil {
 		panic("glfw.Init error: " + err.Error())
 	}
-
+	glfw.SetErrorCallback(error_callback)
 	monitors := glfw.GetMonitors()
 	for i := 0; i < len(monitors); i++ {
 		list_modes(monitors[i])
@@ -194,7 +192,7 @@ func monitor() {
 	fmt.Println("\npress escape to exit")
 	// NB: On some monitors it takes up to 5 sec for the mode to be shown.
 	// The following tests are testing just 4 modes, 2 on primary and 2 on secondary
-	// It depends on the existance of the mode on the actual monitors.
+	// It depends on the existence of the mode on the actual monitors.
 	if len(monitors) > 1 {
 		modes := monitors[1].GetVideoModes()
 		test_mode(monitors[1], min(25, len(modes)-1), 5.0)

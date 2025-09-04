@@ -6,7 +6,7 @@ import (
 	"runtime"
 	"time"
 
-	"github.com/go-gl/gl/all-core/gl"
+	"github.com/neclepsio/gl/all-core/gl"
 	glfw "github.com/jkvatne/purego-glfw"
 )
 

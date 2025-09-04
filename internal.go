@@ -3,6 +3,7 @@ package glfw
 import (
 	"errors"
 	"fmt"
+	"reflect"
 	"strconv"
 	"sync"
 	"syscall"
@@ -438,7 +439,7 @@ func glfwInputWindowDamage(window *_GLFWwindow) {
 }
 
 func glfwInputWindowCloseRequest(window *_GLFWwindow) {
-	// slog.Error("Got CloseRequest")
+	// TODO
 }
 
 func getKeyMods() ModifierKey {
@@ -789,12 +790,9 @@ func glfwSetCursor(window *_GLFWwindow, cursor *Cursor) {
 }
 
 func SetFocus(window *_GLFWwindow) {
-	r1, _, err := _SetFocus.Call(uintptr(unsafe.Pointer(window.Win32.handle)))
-	if r1 == 0 || err != nil && !errors.Is(err, syscall.Errno(0)) {
+	_, _, err := _SetFocus.Call(uintptr(unsafe.Pointer(window.Win32.handle)))
+	if err != nil && !errors.Is(err, syscall.Errno(0)) {
 		panic("SetFocus failed, " + err.Error())
-	}
-	if r1 == 0 {
-		panic("SetFocus failed")
 	}
 }
 
@@ -822,11 +820,7 @@ const (
 	ENUM_CURRENT_SETTINGS      = -1
 	HORZSIZE                   = 4
 	VERTSIZE                   = 6
-	HORZRES                    = 8
-	VERTRES                    = 10
 	DISPLAY_DEVICE_MODESPRUNED = 0x08000000
-	DISPLAY_DEVICE_REMOTE      = 0x04000000
-	DISPLAY_DEVICE_DISCONNECT  = 0x02000000
 )
 
 var CurrentMonitor *Monitor
@@ -854,29 +848,22 @@ func createMonitor(adapter *DISPLAY_DEVICEW, display *DISPLAY_DEVICEW) *Monitor 
 		var ws = display.DeviceName[:]
 		s := syscall.UTF16ToString(ws)
 		copy(monitor.name[:], s)
-	} else if adapter != nil {
-		var ws = adapter.DeviceName[:]
-		s := syscall.UTF16ToString(ws)
-		copy(monitor.name[:], s)
-	}
-	ret, _, err = _DeleteDC.Call(uintptr(dc))
-	if !errors.Is(err, syscall.Errno(0)) {
-		panic("CreateDC failed, " + err.Error())
 	}
 
+	var ws = adapter.DeviceName[:]
+	s := syscall.UTF16ToString(ws)
+	copy(monitor.name[:], s)
+	DeleteDC(dc)
 	if adapter.StateFlags&DISPLAY_DEVICE_MODESPRUNED != 0 {
 		monitor.Win32.modesPruned = true
 	}
 	for i := 0; i < len(adapter.DeviceName); i++ {
 		monitor.Win32.adapterName[i] = adapter.DeviceName[i]
 	}
-	// WideCharToMultiByte(CP_UTF8, 0, adapter.DeviceName, -1, monitor.win32.publicAdapterName, sizeof(monitor.win32.publicAdapterName), NULL, NULL)
 	if display != nil {
 		for i := 0; i < len(adapter.DeviceName); i++ {
 			monitor.Win32.displayName[i] = display.DeviceName[i]
 		}
-	}
-	if display != nil {
 		monitor.Win32.publicDisplayName = string(utf16.Decode(display.DeviceName[:]))
 		monitor.Win32.publicAdapterName = string(utf16.Decode(adapter.DeviceName[:]))
 	}
@@ -884,9 +871,6 @@ func createMonitor(adapter *DISPLAY_DEVICEW, display *DISPLAY_DEVICEW) *Monitor 
 	rect.Top = dm.dmPosition.Y
 	rect.Right = dm.dmPosition.X + dm.dmPelsWidth
 	rect.Bottom = dm.dmPosition.Y + dm.dmPelsHeight
-	s := syscall.UTF16ToString(display.DeviceName[:])
-	fmt.Printf("Device name=%s\n", s)
-	fmt.Printf("monitor name=%s\n", monitor.GetMonitorName())
 	CurrentMonitor = monitor
 	_ = EnumDisplayMonitors(0, &rect, NewEnumDisplayMonitorsCallback(enumMonitorCallback), uintptr(unsafe.Pointer(monitor)))
 	return monitor
@@ -954,11 +938,6 @@ func glfwInputMonitorWindow(monitor *Monitor, window *_GLFWwindow) {
 	monitor.window = window
 }
 
-// glfwInputWindowMonitor Notifies shared code that a full screen window has acquired or released a monitor
-func glfwInputWindowMonitor(window *_GLFWwindow, monitor *Monitor) {
-	window.monitor = monitor
-}
-
 // Retrieves the available modes for the specified monitor
 func refreshVideoModes(monitor *Monitor) bool {
 	var modes []GLFWvidmode
@@ -989,10 +968,11 @@ func glfwChooseVideoMode(monitor *Monitor, desired *GLFWvidmode) *GLFWvidmode {
 	var rateDiff, leastRateDiff int32 = _INT_MAX, _INT_MAX
 	var colorDiff, leastColorDiff int32 = _INT_MAX, _INT_MAX
 	var current GLFWvidmode
-	var closest GLFWvidmode
+	// Default to current mode if no best mode found
+	closest := monitor.GetVideoMode()
 
 	if !refreshVideoModes(monitor) {
-		return nil
+		return &closest
 	}
 	for i := 0; i < len(monitor.modes); i++ {
 		current = monitor.modes[i]
@@ -1026,8 +1006,8 @@ func glfwChooseVideoMode(monitor *Monitor, desired *GLFWvidmode) *GLFWvidmode {
 // Change the current video mode
 //
 func glfwSetVideoMode(monitor *Monitor, desired *GLFWvidmode) error {
-	best := glfwChooseVideoMode(monitor, desired)
 	current := monitor.GetVideoMode()
+	best := glfwChooseVideoMode(monitor, desired)
 	if glfwCompareVideoModes(&current, best) == 0 {
 		fmt.Printf("glfwCompareVideoModes returned 0, could not set video mode\n")
 		return nil
@@ -1083,15 +1063,11 @@ func fitToMonitor(window *Window) {
 	}
 }
 
-func systemParametersInfoW(uiAction uint32, uiParam uint32, pvParam *uint32, fWinIni uint32) {
-	_SystemParametersInfoW.Call(uintptr(uiAction), uintptr(uiParam), uintptr(unsafe.Pointer(pvParam)), uintptr(fWinIni))
-}
-
 // Make the specified window and its video mode active on its monitor
 //
 func acquireMonitor(window *Window) {
 	if _glfw.win32.acquiredMonitorCount > 0 {
-		_SetThreadExecutionState.Call(uintptr(_ES_CONTINUOUS | _ES_DISPLAY_REQUIRED))
+		SetThreadExecutionState(_ES_CONTINUOUS | _ES_DISPLAY_REQUIRED)
 		// HACK: When mouse trails are enabled the cursor becomes invisible when the OpenGL ICD switches to page flipping
 		systemParametersInfoW(_SPI_GETMOUSETRAILS, 0, &_glfw.win32.mouseTrailSize, 0)
 		systemParametersInfoW(_SPI_SETMOUSETRAILS, 0, nil, 0)
@@ -1099,7 +1075,10 @@ func acquireMonitor(window *Window) {
 
 	if window.monitor.window == nil {
 		_glfw.win32.acquiredMonitorCount++
-		glfwSetVideoMode(window.monitor, &window.videoMode)
+		err := glfwSetVideoMode(window.monitor, &window.videoMode)
+		if err != nil {
+
+		}
 		glfwInputMonitorWindow(window.monitor, window)
 	}
 }
@@ -1120,7 +1099,7 @@ func releaseMonitor(window *Window) {
 
 	_glfw.win32.acquiredMonitorCount--
 	if _glfw.win32.acquiredMonitorCount == 0 {
-		_SetThreadExecutionState.Call(uintptr(_ES_CONTINUOUS))
+		SetThreadExecutionState(_ES_CONTINUOUS)
 		// HACK: Restore mouse trail length saved in acquireMonitor
 		systemParametersInfoW(_SPI_SETMOUSETRAILS, _glfw.win32.mouseTrailSize, nil, 0)
 	}
@@ -1241,7 +1220,6 @@ func enableRawMouseMotion(window *Window) {
 }
 
 // Disables _WM_INPUT messages for the mouse
-//
 func disableRawMouseMotion(window *Window) {
 	rid := RAWINPUTDEVICE{0x01, 0x02, _RIDEV_REMOVE, 0}
 	if !RegisterRawInputDevices(&rid, 1, uint32(unsafe.Sizeof(rid))) {
@@ -1250,7 +1228,6 @@ func disableRawMouseMotion(window *Window) {
 }
 
 // Sets the cursor clip rect to the window content area
-//
 func captureCursor(window *Window) {
 	clipRect := GetClientRect(window.Win32.handle)
 	p1 := POINT{clipRect.Left, clipRect.Top}
@@ -1507,7 +1484,7 @@ func glfwGetFramebufferSize(w *Window) (width int, height int) {
 }
 
 func glfwDetachCurrentContext() {
-	makeContextCurrentWGL(nil)
+	_ = makeContextCurrentWGL(nil)
 }
 
 func glfwPostEmptyEvent(w *Window) {
@@ -1526,6 +1503,7 @@ func glfwSetSize(w *Window, width, height int) {
 }
 
 func glfwSetSizeLimits(w *Window, minw, minh, maxw, maxh int) {
+	// TODO
 	area := GetWindowRect(w.Win32.handle)
 	MoveWindow(w.Win32.handle, area.Left, area.Top, area.Right-area.Left, area.Bottom-area.Top, true)
 }
@@ -1764,8 +1742,9 @@ func glfwDestroyWindow(w *Window) {
 	w.sizeCallback = nil
 	w.dropCallback = nil
 	w.contentScaleCallback = nil
-	if uintptr(unsafe.Pointer(w)) == glfwPlatformGetTls(&_glfw.contextSlot) {
-		glfwMakeContextCurrent(nil)
+	//	if uintptr(unsafe.Pointer(w)) == glfwPlatformGetTls(&_glfw.contextSlot) {
+	if w == getCurrentWindow() {
+		_ = glfwMakeContextCurrent(nil)
 	}
 	DestroyWindow(w.Win32.handle)
 	// Unlink window from global linked list
@@ -2009,7 +1988,7 @@ func glfwGetCursorPos(w *_GLFWwindow, x *int32, y *int32) {
 		var pos POINT
 		_, _, err := _GetCursorPos.Call(uintptr(unsafe.Pointer(&pos)))
 		if !errors.Is(err, syscall.Errno(0)) {
-			// if we get an error (typical error 5, access denied, return something way off.
+			// if we get an error (typical error 5, access denied), return something way off.
 			*x = -32767
 			*y = -32767
 			return
@@ -2033,15 +2012,76 @@ func glfwGetWindowSize(window *_GLFWwindow, width *int32, height *int32) {
 // GetClipboardString returns the contents of the system clipboard, if it
 // contains or is convertible to a UTF-8 encoded string.
 // This function may only be called from the main thread.
-func glfwGetClipboardString() string {
-	// b := clipboard.Read(clipboard.FmtText)
-	return "" // string(b)
+func glfwGetClipboardString() (string, error) {
+	for {
+		r, _, _ := _OpenClipboard.Call()
+		if r == 0 {
+			continue
+		}
+		break
+	}
+	defer _CloseClipboard.Call()
+	hMem, _, err := _GetClipboardData.Call(cFmtUnicodeText)
+	if hMem == 0 {
+		return "", err
+	}
+	p, _, err := _GlobalLock.Call(hMem)
+	if p == 0 {
+		return "", err
+	}
+	defer _GlobalUnlock.Call(hMem)
+	n := 0
+	for ptr := unsafe.Pointer(p); *(*uint16)(ptr) != 0; n++ {
+		ptr = unsafe.Pointer(uintptr(ptr) +
+			unsafe.Sizeof(*((*uint16)(unsafe.Pointer(p)))))
+	}
+	var s []uint16
+	h := (*reflect.SliceHeader)(unsafe.Pointer(&s))
+	h.Data = p
+	h.Len = n
+	h.Cap = n
+	_CloseClipboard.Call()
+	return string(utf16.Decode(s)), nil
 }
 
 // SetClipboardString sets the system clipboard to the specified UTF-8 encoded string.
 // This function may only be called from the main thread.
-func glfwSetClipboardString(str string) {
-	// clipboard.Write(clipboard.FmtText, []byte(str))
+func glfwSetClipboardString(str string) error {
+	for {
+		r, _, _ := _OpenClipboard.Call()
+		if r == 0 {
+			continue
+		}
+		break
+	}
+	defer _CloseClipboard.Call()
+	r, _, err := _EmptyClipboard.Call()
+	if r == 0 {
+		return fmt.Errorf("failed to clear clipboard: %w", err)
+	}
+	if len(str) == 0 {
+		return nil
+	}
+	s, err := syscall.UTF16FromString(str)
+	if err != nil {
+		return fmt.Errorf("failed to convert given string: %w", err)
+	}
+	hMem, _, err := _GlobalAlloc.Call(gmemMoveable, uintptr(len(s)*int(unsafe.Sizeof(s[0]))))
+	if hMem == 0 {
+		return fmt.Errorf("failed to alloc global memory: %w", err)
+	}
+	p, _, err := _GlobalLock.Call(hMem)
+	if p == 0 {
+		return fmt.Errorf("failed to lock global memory: %w", err)
+	}
+	defer _GlobalUnlock.Call(hMem)
+	_RtlMoveMemory.Call(p, uintptr(unsafe.Pointer(&s[0])), uintptr(len(s)*int(unsafe.Sizeof(s[0]))))
+	v, _, err := _SetClipboardData.Call(cFmtUnicodeText, hMem)
+	if v == 0 {
+		_GlobalFree.Call(hMem)
+		return fmt.Errorf("failed to set text to clipboard: %w", err)
+	}
+	return nil
 }
 
 func monitorFromWindow(handle syscall.Handle, flags uint32) HMONITOR {
@@ -2092,7 +2132,7 @@ func glfwSetWindowMonitor(window *Window, monitor *Monitor, xpos int32, ypos int
 				fitToMonitor(window)
 			}
 		} else {
-			rect := RECT{(xpos), (ypos), (xpos + width), (ypos + height)}
+			rect := RECT{(xpos), (ypos), xpos + width, ypos + height}
 			if IsWindows10Version1607OrGreater() {
 				AdjustWindowRectExForDpi(&rect, getWindowStyle(window), 0, getWindowExStyle(window), GetDpiForWindow(window.Win32.handle))
 			} else {
@@ -2110,7 +2150,6 @@ func glfwSetWindowMonitor(window *Window, monitor *Monitor, xpos int32, ypos int
 	if window.monitor != nil {
 		releaseMonitor(window)
 	}
-	// _glfwInputWindowMonitor(monitor, window)
 	window.monitor = monitor
 
 	if window.monitor != nil {
@@ -2191,13 +2230,11 @@ func glfwPollMonitors() {
 		}
 		if displayIndex == 0 {
 			// HACK: If an active adapter does not have any display devices, add it directly as a monitor
-			var i int
-			if displayIndex == 0 {
-				for i = 0; i < disconnectedCount; i++ {
-					if disconnected[i] != nil && disconnected[i].Win32.adapterName == adapter.DeviceName {
-						disconnected[i] = nil
-						break
-					}
+			i := 0
+			for i = 0; i < disconnectedCount; i++ {
+				if disconnected[i] != nil && disconnected[i].Win32.adapterName == adapter.DeviceName {
+					disconnected[i] = nil
+					break
 				}
 			}
 			if i < disconnectedCount {

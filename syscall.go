@@ -42,6 +42,12 @@ var (
 	_TlsSetValue             = kernel32.NewProc("TlsSetValue")
 	_TlsFree                 = kernel32.NewProc("TlsFree")
 	_GetCurrentThreadId      = kernel32.NewProc("GetCurrentThreadId")
+	_GlobalAlloc             = kernel32.NewProc("GlobalAlloc")
+	_GlobalFree              = kernel32.NewProc("GlobalFree")
+	_MemMove                 = kernel32.NewProc("MemMove")
+	_GlobalLock              = kernel32.NewProc("GlobalLock")
+	_GlobalUnlock            = kernel32.NewProc("GlobalUnlock")
+	_RtlMoveMemory           = kernel32.NewProc("RtlMoveMemory")
 )
 
 var (
@@ -61,7 +67,6 @@ var (
 	_GetDC                         = user32.NewProc("GetDC")
 	_GetDpiForWindow               = user32.NewProc("GetDpiForWindow")
 	_GetKeyState                   = user32.NewProc("GetKeyState")
-	_LoadCursor                    = user32.NewProc("LoadCursorW")
 	_LoadImageW                    = user32.NewProc("LoadImageW")
 	_MonitorFromWindow             = user32.NewProc("MonitorFromWindow")
 	_PeekMessage                   = user32.NewProc("PeekMessageW")
@@ -115,6 +120,11 @@ var (
 	_GetMessageTime                = user32.NewProc("GetMessageTime")
 	_RegisterDeviceNotificationW   = user32.NewProc("RegisterDeviceNotificationW")
 	_UnregisterDeviceNotificationW = user32.NewProc("UnregisterDeviceNotification")
+	_OpenClipboard                 = user32.NewProc("OpenClipboard")
+	_GetClipboardData              = user32.NewProc("GetClipboardData")
+	_CloseClipboard                = user32.NewProc("CloseClipboard")
+	_EmptyClipboard                = user32.NewProc("EmptyClipboard")
+	_SetClipboardData              = user32.NewProc("SetClipboardData")
 )
 
 var (
@@ -184,11 +194,11 @@ func PeekMessage(m *Msg, hwnd syscall.Handle, wMsgFilterMin, wMsgFilterMax, wRem
 }
 
 func TranslateMessage(m *Msg) {
-	_TranslateMessage.Call(uintptr(unsafe.Pointer(m)))
+	_, _, _ = _TranslateMessage.Call(uintptr(unsafe.Pointer(m)))
 }
 
 func DispatchMessage(m *Msg) {
-	_DispatchMessage.Call(uintptr(unsafe.Pointer(m)))
+	_, _, _ = _DispatchMessage.Call(uintptr(unsafe.Pointer(m)))
 }
 
 func WaitMessage() {
@@ -211,7 +221,7 @@ func CreateWindowEx(dwExStyle uint32, lpClassName uint16, lpWindowName string, d
 		uintptr(hWndParent),
 		uintptr(hMenu),
 		uintptr(hInstance),
-		uintptr(lpParam))
+		lpParam)
 	if hwnd == 0 {
 		return 0, fmt.Errorf("CreateWindowEx failed: %v", err)
 	}
@@ -220,7 +230,7 @@ func CreateWindowEx(dwExStyle uint32, lpClassName uint16, lpWindowName string, d
 
 func SetWindowTextW(window syscall.Handle, title string) {
 	wname, _ := syscall.UTF16PtrFromString(title)
-	_SetWindowTextW.Call(uintptr(window), uintptr(unsafe.Pointer(wname)))
+	_, _, _ = _SetWindowTextW.Call(uintptr(window), uintptr(unsafe.Pointer(wname)))
 }
 
 func DestroyWindow(h syscall.Handle) {
@@ -453,7 +463,7 @@ func glfwPlatformDestroyTls(tls *_GLFWtls) {
 
 func glfwPlatformCreateTls(tls *_GLFWtls) error {
 	if tls.allocated {
-		return nil // Tls is already allocated")
+		return nil // Tls is already allocated
 	}
 	tls.index = TlsAlloc()
 	if tls.index == 4294967295 { // TLS_OUT_OF_INDEXES
@@ -730,7 +740,7 @@ func ReleaseCapture() {
 }
 
 func TrackMouseEvent(tme *TRACKMOUSEEVENT) {
-	_TrackMouseEvent.Call(uintptr(unsafe.Pointer(tme)))
+	_, _, _ = _TrackMouseEvent.Call(uintptr(unsafe.Pointer(tme)))
 }
 
 func FlashWindow(hWnd syscall.Handle, invert uint32) {
@@ -755,4 +765,54 @@ func RegisterDeviceNotificationW(h syscall.Handle, filter *DEV_BROADCAST_DEVICEI
 		panic("RegisterDeviceNotificationW failed, " + err.Error())
 	}
 	return syscall.Handle(r)
+}
+
+func DeleteDC(dc HDC) {
+	_, _, err := _DeleteDC.Call(uintptr(dc))
+	if !errors.Is(err, syscall.Errno(0)) {
+		panic("DeleteDC failed, " + err.Error())
+	}
+}
+
+func systemParametersInfoW(uiAction uint32, uiParam uint32, pvParam *uint32, fWinIni uint32) {
+	_, _, err := _SystemParametersInfoW.Call(uintptr(uiAction), uintptr(uiParam), uintptr(unsafe.Pointer(pvParam)), uintptr(fWinIni))
+	if !errors.Is(err, syscall.Errno(0)) {
+		panic("systemParametersInfoW failed, " + err.Error())
+	}
+}
+
+func SetThreadExecutionState(state int) {
+	_, _, err := _SetThreadExecutionState.Call(uintptr(state))
+	if !errors.Is(err, syscall.Errno(0)) {
+		panic("SetThreadExecutionState failed, " + err.Error())
+	}
+}
+
+func OpenClipboard() {
+
+}
+
+const (
+	cFmtBitmap      = 2 // Win+PrintScreen
+	cFmtUnicodeText = 13
+	cFmtDIBV5       = 17
+	// Screenshot taken from special shortcut is in different format (why??), see:
+	// https://jpsoft.com/forums/threads/detecting-clipboard-format.5225/
+	cFmtDataObject = 49161 // Shift+Win+s, returned from enumClipboardFormats
+	gmemMoveable   = 0x0002
+)
+
+func GetClipboardData() {
+
+}
+func CloseClipboard() {
+
+}
+
+func EmptyClipboard() {
+
+}
+
+func SetClipboardData() {
+
 }

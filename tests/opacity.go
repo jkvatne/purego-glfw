@@ -8,8 +8,8 @@ import (
 	"runtime"
 	"time"
 
-	"github.com/go-gl/gl/all-core/gl"
 	glfw "github.com/jkvatne/purego-glfw"
+	"github.com/neclepsio/gl/all-core/gl"
 )
 
 func opacity() {
@@ -24,7 +24,12 @@ func opacity() {
 		os.Exit(1)
 	}
 	window.MakeContextCurrent()
-	gl.Init()
+	err = gl.Init()
+	if err != nil {
+		glfw.Terminate()
+		fmt.Printf("Could not init gl: %v\n", err)
+		os.Exit(2)
+	}
 	glfw.SwapInterval(1)
 	glfw.SetTime(0)
 	FadeTime := 2.0

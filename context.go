@@ -154,9 +154,9 @@ func glfwChooseFBConfig(desired *_GLFWfbconfig, alternatives []_GLFWfbconfig, co
 func glfwRefreshContextAttribs(window *_GLFWwindow, ctxconfig *_GLFWctxconfig) error {
 	window.context.source = ctxconfig.source
 	window.context.client = OpenGLAPI
-	previous := (*Window)(unsafe.Pointer(glfwPlatformGetTls(&_glfw.contextSlot)))
+	previous := getCurrentWindow() // Was (unsafe.Pointer(glfwPlatformGetTls(&_glfw.contextSlot)))
 	_ = glfwMakeContextCurrent(window)
-	if glfwPlatformGetTls(&_glfw.contextSlot) != uintptr(unsafe.Pointer(window)) {
+	if getCurrentWindow() != window {
 		return fmt.Errorf("glfwRefrechContext got Tls slot error")
 	}
 
@@ -305,7 +305,8 @@ func getIntegerv(window *Window, name int, value *int) {
 }
 
 func glfwMakeContextCurrent(window *_GLFWwindow) error {
-	previous := (*Window)(unsafe.Pointer(glfwPlatformGetTls(&_glfw.contextSlot)))
+	// previous := (*Window)(unsafe.Pointer(glfwPlatformGetTls(&_glfw.contextSlot)))
+	previous := getCurrentWindow()
 	if window != nil && window.context.client == NoAPI {
 		return fmt.Errorf("glfwMakeContextCurrent failed: Cannot make current with a window that has no OpenGL or OpenGL ES context")
 	}
@@ -319,8 +320,9 @@ func glfwMakeContextCurrent(window *_GLFWwindow) error {
 }
 
 func glfwGetCurrentContext() *Window {
-	p := glfwPlatformGetTls(&_glfw.contextSlot)
-	return (*Window)(unsafe.Pointer(p))
+	return getCurrentWindow()
+	// This fails with -race enabled
+	// return (*Window)(unsafe.Pointer(p))
 }
 
 func glfwSwapBuffers(window *_GLFWwindow) {
@@ -338,7 +340,10 @@ func ExtensionSupported(extension string) bool {
 	if extension == "" {
 		return false
 	}
-	window := (*_GLFWwindow)(unsafe.Pointer(p))
+	window := getCurrentWindow()
+	if window == nil {
+		return false
+	}
 	if window.context.major >= 3 {
 		// Check if extension is in the modern OpenGL extensions string list
 		// count := window.context.getIntegerv(_GL_NUM_EXTENSIONS)
@@ -363,14 +368,4 @@ func ExtensionSupported(extension string) bool {
 	}
 	// Check if extension is in the platform-specific string
 	return window.context.extensionSupported(extension)
-}
-
-func glfwGetProcAddress(procname string) *Window {
-	p := glfwPlatformGetTls(&_glfw.contextSlot)
-	window := (*Window)(unsafe.Pointer(p))
-	if window == nil {
-		panic("glfwGetProcAddress: window == nil")
-	}
-	p = window.context.getProcAddress(procname)
-	return (*Window)(unsafe.Pointer(p))
 }

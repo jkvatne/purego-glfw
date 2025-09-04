@@ -5,14 +5,14 @@ import (
 	"os"
 	"runtime"
 
-	"github.com/go-gl/gl/all-core/gl"
 	glfw "github.com/jkvatne/purego-glfw"
+	"github.com/neclepsio/gl/all-core/gl"
 )
 
 // UTF-8 window tear_title test
 
 func title() {
-	fmt.Printf("Windows tear_title should show non-latin utf characters\n")
+	fmt.Printf("Windows title should show non-latin utf characters\n")
 	runtime.LockOSThread()
 	if err := glfw.Init(); err != nil {
 		panic(err)
@@ -23,7 +23,30 @@ func title() {
 		os.Exit(1)
 	}
 	window.MakeContextCurrent()
-	gl.Init()
+	err = gl.Init()
+	if err != nil {
+		glfw.Terminate()
+		fmt.Printf("Could not init gl: %v\n", err)
+		os.Exit(2)
+	}
+
+	// Test clipboard
+	err = glfw.SetClipboardString("Test")
+	if err != nil {
+		fmt.Printf("Could not set clipboard: %v\n", err)
+	} else {
+		fmt.Printf("Clipboard set to Test\n")
+	}
+	s, err := glfw.GetClipboardString()
+	if err != nil {
+		fmt.Printf("Could not gset clipboard: %v\n", err)
+	} else {
+		fmt.Printf("Clipboard read correctly the value %s\n", s)
+	}
+	if s != "Test" {
+		panic("Invalid clipboard string")
+	}
+
 	glfw.SwapInterval(1)
 	glfw.SetTime(0)
 	window.SetTitle("English 日本語 русский язык 官話")

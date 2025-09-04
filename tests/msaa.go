@@ -1,4 +1,4 @@
-// Multisample anti-aliasing test
+// Multisample antialiasing test
 // This test renders two high contrast, slowly rotating quads, one aliased
 // and one (hopefully) anti-aliased, thus allowing for visual verification
 // of whether MSAA is indeed enabled
@@ -11,8 +11,8 @@ import (
 	"strings"
 	"unsafe"
 
-	"github.com/go-gl/gl/all-core/gl"
 	glfw "github.com/jkvatne/purego-glfw"
+	"github.com/neclepsio/gl/all-core/gl"
 )
 
 var vertices2 = [8]float32{-0.6, 0.6, 0.6, -0.6, -0.6, -0.6, 0.6, 0.6}
@@ -83,10 +83,11 @@ func msaa() {
 	if err != nil {
 		glfw.Terminate()
 		fmt.Printf("CreateWindow error, " + err.Error())
+		os.Exit(2)
 	}
 	if window == nil {
 		glfw.Terminate()
-		fmt.Printf("CreateWindow error, " + err.Error())
+		fmt.Printf("CreateWindow returned nil\n")
 		os.Exit(2)
 	}
 	_ = window.SetKeyCallback(key_callback2)
@@ -110,15 +111,15 @@ func msaa() {
 	gl.BufferData(gl.ARRAY_BUFFER, 32, unsafe.Pointer(&vertices2[0]), gl.STATIC_DRAW)
 
 	vertex_shader2 := gl.CreateShader(gl.VERTEX_SHADER)
-	csources, free := gl.Strs(vertex_shader_text2)
-	gl.ShaderSource(vertex_shader2, 1, csources, nil)
+	shaderSource, free := gl.Strs(vertex_shader_text2)
+	gl.ShaderSource(vertex_shader2, 1, shaderSource, nil)
 	free()
 	gl.CompileShader(vertex_shader2)
 	CheckError(gl.COMPILE_STATUS, vertex_shader2, vertex_shader_text2)
 
 	fragment_shader2 := gl.CreateShader(gl.FRAGMENT_SHADER)
-	csources, free = gl.Strs(fragment_shader_text2)
-	gl.ShaderSource(fragment_shader2, 1, csources, nil)
+	shaderSource, free = gl.Strs(fragment_shader_text2)
+	gl.ShaderSource(fragment_shader2, 1, shaderSource, nil)
 	free()
 	gl.CompileShader(fragment_shader2)
 	CheckError(gl.COMPILE_STATUS, fragment_shader2, fragment_shader_text2)
