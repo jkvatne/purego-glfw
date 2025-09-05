@@ -1463,8 +1463,8 @@ func glfwSetWindowMousePassthrough(window *Window, enabled bool) {
 	}
 }
 
-func glfwSetTitle(w *Window, title string) {
-	SetWindowTextW(w.Win32.handle, title)
+func glfwSetTitle(w *Window, title string) error {
+	return SetWindowText(w.Win32.handle, title)
 }
 
 func glfwGetPos(w *Window) (x, y int32) {
@@ -1613,7 +1613,7 @@ func _glfwRegisterWindowClassWin32() error {
 		LpszClassName: ws,
 	}
 	// Load user-provided icon if available
-	h, _ := GetModuleHandle()
+	h := GetModuleHandle()
 	wstr, _ := syscall.UTF16FromString("GLFW_ICON")
 	wcls.HIcon, _ = LoadImage(h, uintptr(unsafe.Pointer(&wstr[0])), _IMAGE_ICON, 0, 0, _LR_DEFAULTSIZE|_LR_SHARED)
 	if wcls.HIcon == 0 {
@@ -1713,7 +1713,6 @@ func createNativeWindow(window *_GLFWwindow, wndconfig *_GLFWwndconfig, fbconfig
 
 		// Adjust rect of maximized undecorated window, because by default Windows will
 		// make such a window cover the whole monitor instead of its workarea
-
 		if wndconfig.maximized && !wndconfig.decorated {
 			mi := GetMonitorInfo(mh)
 			SetWindowPos(window.Win32.handle, _HWND_TOPMOST,
@@ -1742,7 +1741,7 @@ func glfwDestroyWindow(w *Window) {
 	w.sizeCallback = nil
 	w.dropCallback = nil
 	w.contentScaleCallback = nil
-	//	if uintptr(unsafe.Pointer(w)) == glfwPlatformGetTls(&_glfw.contextSlot) {
+	RemoveProp(w.Win32.handle, "GLFW")
 	if w == getCurrentWindow() {
 		_ = glfwMakeContextCurrent(nil)
 	}
@@ -1777,7 +1776,7 @@ func glfwPlatformInit() error {
 	var err error
 	createKeyTables()
 	SetProcessDpiAwareness()
-	_glfw.instance, err = GetModuleHandle()
+	_glfw.instance = GetModuleHandle()
 	if err != nil {
 		return fmt.Errorf("glfw platform init failed %v ", err.Error())
 	}
@@ -1918,8 +1917,7 @@ func createHelperWindow() error {
 	wc.Style = _CS_OWNDC
 	wc.LpfnWndProc = syscall.NewCallback(helperWindowProc)
 	wc.HInstance = _glfw.instance
-	wc.LpszClassName = syscall.StringToUTF16Ptr("GLFW3 Helper")
-
+	wc.LpszClassName, _ = syscall.UTF16PtrFromString("GLFW3 Helper")
 	_glfw.win32.helperWindowClass, err = RegisterClassEx(&wc)
 	if _glfw.win32.helperWindowClass == 0 || err != nil {
 		panic("Win32: Failed to register helper window class")
@@ -2008,6 +2006,11 @@ func glfwGetWindowSize(window *_GLFWwindow, width *int32, height *int32) {
 	*width = area.Right
 	*height = area.Bottom
 }
+
+const (
+	cFmtUnicodeText = 13
+	gmemMoveable    = 0x0002
+)
 
 // GetClipboardString returns the contents of the system clipboard, if it
 // contains or is convertible to a UTF-8 encoded string.
@@ -2200,7 +2203,7 @@ func glfwPollMonitors() {
 		var adapter DISPLAY_DEVICEW
 		adapterType := InsertLast
 		adapter.cb = uint32(unsafe.Sizeof(adapter))
-		EnumDisplayDevices(0, adapterIndex, &adapter, 0)
+		_ = EnumDisplayDevices(0, adapterIndex, &adapter, 0)
 
 		if (adapter.StateFlags & _DISPLAY_DEVICE_ACTIVE) == 0 {
 			continue
@@ -2213,7 +2216,7 @@ func glfwPollMonitors() {
 		for ; ; displayIndex++ {
 			var display DISPLAY_DEVICEW
 			display.cb = uint32(unsafe.Sizeof(display))
-			if !EnumDisplayDevices(uintptr(unsafe.Pointer(&adapter.DeviceName)), displayIndex, &display, 0) {
+			if EnumDisplayDevices(uintptr(unsafe.Pointer(&adapter.DeviceName)), displayIndex, &display, 0) != nil {
 				break
 			}
 
@@ -2408,4 +2411,29 @@ func glfwGetVideoMode(monitor *Monitor) GLFWvidmode {
 	mode.RefreshRate = dm.dmDisplayFrequency
 	mode.RedBits, mode.GreenBits, mode.BlueBits = splitBpp(dm.dmBitsPerPel)
 	return mode
+}
+
+func glfwPlatformGetTls(tls *_GLFWtls) uintptr {
+	if !tls.allocated {
+		panic("_glfwPlatformGetTls failed: tls not allocated")
+	}
+	return TlsGetValue(tls.index)
+}
+
+func glfwPlatformDestroyTls(tls *_GLFWtls) {
+	if tls.allocated {
+		TlsFree(tls.index)
+	}
+}
+
+func glfwPlatformCreateTls(tls *_GLFWtls) error {
+	if tls.allocated {
+		return nil // Tls is already allocated
+	}
+	tls.index = TlsAlloc()
+	if tls.index == 4294967295 { // TLS_OUT_OF_INDEXES
+		return fmt.Errorf("glfwPlatformCreateTls: Failed to allocate TLS index")
+	}
+	tls.allocated = true
+	return nil
 }

@@ -49,7 +49,7 @@ func title() {
 
 	glfw.SwapInterval(1)
 	glfw.SetTime(0)
-	window.SetTitle("English 日本語 русский язык 官話")
+	_ = window.SetTitle("English 日本語 русский язык 官話")
 	for !window.ShouldClose() && glfw.GetTime() < 2.0 {
 		gl.ClearColor(100, 100, 0, 256)
 		gl.Clear(gl.COLOR_BUFFER_BIT)

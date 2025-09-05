@@ -1,3 +1,7 @@
+// This is the tests for the purego-glfw implementations.
+// Type go run ./tests from the main directory.
+// To avoid using gcc the "github.com/neclepsio/gl/all-core/gl" is used
+// instead of the "github.com/go-gl/gl/all-core/gl" repository.
 package main
 
 import (
@@ -7,7 +11,7 @@ import (
 var testName string
 
 func main() {
-	flag.StringVar(&testName, "t", "", "Test can be: tear_title, msaa, reopen, timeout, monitor")
+	flag.StringVar(&testName, "t", "", "Test can be: -tearing, -window, -cursor, -threadds, -msaa, -reopen, -timeout, -monitor, -opacity")
 	flag.Parse()
 	switch testName {
 	case "title":

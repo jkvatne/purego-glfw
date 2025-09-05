@@ -321,8 +321,6 @@ func glfwMakeContextCurrent(window *_GLFWwindow) error {
 
 func glfwGetCurrentContext() *Window {
 	return getCurrentWindow()
-	// This fails with -race enabled
-	// return (*Window)(unsafe.Pointer(p))
 }
 
 func glfwSwapBuffers(window *_GLFWwindow) {

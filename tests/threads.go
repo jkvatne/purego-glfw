@@ -44,9 +44,9 @@ func thread_main(self *Thread) {
 	runtime.LockOSThread()
 	self.window.MakeContextCurrent()
 	glfw.SwapInterval(20)
-	fmt.Printf("ThreadId=%d\n", glfw.GetCurrentThreadId())
 	for running.Load() {
 		v := float32(math.Abs(math.Sin(glfw.GetTime() * 2)))
+		// The Thread struct is shared and must be protected by a mutex.
 		m.Lock()
 		gl.ClearColor(self.r*v, self.g*v, self.b*v, 1)
 		gl.Clear(gl.COLOR_BUFFER_BIT)
@@ -98,6 +98,7 @@ func threads() {
 	count := len(threadDefs)
 	runtime.LockOSThread()
 	runtime.GOMAXPROCS(1)
+	fmt.Printf("\nTesting drawing windows in different goroutines\n")
 	fmt.Printf("Window count %d\n", count)
 	fmt.Printf("CPU count=%d\n", runtime.NumCPU())
 	fmt.Printf("ProcCount=%d\n", runtime.GOMAXPROCS(0))
@@ -141,10 +142,12 @@ func threads() {
 	}
 	running.Store(false)
 	time.Sleep(time.Millisecond * 100)
+	fmt.Printf("Thread IDs\n")
 	for i := 0; i < count; i++ {
 		m.Lock()
 		fmt.Printf("%7d", threadDefs[i].id)
 		m.Unlock()
 		threadDefs[i].window.Destroy()
 	}
+	fmt.Printf("\n")
 }

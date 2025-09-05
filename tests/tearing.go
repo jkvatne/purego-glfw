@@ -11,8 +11,8 @@ import (
 	"runtime"
 	"unsafe"
 
-	"github.com/neclepsio/gl/all-core/gl"
 	glfw "github.com/jkvatne/purego-glfw"
+	"github.com/neclepsio/gl/all-core/gl"
 )
 
 var vertices3 = [8]float32{-0.25, -1.0, 0.25, -1.0, 0.25, 1.0, -0.25, 1.0}
@@ -29,7 +29,7 @@ func update_window_title(window *glfw.Window) {
 	} else {
 		tear_title = fmt.Sprintf("Tearing detector (interval %d, %0.1f Hz)", swap_interval, frame_rate)
 	}
-	window.SetTitle(tear_title)
+	_ = window.SetTitle(tear_title)
 }
 
 func set_swap_interval(window *glfw.Window, interval int) {

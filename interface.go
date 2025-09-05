@@ -387,10 +387,8 @@ func (w *Window) SetShouldClose(value bool) {
 }
 
 // SetTitle sets the window title, encoded as UTF-8, of the window.
-//
-// This function may only be called from the main thread.
-func (w *Window) SetTitle(title string) {
-	glfwSetTitle(w, title)
+func (w *Window) SetTitle(title string) error {
+	return glfwSetTitle(w, title)
 
 }
 

@@ -1,3 +1,6 @@
+// This file contains the window system calls
+// The entry points are found in dwmapi.dll, gdi32.dll, ntdll.dll, shcore.dll and kernel32.dll
+// Most functions panic on error, except when an error is expected during normal operation.
 package glfw
 
 import (
@@ -54,9 +57,9 @@ var (
 	user32                         = windows.NewLazySystemDLL("user32.dll")
 	_SetProcessDpiAwarenessContext = user32.NewProc("SetProcessDpiAwarenessContext")
 	_EnumDisplayMonitors           = user32.NewProc("EnumDisplayMonitors")
-	_EnumDisplayDevices            = user32.NewProc("EnumDisplayDevicesW")
+	_EnumDisplayDevicesW           = user32.NewProc("EnumDisplayDevicesW")
 	_EnumDisplaySettingsEx         = user32.NewProc("EnumDisplaySettingsExW")
-	_GetMonitorInfo                = user32.NewProc("GetMonitorInfoW")
+	_GetMonitorInfoW               = user32.NewProc("GetMonitorInfoW")
 	_AdjustWindowRectEx            = user32.NewProc("AdjustWindowRectEx")
 	_CreateWindowEx                = user32.NewProc("CreateWindowExW")
 	_DefWindowProc                 = user32.NewProc("DefWindowProcW")
@@ -69,7 +72,7 @@ var (
 	_GetKeyState                   = user32.NewProc("GetKeyState")
 	_LoadImageW                    = user32.NewProc("LoadImageW")
 	_MonitorFromWindow             = user32.NewProc("MonitorFromWindow")
-	_PeekMessage                   = user32.NewProc("PeekMessageW")
+	_PeekMessageW                  = user32.NewProc("PeekMessageW")
 	_WaitMessage                   = user32.NewProc("WaitMessage")
 	_RegisterClassExW              = user32.NewProc("RegisterClassExW")
 	_ReleaseDC                     = user32.NewProc("ReleaseDC")
@@ -81,15 +84,16 @@ var (
 	_SetProcessDPIAware            = user32.NewProc("SetProcessDPIAware")
 	_SetWindowPos                  = user32.NewProc("SetWindowPos")
 	_TranslateMessage              = user32.NewProc("TranslateMessage")
-	_UnregisterClass               = user32.NewProc("UnregisterClassW")
+	_UnregisterClassW              = user32.NewProc("UnregisterClassW")
 	_BringWindowToTop              = user32.NewProc("BringWindowToTop")
 	_GetCursorPos                  = user32.NewProc("GetCursorPos")
 	_SystemParametersInfoW         = user32.NewProc("SystemParametersInfoW")
 	_GetWindowLongW                = user32.NewProc("GetWindowLongW")
 	_SetWindowLongW                = user32.NewProc("SetWindowLongW")
 	_GetActiveWindow               = user32.NewProc("GetActiveWindow")
-	_GetPropA                      = user32.NewProc("GetPropA")
-	_SetPropA                      = user32.NewProc("SetPropA")
+	_GetPropW                      = user32.NewProc("GetPropW")
+	_SetPropW                      = user32.NewProc("SetPropW")
+	_RemovePropW                   = user32.NewProc("RemovePropW")
 	_MsgWaitForMultipleObjects     = user32.NewProc("MsgWaitForMultipleObjects")
 	_GetSystemMetrics              = user32.NewProc("GetSystemMetrics")
 	_CreateIcon                    = user32.NewProc("CreateIcon")
@@ -132,84 +136,107 @@ var (
 	_GetDpiForMonitor = shcore.NewProc("GetDpiForMonitor")
 )
 
+// GetActiveWindow returns value is the handle to the active window attached to the calling thread's message queue.
+// i.e. the window having focus. It can return 0.
 func GetActiveWindow() syscall.Handle {
-	r, _, err := _GetActiveWindow.Call()
-	if !errors.Is(err, syscall.Errno(0)) {
-		panic("GetActiveWindow failed, " + err.Error())
-	}
+	r, _, _ := _GetActiveWindow.Call()
 	return syscall.Handle(r)
 }
 
+// GetProp retrieves a data handle from the property list of the specified window
+// It can return nil.
 func GetProp(handle syscall.Handle, key string) uintptr {
-	// widestr, _ := syscall.UTF16PtrFromString(key)
-	cstr, _ := windows.BytePtrFromString(key)
-	r, _, err := _GetPropA.Call(uintptr(handle), uintptr(unsafe.Pointer(cstr)))
-	if !errors.Is(err, syscall.Errno(0)) {
-		// panic("GetProp failed, " + err.Error())
-	}
+	w, _ := syscall.UTF16PtrFromString(key)
+	r, _, _ := _GetPropW.Call(uintptr(handle), uintptr(unsafe.Pointer(w)))
 	return r
 }
 
+// SetProp adds a new entry or changes an existing entry in the property list of the specified window.
+// It will panic on error, but it normaly never fails.
 func SetProp(handle syscall.Handle, key string, data uintptr) {
-	// widestr, _ := syscall.UTF16PtrFromString(key)
-	cstr, _ := windows.BytePtrFromString(key)
-	_, _, err := _SetPropA.Call(uintptr(handle), uintptr(unsafe.Pointer(cstr)), data)
+	w, _ := syscall.UTF16PtrFromString(key)
+	_, _, err := _SetPropW.Call(uintptr(handle), uintptr(unsafe.Pointer(w)), data)
 	if !errors.Is(err, syscall.Errno(0)) {
 		panic("SetProp failed, " + err.Error())
 	}
 }
 
+// RemoveProp removes an entry from the property list of the specified window.
+// Errors are ignored
+func RemoveProp(handle syscall.Handle, key string) {
+	widestr, _ := syscall.UTF16PtrFromString(key)
+	_, _, _ = _RemovePropW.Call(uintptr(handle), uintptr(unsafe.Pointer(widestr)))
+}
+
+// GetKeyState returns the state of a keyboard key.
+// Bit 0 is 1 when pressed. Bit 15 is 1 when toggled
 func GetKeyState(nVirtKey Key) uint16 {
 	c, _, _ := _GetKeyState.Call(uintptr(nVirtKey))
 	return uint16(c)
 }
 
-func GetModuleHandle() (syscall.Handle, error) {
+// GetModuleHandle returns the handle for the exe file itself.
+// It should normally never fail, so it panics on errors.
+func GetModuleHandle() syscall.Handle {
 	h, _, err := _GetModuleHandleW.Call(uintptr(0))
 	if h == 0 {
-		return 0, fmt.Errorf("GetModuleHandleW failed: %v", err)
+		panic("LoadImage GetModuleHandle: %v" + err.Error())
 	}
-	return syscall.Handle(h), nil
+	return syscall.Handle(h)
 }
 
+// RegisterClassEx registers a window class for subsequent use in calls to the CreateWindow
+// It will panic on errors, because the error makes window handling impossible.
 func RegisterClassEx(cls *WndClassEx) (uint16, error) {
 	a, _, err := _RegisterClassExW.Call(uintptr(unsafe.Pointer(cls)))
-	if a == 0 {
-		return 0, fmt.Errorf("RegisterClassExW failed: %v", err)
+	if a == 0 || !errors.Is(err, syscall.Errno(0)) {
+		panic("RegisterClassExW failed: " + err.Error())
 	}
 	return uint16(a), nil
 }
 
+// LoadImage loads an icon, cursor, animated cursor, or bitmap
+// It returns an error if loading fails.
 func LoadImage(hInst syscall.Handle, res uintptr, typ uint32, cx, cy int, fuload uint32) (syscall.Handle, error) {
 	h, _, err := _LoadImageW.Call(uintptr(hInst), res, uintptr(typ), uintptr(cx), uintptr(cy), uintptr(fuload))
-	if h == 0 {
+	if h == 0 || !errors.Is(err, syscall.Errno(0)) {
 		return 0, fmt.Errorf("LoadImage failed: %v", err)
 	}
 	return syscall.Handle(h), nil
 }
 
+// PeekMessage looks at the message queue.Returns 0 if no message was found.
 func PeekMessage(m *Msg, hwnd syscall.Handle, wMsgFilterMin, wMsgFilterMax, wRemoveMsg uint32) bool {
-	r, _, _ := _PeekMessage.Call(uintptr(unsafe.Pointer(m)), uintptr(hwnd), uintptr(wMsgFilterMin), uintptr(wMsgFilterMax), uintptr(wRemoveMsg))
+	r, _, _ := _PeekMessageW.Call(uintptr(unsafe.Pointer(m)), uintptr(hwnd), uintptr(wMsgFilterMin), uintptr(wMsgFilterMax), uintptr(wRemoveMsg))
 	return r != 0
 }
 
+// TranslateMessage translates virtual-key messages into character messages
 func TranslateMessage(m *Msg) {
 	_, _, _ = _TranslateMessage.Call(uintptr(unsafe.Pointer(m)))
 }
 
+// DispatchMessage adds message to queue.
 func DispatchMessage(m *Msg) {
 	_, _, _ = _DispatchMessage.Call(uintptr(unsafe.Pointer(m)))
 }
 
+// WaitMessage blocks thread execution until the thread needs to process a new message
+// It will panic on errors.
 func WaitMessage() {
 	_, _, err := _WaitMessage.Call()
 	if !errors.Is(err, syscall.Errno(0)) {
-		// panic("WaitMessage failed, " + err.Error())
-		fmt.Printf("WaitMessage failed: %v", err)
+		panic("WaitMessage failed, " + err.Error())
 	}
 }
 
-func CreateWindowEx(dwExStyle uint32, lpClassName uint16, lpWindowName string, dwStyle uint32, x, y, w, h int32, hWndParent, hMenu, hInstance syscall.Handle, lpParam uintptr) (syscall.Handle, error) {
+func PostMessageW(hWnd syscall.Handle, msg uint32, wParam, lParam uintptr) {
+	_, _, _ = _PostMessageW.Call(uintptr(hWnd), uintptr(msg), uintptr(wParam), uintptr(lParam))
+}
+
+// CreateWindowEx will create a new window. It returns an error if creation failed
+func CreateWindowEx(dwExStyle uint32, lpClassName uint16, lpWindowName string, dwStyle uint32,
+	x, y, w, h int32, hWndParent, hMenu, hInstance syscall.Handle, lpParam uintptr) (syscall.Handle, error) {
 	wname, _ := syscall.UTF16PtrFromString(lpWindowName)
 	hwnd, _, err := _CreateWindowEx.Call(
 		uintptr(dwExStyle),
@@ -228,11 +255,19 @@ func CreateWindowEx(dwExStyle uint32, lpClassName uint16, lpWindowName string, d
 	return syscall.Handle(hwnd), nil
 }
 
-func SetWindowTextW(window syscall.Handle, title string) {
+// SetWindowText will set the text on the top of the window border
+// It returns an error if this was not possible (almost never).
+func SetWindowText(window syscall.Handle, title string) error {
 	wname, _ := syscall.UTF16PtrFromString(title)
-	_, _, _ = _SetWindowTextW.Call(uintptr(window), uintptr(unsafe.Pointer(wname)))
+	_, _, err := _SetWindowTextW.Call(uintptr(window), uintptr(unsafe.Pointer(wname)))
+	if !errors.Is(err, syscall.Errno(0)) {
+		return fmt.Errorf("SetWindowText failed: %v", err)
+	}
+	return nil
 }
 
+// DestroyWindow will delete the window. It will panic on errors
+// except for "invalid window handle".
 func DestroyWindow(h syscall.Handle) {
 	_, _, err := _DestroyWindow.Call(uintptr(h))
 	if !errors.Is(err, syscall.Errno(0)) {
@@ -243,13 +278,13 @@ func DestroyWindow(h syscall.Handle) {
 	}
 }
 
+// UnregisterClass will unregister the class
+// Errrors are ignored
 func UnregisterClass(class uint16, instance syscall.Handle) {
-	_, _, err := _UnregisterClass.Call(uintptr(class), uintptr(instance))
-	if !errors.Is(err, syscall.Errno(0)) {
-		panic("UnregisterClass failed, " + err.Error())
-	}
+	_, _, _ = _UnregisterClassW.Call(uintptr(class), uintptr(instance))
 }
 
+// IsWindows10Version1607OrGreater is true for version 10.0.14393 or newer
 func IsWindows10Version1607OrGreater() bool {
 	var osvi _OSVERSIONINFOEXW
 	osvi.dwOSVersionInfoSize = uint32(unsafe.Sizeof(osvi))
@@ -257,13 +292,12 @@ func IsWindows10Version1607OrGreater() bool {
 	osvi.dwMinorVersion = 0
 	osvi.dwBuildNumber = 14393
 	var mask uint32 = VER_MAJORVERSION | VER_MINORVERSION | VER_BUILDNUMBER
-	r, _, err := _RtlVerifyVersionInfo.Call(uintptr(unsafe.Pointer(&osvi)), uintptr(mask), uintptr(0x80000000000000db))
-	if !errors.Is(err, syscall.Errno(0)) {
-		panic("SetProcessDpiAwarenessContext failed, " + err.Error())
-	}
+	r, _, _ := _RtlVerifyVersionInfo.Call(uintptr(unsafe.Pointer(&osvi)), uintptr(mask), uintptr(0x80000000000000db))
 	return r == 0
 }
 
+// IsWindows10Version1703OrGreater is true for version 10.0.15063 or newer
+// It will panic on errors.
 func IsWindows10Version1703OrGreater() bool {
 	var osvi _OSVERSIONINFOEXW
 	osvi.dwOSVersionInfoSize = uint32(unsafe.Sizeof(osvi))
@@ -278,6 +312,8 @@ func IsWindows10Version1703OrGreater() bool {
 	return r == 0
 }
 
+// IsWindows8Point1OrGreater is true for version 8.10 or newer
+// It will panic on errors.
 func IsWindows8Point1OrGreater() bool {
 	var osvi _OSVERSIONINFOEXW
 	osvi.dwOSVersionInfoSize = uint32(unsafe.Sizeof(osvi))
@@ -287,43 +323,48 @@ func IsWindows8Point1OrGreater() bool {
 	var mask uint32 = VER_MAJORVERSION | VER_MINORVERSION | VER_SERVICEPACKMAJOR
 	r, _, err := _RtlVerifyVersionInfo.Call(uintptr(unsafe.Pointer(&osvi)), uintptr(mask), uintptr(0x800000000001801b))
 	if !errors.Is(err, syscall.Errno(0)) {
-		panic("SetProcessDpiAwarenessContext failed, " + err.Error())
+		panic("IsWindows8Point1OrGreater failed, " + err.Error())
 	}
 	return r == 0
 }
 
+// SetProcessDpiAwareness will make the window dpi aware
 func SetProcessDpiAwareness() {
+	var err error
 	if IsWindows10Version1703OrGreater() {
-		_, _, err := _SetProcessDpiAwarenessContext.Call(uintptr(DPI_AWARENESS_CONTEXT_PER_MONITOR_AWARE_V2))
-		// We will getr error 5=Access denied if the awareness is already set. So ignore this error.
-		if !errors.Is(err, syscall.Errno(0)) && !errors.Is(err, syscall.Errno(5)) {
-			panic("SetProcessDpiAwarenessContext failed, " + err.Error())
-		}
+		_, _, err = _SetProcessDpiAwarenessContext.Call(uintptr(DPI_AWARENESS_CONTEXT_PER_MONITOR_AWARE_V2))
 	} else if IsWindows8Point1OrGreater() {
-		_, _, err := _SetProcessDpiAwarenessContext.Call(uintptr(PROCESS_PER_MONITOR_DPI_AWARE))
-		if !errors.Is(err, syscall.Errno(0)) {
-			panic("SetProcessDpiAwarenessContext failed, " + err.Error())
-		}
-	} else if isWindowsVistaOrGreater() {
-		_, _, _ = _SetProcessDPIAware.Call()
+		_, _, err = _SetProcessDpiAwarenessContext.Call(uintptr(PROCESS_PER_MONITOR_DPI_AWARE))
+	} else {
+		_, _, err = _SetProcessDPIAware.Call()
+	}
+	// We will get error 5=Access denied if the awareness is already set. So ignore this error.
+	if !errors.Is(err, syscall.Errno(0)) && !errors.Is(err, syscall.Errno(5)) {
+		panic("SetProcessDpiAwarenessContext failed, " + err.Error())
 	}
 }
 
+// SetWindowPos will move the window to a new position
+// Errors are ignored since this function is optional
 func SetWindowPos(hwnd syscall.Handle, after syscall.Handle, x, y, w, h int32, flags uint32) {
 	_, _, err := _SetWindowPos.Call(uintptr(hwnd), uintptr(after), uintptr(x), uintptr(y), uintptr(w), uintptr(h), uintptr(flags))
 	if err != nil && !errors.Is(err, syscall.Errno(0)) {
-		panic("SetWindowPos failed, " + err.Error())
+		// fmt.Println("SetWindowPos failed, " + err.Error())
 	}
 }
 
+// GetWindowLongW retrieves information about the specified window
+// Returns 0 on error
 func GetWindowLongW(hWnd syscall.Handle, index int32) uint32 {
 	r1, _, err := _GetWindowLongW.Call(uintptr(hWnd), uintptr(index))
 	if err != nil && !errors.Is(err, syscall.Errno(0)) {
-		panic("GetWindowLongW failed, " + err.Error())
+		return 0
 	}
 	return uint32(r1)
 }
 
+// SetWindowLongW sets information for a window, normally the style.
+// It will panic on errors, because such errors are non-recoverable.
 func SetWindowLongW(hWnd syscall.Handle, index int, newValue uint32) {
 	_, _, err := _SetWindowLongW.Call(uintptr(hWnd), uintptr(index), uintptr(newValue))
 	if err != nil && !errors.Is(err, syscall.Errno(0)) {
@@ -331,24 +372,28 @@ func SetWindowLongW(hWnd syscall.Handle, index int, newValue uint32) {
 	}
 }
 
-func EnumDisplayDevices(device uintptr, no int, adapter *DISPLAY_DEVICEW, flags uint32) bool {
-	ret, _, err := _EnumDisplayDevices.Call(device, uintptr(no), uintptr(unsafe.Pointer(adapter)), uintptr(flags))
-	if !errors.Is(err, syscall.Errno(0)) {
-		panic("EnumDisplayDevices failed")
+// EnumDisplayDevices will enumerate all monitors connected to the display device
+func EnumDisplayDevices(device uintptr, no int, adapter *DISPLAY_DEVICEW, flags uint32) error {
+	ret, _, err := _EnumDisplayDevicesW.Call(device, uintptr(no), uintptr(unsafe.Pointer(adapter)), uintptr(flags))
+	if ret == 0 || !errors.Is(err, syscall.Errno(0)) {
+		return fmt.Errorf("EnumDisplayDevices failed, " + err.Error())
 	}
-	return ret == 1
+	return nil
 }
 
+// GetMonitorInfo for given monitor
+// Will panic if the handle is invalid
 func GetMonitorInfo(hMonitor HMONITOR) *MONITORINFO {
 	lmpi := MONITORINFO{}
 	lmpi.CbSize = uint32(unsafe.Sizeof(lmpi))
-	_, _, err := _GetMonitorInfo.Call(uintptr(hMonitor), uintptr(unsafe.Pointer(&lmpi)))
+	_, _, err := _GetMonitorInfoW.Call(uintptr(hMonitor), uintptr(unsafe.Pointer(&lmpi)))
 	if !errors.Is(err, syscall.Errno(0)) {
 		panic("GetMonitorInfo failed, " + err.Error())
 	}
 	return &lmpi
 }
 
+// GetDeviceCaps
 func GetDeviceCaps(dc HDC, flags int) int {
 	r1, _, err := _GetDeviceCaps.Call(uintptr(unsafe.Pointer(dc)), uintptr(flags))
 	if err != nil && !errors.Is(err, syscall.Errno(0)) {
@@ -376,10 +421,6 @@ func EnumDisplayMonitors(hdc HDC, clip *RECT, lpfnEnum uintptr, data uintptr) er
 		return fmt.Errorf("w32.EnumDisplayMonitors returned FALSE")
 	}
 	return nil
-}
-
-func isWindowsVistaOrGreater() bool {
-	return true
 }
 
 func AdjustWindowRectEx(rect *RECT, style uint32, menu int, exStyle uint32) {
@@ -446,31 +487,6 @@ func glfwPlatformSetTls(tls *_GLFWtls, value uintptr) {
 		panic("_glfwPlatformGetTls failed: tls not allocated")
 	}
 	TlsSetValue(tls.index, value)
-}
-
-func glfwPlatformGetTls(tls *_GLFWtls) uintptr {
-	if !tls.allocated {
-		panic("_glfwPlatformGetTls failed: tls not allocated")
-	}
-	return TlsGetValue(tls.index)
-}
-
-func glfwPlatformDestroyTls(tls *_GLFWtls) {
-	if tls.allocated {
-		TlsFree(tls.index)
-	}
-}
-
-func glfwPlatformCreateTls(tls *_GLFWtls) error {
-	if tls.allocated {
-		return nil // Tls is already allocated
-	}
-	tls.index = TlsAlloc()
-	if tls.index == 4294967295 { // TLS_OUT_OF_INDEXES
-		return fmt.Errorf("glfwPlatformCreateTls: Failed to allocate TLS index")
-	}
-	tls.allocated = true
-	return nil
 }
 
 func MsgWaitForMultipleObjects(nCount uint32, pHandles *HANDLE, fWaitAll uint32, dwMilliseconds uint32, dwWakeMask uint32) uint32 {
@@ -679,10 +695,6 @@ func LoadCursor(cursorID uint16) syscall.Handle {
 	return syscall.Handle(h)
 }
 
-func PostMessageW(hWnd syscall.Handle, msg uint32, wParam, lParam uintptr) {
-	_, _, _ = _PostMessageW.Call(uintptr(hWnd), uintptr(msg), uintptr(wParam), uintptr(lParam))
-}
-
 func ChangeDisplaySettingsEx(name *uint16, mode *DEVMODEW, hWnd syscall.Handle, flags uint32, lParam uintptr) int32 {
 	r, _, err := _ChangeDisplaySettingsEx.Call(uintptr(unsafe.Pointer(name)), uintptr(unsafe.Pointer(mode)), uintptr(hWnd), uintptr(flags), lParam)
 	if !errors.Is(err, syscall.Errno(0)) {
@@ -786,33 +798,4 @@ func SetThreadExecutionState(state int) {
 	if !errors.Is(err, syscall.Errno(0)) {
 		panic("SetThreadExecutionState failed, " + err.Error())
 	}
-}
-
-func OpenClipboard() {
-
-}
-
-const (
-	cFmtBitmap      = 2 // Win+PrintScreen
-	cFmtUnicodeText = 13
-	cFmtDIBV5       = 17
-	// Screenshot taken from special shortcut is in different format (why??), see:
-	// https://jpsoft.com/forums/threads/detecting-clipboard-format.5225/
-	cFmtDataObject = 49161 // Shift+Win+s, returned from enumClipboardFormats
-	gmemMoveable   = 0x0002
-)
-
-func GetClipboardData() {
-
-}
-func CloseClipboard() {
-
-}
-
-func EmptyClipboard() {
-
-}
-
-func SetClipboardData() {
-
 }

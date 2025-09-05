@@ -85,11 +85,9 @@ var (
 )
 
 func wglGetProcAddress(name string) uintptr {
-	cname, err := windows.BytePtrFromString(name)
-	if err != nil {
-		panic(err)
-	}
-	r, _, err := _glfw.wgl.wglGetProcAddress.Call(uintptr(unsafe.Pointer(cname)))
+	var b [64]byte
+	copy(b[:], name)
+	r, _, err := _glfw.wgl.wglGetProcAddress.Call(uintptr(unsafe.Pointer(&b)))
 	if !errors.Is(err, syscall.Errno(0)) {
 		panic("wglGetProcAddr " + err.Error() + "\n")
 	}
