@@ -6,8 +6,8 @@ import (
 	"runtime"
 	"time"
 
-	"github.com/neclepsio/gl/all-core/gl"
 	glfw "github.com/jkvatne/purego-glfw"
+	"github.com/neclepsio/gl/all-core/gl"
 )
 
 func key_callback_window(window *glfw.Window, key glfw.Key, scancode int, action glfw.Action, mods glfw.ModifierKey) {
@@ -68,7 +68,12 @@ func windowinfo() {
 	}
 	window.SetKeyCallback(key_callback_window)
 	window.MakeContextCurrent()
-	gl.Init()
+	err = gl.Init()
+	if err != nil {
+		glfw.Terminate()
+		fmt.Printf("Could not init gl: %v\n", err)
+		os.Exit(2)
+	}
 	glfw.SwapInterval(1)
 	glfw.SetTime(0)
 	for !window.ShouldClose() && glfw.GetTime() < 3.0 {

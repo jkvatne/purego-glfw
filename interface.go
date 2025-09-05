@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"image"
 	"image/draw"
+	"sync/atomic"
 	"syscall"
 	"time"
 	"unsafe"
@@ -621,19 +622,20 @@ func getTime() float64 {
 	return float64(time.Now().UnixNano()) / 1.0e9
 }
 
-var startTime = float64(time.Now().UnixNano()) / 1.0e9
+var startTime atomic.Uint64
 
 func GetTime() float64 {
-	return getTime() - startTime
+	return getTime() - float64(startTime.Load())
 }
 
 func SetTime(t float64) {
-	startTime = getTime() - t
+	startTime.Store(uint64(getTime() - t))
 }
 
 // Init is glfwInit(void)
 func Init() error {
 	// Repeated calls do nothing
+	SetTime(0)
 	if _glfw.initialized {
 		return nil
 	}

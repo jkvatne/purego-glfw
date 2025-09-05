@@ -33,13 +33,13 @@ func main() {
 	case "tearing":
 		tearing()
 	default:
-		opacity()
 		title()
+		threads()
+		opacity()
 		msaa()
 		timeout()
 		reopen()
 		icon()
-		threads()
 		windowinfo()
 		monitor()
 		cursor()

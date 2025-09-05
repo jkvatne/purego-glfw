@@ -40,7 +40,6 @@ func opacity() {
 		glfw.PollEvents()
 		window.SetOpacity(max(0.0, 1.0-glfw.GetTime()/FadeTime))
 		time.Sleep(time.Millisecond * 100)
-		fmt.Printf("Opacity=%0.0f%%\n", window.GetOpacity()*100)
 	}
 	window.Destroy()
 	glfw.Terminate()

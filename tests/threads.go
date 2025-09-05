@@ -6,13 +6,14 @@ import (
 	"os"
 	"runtime"
 	"sync"
+	"sync/atomic"
 	"time"
 
 	glfw "github.com/jkvatne/purego-glfw"
 	"github.com/neclepsio/gl/all-core/gl"
 )
 
-var running bool
+var running atomic.Bool
 
 type Thread struct {
 	window  *glfw.Window
@@ -44,12 +45,12 @@ func thread_main(self *Thread) {
 	self.window.MakeContextCurrent()
 	glfw.SwapInterval(20)
 	fmt.Printf("ThreadId=%d\n", glfw.GetCurrentThreadId())
-	for running {
+	for running.Load() {
 		v := float32(math.Abs(math.Sin(glfw.GetTime() * 2)))
-		gl.ClearColor(self.r*v, self.g*v, self.b*v, 0)
+		m.Lock()
+		gl.ClearColor(self.r*v, self.g*v, self.b*v, 1)
 		gl.Clear(gl.COLOR_BUFFER_BIT)
 		self.window.SwapBuffers()
-		m.Lock()
 		self.id = glfw.GetCurrentThreadId()
 		m.Unlock()
 		time.Sleep(time.Millisecond * 10)
@@ -123,27 +124,27 @@ func threads() {
 		fmt.Printf("gl Init error, " + err.Error())
 	}
 	glfw.DetachCurrentContext()
-	running = true
+	running.Store(true)
 	for i := 0; i < count; i++ {
 		go thread_main(&threadDefs[i])
 	}
 
 	glfw.SetTime(0)
-	for running && glfw.GetTime() < 4.0 {
+	for running.Load() && glfw.GetTime() < 4.0 {
 		glfw.PollEvents()
 		for i := 0; i < count; i++ {
-			if threadDefs[i].window.ShouldClose() {
-				running = false
+			if threadDefs[i].window.ShouldClose() || glfw.GetTime() > 4.0 {
+				break
 			}
-			// RACE:
-			m.Lock()
-			fmt.Printf("%7d", threadDefs[i].id)
-			m.Unlock()
 		}
-		fmt.Printf("\n")
 		time.Sleep(time.Millisecond * 1000)
 	}
+	running.Store(false)
+	time.Sleep(time.Millisecond * 100)
 	for i := 0; i < count; i++ {
+		m.Lock()
+		fmt.Printf("%7d", threadDefs[i].id)
+		m.Unlock()
 		threadDefs[i].window.Destroy()
 	}
 }
