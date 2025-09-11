@@ -31,13 +31,13 @@ func title() {
 	}
 
 	// Test clipboard
-	err = glfw.SetClipboardString("Test")
+	glfw.SetClipboardString("Test")
 	if err != nil {
 		fmt.Printf("Could not set clipboard: %v\n", err)
 	} else {
 		fmt.Printf("Clipboard set to Test\n")
 	}
-	s, err := glfw.GetClipboardString()
+	s := glfw.GetClipboardString()
 	if err != nil {
 		fmt.Printf("Could not gset clipboard: %v\n", err)
 	} else {

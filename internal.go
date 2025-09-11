@@ -341,7 +341,6 @@ func glfwInputKey(window *_GLFWwindow, key Key, scancode int, action Action, mod
 }
 
 // Apply disabled cursor mode to a focused window
-//
 func disableCursor(window *Window) {
 	_glfw.win32.disabledCursorWindow = window
 	_glfw.win32.restoreCursorPosX, _glfw.win32.restoreCursorPosY = window.GetCursorPos()
@@ -356,7 +355,6 @@ func disableCursor(window *Window) {
 }
 
 // Exit disabled cursor mode for the specified window
-//
 func enableCursor(window *Window) {
 	if window.rawMouseMotion != 0 {
 		disableRawMouseMotion(window)
@@ -772,6 +770,9 @@ func updateCursorImage(window *Window) {
 }
 
 func glfwSetCursor(window *_GLFWwindow, cursor *Cursor) {
+	if window.cursor == cursor {
+		return
+	}
 	window.cursor = cursor
 	if cursorInContentArea(window) {
 		if window.cursorMode == CursorNormal || window.cursorMode == CursorCaptured {
@@ -1004,7 +1005,6 @@ func glfwChooseVideoMode(monitor *Monitor, desired *GLFWvidmode) *GLFWvidmode {
 }
 
 // Change the current video mode
-//
 func glfwSetVideoMode(monitor *Monitor, desired *GLFWvidmode) error {
 	current := monitor.GetVideoMode()
 	best := glfwChooseVideoMode(monitor, desired)
@@ -1064,7 +1064,6 @@ func fitToMonitor(window *Window) {
 }
 
 // Make the specified window and its video mode active on its monitor
-//
 func acquireMonitor(window *Window) {
 	if _glfw.win32.acquiredMonitorCount > 0 {
 		SetThreadExecutionState(_ES_CONTINUOUS | _ES_DISPLAY_REQUIRED)
@@ -1114,7 +1113,6 @@ func glfwSetPos(w *Window, xPos, yPos int32) {
 }
 
 // Returns the image whose area most closely matches the desired one
-//
 func chooseImage(count int, images []*GLFWimage, width int32, height int32) *GLFWimage {
 	var leastDiff = int32(_INT_MAX)
 	var closest int
@@ -1130,7 +1128,6 @@ func chooseImage(count int, images []*GLFWimage, width int32, height int32) *GLF
 }
 
 // Creates an RGBA icon or cursor
-//
 func createIcon(image *GLFWimage, xhot, yhot int32, icon bool) syscall.Handle {
 	var handle syscall.Handle
 	var bi BITMAPV5HEADER
@@ -1240,7 +1237,6 @@ func captureCursor(window *Window) {
 }
 
 // Disabled clip cursor
-//
 func releaseCursor() {
 	ClipCursor(nil)
 	_glfw.win32.capturedCursorWindow = nil
@@ -1487,8 +1483,8 @@ func glfwDetachCurrentContext() {
 	_ = makeContextCurrentWGL(nil)
 }
 
-func glfwPostEmptyEvent(w *Window) {
-	PostMessageW(w.Win32.handle, 0, 0, 0)
+func glfwPostEmptyEvent() {
+	PostMessageW(_glfw.win32.helperWindowHandle, 0, 0, 0)
 }
 
 func glfwWaitEventsTimeout(timeout float64) {
@@ -1756,6 +1752,9 @@ func glfwDestroyWindow(w *Window) {
 }
 
 func glfwTerminate() {
+	if !_glfw.initialized {
+		return
+	}
 	_glfw.initialized = false
 	if _glfw.win32.deviceNotificationHandle != 0 {
 		UnregisterDeviceNotification(_glfw.win32.deviceNotificationHandle)
@@ -2366,7 +2365,6 @@ func splitBpp(bitsPerPel int32) (int32, int32, int32) {
 }
 
 // Lexically compare video modes, used by qsort
-//
 func glfwCompareVideoModes(fp, sp *GLFWvidmode) int32 {
 	fbpp := fp.RedBits + fp.GreenBits + fp.BlueBits
 	sbpp := sp.RedBits + sp.GreenBits + sp.BlueBits

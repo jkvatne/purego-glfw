@@ -13,7 +13,7 @@ type FocusCallback func(w *Window, focused bool)
 type MaximizeCallback func(w *Window, maximized bool)
 type ScrollCallback func(w *Window, xoff float64, yoff float64)
 type MouseButtonCallback func(w *Window, button MouseButton, action Action, mods ModifierKey)
-type WindowCloseCallback func(w *Window)
+type CloseCallback func(w *Window)
 type ErrorCallbackFunc func(e int, description string)
 
 // SetCursorPosCallback sets the cursor position callback which is called
@@ -111,7 +111,7 @@ func (w *Window) SetScrollCallback(cbfun ScrollCallback) (previous ScrollCallbac
 // SetWindowCloseCallback will set set the close callback of the specified window, which is
 // called when the user attempts to close the window, for example by clicking
 // the close widget in the title bar.
-func (w *Window) SetWindowCloseCallback(cbfun WindowCloseCallback) (previous WindowCloseCallback) {
+func (w *Window) SetCloseCallback(cbfun CloseCallback) (previous CloseCallback) {
 	w.windowCloseCallback, previous = cbfun, w.windowCloseCallback
 	return previous
 }

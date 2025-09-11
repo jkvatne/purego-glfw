@@ -301,14 +301,15 @@ func WindowHintString(hint Hint, value string) {
 // GetClipboardString returns the contents of the system clipboard
 // if it contains or is convertible to a UTF-8 encoded string.
 // This function may only be called from the main thread.
-func GetClipboardString() (string, error) {
-	return glfwGetClipboardString()
+func GetClipboardString() string {
+	s, _ := glfwGetClipboardString()
+	return s
 }
 
 // SetClipboardString sets the system clipboard to the specified UTF-8 encoded string.
 // This function may only be called from the main thread.
-func SetClipboardString(str string) error {
-	return glfwSetClipboardString(str)
+func SetClipboardString(str string) {
+	_ = glfwSetClipboardString(str)
 }
 
 func CreateCursor(image image.Image, xhot int, yhot int) *Cursor {
@@ -846,6 +847,6 @@ func SwapInterval(interval int) {
 	window.context.swapInterval(interval)
 }
 
-func (w *Window) PostEmptyEvent() {
-	glfwPostEmptyEvent(w)
+func PostEmptyEvent() {
+	glfwPostEmptyEvent()
 }

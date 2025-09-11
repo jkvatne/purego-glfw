@@ -158,7 +158,7 @@ func getCurrentContext() HANDLE {
 func makeCurrent(dc HDC, handle HANDLE) bool {
 	r1, _, err := _glfw.wgl.wglMakeCurrent.Call(uintptr(dc), uintptr(handle))
 	if !errors.Is(err, syscall.Errno(0)) {
-		panic("MmakeCurrent failed, " + err.Error())
+		//OBS panic("wgl makeCurrent failed, " + err.Error())
 	}
 	return r1 != 0
 }

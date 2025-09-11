@@ -9,8 +9,8 @@ import (
 	"strings"
 	"unsafe"
 
-	"github.com/neclepsio/gl/all-core/gl"
 	glfw "github.com/jkvatne/purego-glfw"
+	"github.com/neclepsio/gl/all-core/gl"
 )
 
 // It closes and re-opens the GLFW window every five seconds, alternating
@@ -119,8 +119,7 @@ func reopen() {
 
 		gl.ClearColor(100, 100, 0, 256)
 		gl.Clear(gl.COLOR_BUFFER_BIT)
-		// window.SwapBuffers()
-		window.SetWindowCloseCallback(window_close_callback)
+		window.SetCloseCallback(window_close_callback)
 		window.SetKeyCallback(key_callback)
 		window.MakeContextCurrent()
 		gl.Init()

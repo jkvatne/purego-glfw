@@ -330,7 +330,7 @@ func cursor() {
 				animate_cursor = true
 			} else {
 				window.SetCursor(standard_cursors[index])
-				window.PostEmptyEvent()
+				glfw.PostEmptyEvent()
 			}
 		}
 		gl.Clear(gl.COLOR_BUFFER_BIT)
