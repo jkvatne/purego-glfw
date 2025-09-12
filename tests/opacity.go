@@ -83,11 +83,11 @@ func opacity() {
 	for !window.ShouldClose() && glfw.GetTime() < 4.0 {
 		gl.ClearColor(0.5, 0.5, 0, 1)
 		gl.Clear(gl.COLOR_BUFFER_BIT)
-		ww, hh := window.GetFramebufferSize()
-		gl.Viewport(0, 0, int32(ww), int32(hh))
-		var v = [3][2]float32{{100, 100}, {300, 100}, {300, 300}}
+		// ww, hh := window.GetFramebufferSize()
+		// gl.Viewport(0, 0, int32(1), int32(1))
+		var v = [3][2]float32{{0, 0}, {1, 1}, {1, 0}}
 		gl.BufferData(gl.ARRAY_BUFFER, int(unsafe.Sizeof(v)), unsafe.Pointer(&v), gl.STREAM_DRAW)
-		mvp := mat4x4_ortho(0.0, 300, 0.0, 300, 0.0, 1.0)
+		mvp := mat4x4_ortho(0.0, 1, 0.0, 1, 0.0, 1.0)
 		gl.UniformMatrix4fv(mvp_location, 1, false, &mvp[0])
 		gl.DrawArrays(gl.TRIANGLES, 0, 3)
 		window.SwapBuffers()
