@@ -8,6 +8,7 @@ import (
 	"sync"
 	"sync/atomic"
 	"time"
+	"unsafe"
 
 	glfw "github.com/jkvatne/purego-glfw"
 	"github.com/neclepsio/gl/all-core/gl"
@@ -44,12 +45,66 @@ func thread_main(self *Thread) {
 	runtime.LockOSThread()
 	self.window.MakeContextCurrent()
 	glfw.SwapInterval(20)
+
+	// Setup vertex shader
+	var vertexShaderSource = `
+		#version 110
+		attribute vec2 vPos;
+		void main()
+		{
+			gl_Position = vec4(vPos, 0.0, 1.0);	
+		}
+	` + "\x00"
+	vertex_shader := gl.CreateShader(gl.VERTEX_SHADER)
+	source, free := gl.Strs(vertexShaderSource)
+	gl.ShaderSource(vertex_shader, 1, source, nil)
+	free()
+	gl.CompileShader(vertex_shader)
+
+	// Setup fragment shader
+	var fragmentShaderSource = `
+		#version 110
+		void main()
+		{
+			gl_FragColor = vec4(0.8,0.8,0.0,1.0);
+		}
+	` + "\x00"
+	fragment_shader := gl.CreateShader(gl.FRAGMENT_SHADER)
+	source, free = gl.Strs(fragmentShaderSource)
+	gl.ShaderSource(fragment_shader, 1, source, nil)
+	free()
+	gl.CompileShader(fragment_shader)
+
+	// Create program
+	program := gl.CreateProgram()
+	gl.AttachShader(program, vertex_shader)
+	gl.AttachShader(program, fragment_shader)
+	gl.LinkProgram(program)
+
+	// Create and bind buffers
+	var vertex_buffer uint32
+	gl.GenBuffers(1, &vertex_buffer)
+	gl.BindBuffer(gl.ARRAY_BUFFER, vertex_buffer)
+
+	// Create and setup attribute (vPos)
+	vposLocation := gl.GetAttribLocation(program, gl.Str("vPos\x00"))
+	gl.EnableVertexAttribArray(uint32(vposLocation))
+	gl.VertexAttribPointer(uint32(vposLocation), 2, gl.FLOAT, false, 4, nil)
+
 	for running.Load() {
-		v := float32(math.Abs(math.Sin(glfw.GetTime() * 2)))
 		// The Thread struct is shared and must be protected by a mutex.
 		m.Lock()
-		gl.ClearColor(self.r*v, self.g*v, self.b*v, 1)
+		// Clear screen to a color unique to this window
+		a := float32(math.Abs(math.Sin(glfw.GetTime() * 2)))
+		gl.ClearColor(self.r*a, self.g*a, self.b*a, 1)
 		gl.Clear(gl.COLOR_BUFFER_BIT)
+		// Draw a triangle
+		var v = [3][2]float32{{-a, -a}, {a, a}, {a, -a}}
+		gl.UseProgram(program)
+		gl.BufferData(gl.ARRAY_BUFFER, int(unsafe.Sizeof(v)), unsafe.Pointer(&v), gl.STREAM_DRAW)
+		gl.DrawArrays(gl.TRIANGLES, 0, 3)
+		gl.UseProgram(0)
+		// Do end of frame housekeeping
 		self.window.SwapBuffers()
 		self.id = glfw.GetCurrentThreadId()
 		m.Unlock()
