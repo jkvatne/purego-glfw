@@ -158,7 +158,7 @@ func getCurrentContext() HANDLE {
 func makeCurrent(dc HDC, handle HANDLE) bool {
 	r1, _, err := _glfw.wgl.wglMakeCurrent.Call(uintptr(dc), uintptr(handle))
 	if !errors.Is(err, syscall.Errno(0)) {
-		//OBS panic("wgl makeCurrent failed, " + err.Error())
+		// OBS panic("wgl makeCurrent failed, " + err.Error())
 	}
 	return r1 != 0
 }
@@ -583,10 +583,6 @@ func choosePixelFormatWGL(window *_GLFWwindow, ctxconfig *_GLFWctxconfig, fbconf
 	}
 	pixelFormat = int32(closest.handle)
 	return pixelFormat
-}
-
-func wglMakeCurrent(g *_GLFWtls, w *_GLFWwindow) bool {
-	return false
 }
 
 func makeContextCurrentWGL(window *_GLFWwindow) error {
