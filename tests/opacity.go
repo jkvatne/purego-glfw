@@ -34,15 +34,13 @@ func opacity() {
 		os.Exit(2)
 	}
 	glfw.SwapInterval(1)
-	glfw.SetTime(0)
 
 	var vertexShaderSource = `
 		#version 110
-		uniform mat4 MVP;
 		attribute vec2 vPos;
 		void main()
 		{
-			gl_Position = MVP * vec4(vPos, 0.0, 1.0);	
+			gl_Position = vec4(vPos, 0.0, 1.0);	
 		}
 	` + "\x00"
 
@@ -53,6 +51,7 @@ func opacity() {
 			gl_FragColor = vec4(1.0);
 		}
 	` + "\x00"
+	
 	var vertex_buffer uint32
 	gl.GenBuffers(1, &vertex_buffer)
 	gl.BindBuffer(gl.ARRAY_BUFFER, vertex_buffer)
@@ -73,23 +72,21 @@ func opacity() {
 	gl.AttachShader(program, fragment_shader)
 	gl.LinkProgram(program)
 
-	mvp_location := gl.GetUniformLocation(program, gl.Str("MVP\x00"))
 	vpos_location := gl.GetAttribLocation(program, gl.Str("vPos\x00"))
-
 	gl.EnableVertexAttribArray(uint32(vpos_location))
 	gl.VertexAttribPointer(uint32(vpos_location), 2, gl.FLOAT, false, 8, nil)
-	gl.UseProgram(program)
 
+	glfw.SetTime(0)
 	for !window.ShouldClose() && glfw.GetTime() < 4.0 {
 		gl.ClearColor(0.5, 0.5, 0, 1)
 		gl.Clear(gl.COLOR_BUFFER_BIT)
-		// ww, hh := window.GetFramebufferSize()
-		// gl.Viewport(0, 0, int32(1), int32(1))
-		var v = [3][2]float32{{0, 0}, {1, 1}, {1, 0}}
+
+		var v = [3][2]float32{{-0.7, -0.7}, {0.7, 0.7}, {0.7, -0.7}}
+		gl.UseProgram(program)
 		gl.BufferData(gl.ARRAY_BUFFER, int(unsafe.Sizeof(v)), unsafe.Pointer(&v), gl.STREAM_DRAW)
-		mvp := mat4x4_ortho(0.0, 1, 0.0, 1, 0.0, 1.0)
-		gl.UniformMatrix4fv(mvp_location, 1, false, &mvp[0])
 		gl.DrawArrays(gl.TRIANGLES, 0, 3)
+		gl.UseProgram(0)
+
 		window.SwapBuffers()
 		glfw.PollEvents()
 		window.SetOpacity(min(glfw.GetTime(), max(0, min(1.0, 4.0-glfw.GetTime()))))
