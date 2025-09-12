@@ -617,18 +617,21 @@ func Terminate() {
 	glfwTerminate()
 }
 
-func getTime() float64 {
-	return float64(time.Now().UnixNano()) / 1.0e9
+func getTime() int64 {
+	return time.Now().UnixNano()
 }
 
-var startTime atomic.Uint64
+var startTime atomic.Int64
 
 func GetTime() float64 {
-	return getTime() - float64(startTime.Load())
+	t := time.Now().UnixNano()
+	t = t - startTime.Load()
+	return float64(t/1e6) / 1e3
 }
 
-func SetTime(t float64) {
-	startTime.Store(uint64(getTime() - t))
+func SetTime(newTime float64) {
+	tNow := time.Now().UnixNano()
+	startTime.Store(tNow - int64(newTime*1e9))
 }
 
 // Init is glfwInit(void)

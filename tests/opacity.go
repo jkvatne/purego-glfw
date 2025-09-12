@@ -26,6 +26,8 @@ func opacity() {
 		glfw.Terminate()
 		os.Exit(1)
 	}
+
+	// Initialize Open-gl on current window
 	window.MakeContextCurrent()
 	err = gl.Init()
 	if err != nil {
@@ -35,6 +37,7 @@ func opacity() {
 	}
 	glfw.SwapInterval(1)
 
+	// Setup vertex shader
 	var vertexShaderSource = `
 		#version 110
 		attribute vec2 vPos;
@@ -43,7 +46,13 @@ func opacity() {
 			gl_Position = vec4(vPos, 0.0, 1.0);	
 		}
 	` + "\x00"
+	vertex_shader := gl.CreateShader(gl.VERTEX_SHADER)
+	source, free := gl.Strs(vertexShaderSource)
+	gl.ShaderSource(vertex_shader, 1, source, nil)
+	free()
+	gl.CompileShader(vertex_shader)
 
+	// Setup fragment shader
 	var fragmentShaderSource = `
 		#version 110
 		void main()
@@ -51,45 +60,48 @@ func opacity() {
 			gl_FragColor = vec4(1.0);
 		}
 	` + "\x00"
-	
-	var vertex_buffer uint32
-	gl.GenBuffers(1, &vertex_buffer)
-	gl.BindBuffer(gl.ARRAY_BUFFER, vertex_buffer)
-	vertex_shader := gl.CreateShader(gl.VERTEX_SHADER)
-	csources, free := gl.Strs(vertexShaderSource)
-	gl.ShaderSource(vertex_shader, 1, csources, nil)
-	free()
-	gl.CompileShader(vertex_shader)
-
 	fragment_shader := gl.CreateShader(gl.FRAGMENT_SHADER)
-	csources, free = gl.Strs(fragmentShaderSource)
-	gl.ShaderSource(fragment_shader, 1, csources, nil)
+	source, free = gl.Strs(fragmentShaderSource)
+	gl.ShaderSource(fragment_shader, 1, source, nil)
 	free()
 	gl.CompileShader(fragment_shader)
 
+	// Create program
 	program := gl.CreateProgram()
 	gl.AttachShader(program, vertex_shader)
 	gl.AttachShader(program, fragment_shader)
 	gl.LinkProgram(program)
 
-	vpos_location := gl.GetAttribLocation(program, gl.Str("vPos\x00"))
-	gl.EnableVertexAttribArray(uint32(vpos_location))
-	gl.VertexAttribPointer(uint32(vpos_location), 2, gl.FLOAT, false, 8, nil)
+	// Create and bind buffers
+	var vertex_buffer uint32
+	gl.GenBuffers(1, &vertex_buffer)
+	gl.BindBuffer(gl.ARRAY_BUFFER, vertex_buffer)
+
+	// Create and setup attribute (vPos)
+	vposLocation := gl.GetAttribLocation(program, gl.Str("vPos\x00"))
+	gl.EnableVertexAttribArray(uint32(vposLocation))
+	gl.VertexAttribPointer(uint32(vposLocation), 2, gl.FLOAT, false, 4, nil)
 
 	glfw.SetTime(0)
 	for !window.ShouldClose() && glfw.GetTime() < 4.0 {
+		t := glfw.GetTime()
+		o := min(t/2, max(0, min(1.0, 2.0-t/2)))
+		window.SetOpacity(o)
+
+		// Clear screen to a brown color
 		gl.ClearColor(0.5, 0.5, 0, 1)
 		gl.Clear(gl.COLOR_BUFFER_BIT)
 
+		// Draw a triangle
 		var v = [3][2]float32{{-0.7, -0.7}, {0.7, 0.7}, {0.7, -0.7}}
 		gl.UseProgram(program)
 		gl.BufferData(gl.ARRAY_BUFFER, int(unsafe.Sizeof(v)), unsafe.Pointer(&v), gl.STREAM_DRAW)
 		gl.DrawArrays(gl.TRIANGLES, 0, 3)
 		gl.UseProgram(0)
 
+		// Do end of frame housekeeping
 		window.SwapBuffers()
 		glfw.PollEvents()
-		window.SetOpacity(min(glfw.GetTime(), max(0, min(1.0, 4.0-glfw.GetTime()))))
 		time.Sleep(time.Millisecond * 20)
 	}
 	window.Destroy()
