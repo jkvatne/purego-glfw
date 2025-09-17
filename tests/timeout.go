@@ -22,14 +22,18 @@ func key_callback3(window *glfw.Window, key glfw.Key, scancode int, action glfw.
 	}
 }
 
-func timeout() {
+func TimeoutMain() {
 	fmt.Printf("Test timeouts at 1 second. Window should change color each second\n")
 	runtime.LockOSThread()
-	glfw.SetErrorCallback(error_callback)
+
+	// Initialize the glfw library
 	err := glfw.Init()
 	if err != nil {
-		panic("glfw.Init error: " + err.Error())
+		panic(err.Error())
 	}
+	defer glfw.Terminate()
+	glfw.SetErrorCallback(error_callback)
+
 	window, err := glfw.CreateWindow(640, 480, "Event Wait Timeout Test", nil, nil)
 	if err != nil {
 		glfw.Terminate()

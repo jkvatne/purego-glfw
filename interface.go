@@ -643,10 +643,6 @@ func Init() error {
 	}
 	_glfw.initialized = true
 	_glfw.hints.init = _GLFWinitconfig{}
-	// err := clipboard.Init()
-	// if err != nil {
-	//		panic(err)
-	//	}
 	if err := glfwPlatformInit(); err != nil {
 		return err
 	}
@@ -680,7 +676,7 @@ func (window *Window) GetInputMode(mode InputMode) int {
 }
 
 func (window *Window) Focused() bool {
-	return window.Win32.handle == GetActiveWindow()
+	return window.Win32.Handle == GetActiveWindow()
 }
 
 func (window *Window) SetCursorMode(mode int) {
@@ -852,4 +848,9 @@ func SwapInterval(interval int) {
 
 func PostEmptyEvent() {
 	glfwPostEmptyEvent()
+}
+
+// PostEmptyMessage will post a zero message to the given window
+func PostEmptyMessage(w *Window) {
+	PostMessageW(w.Win32.Handle, 0, 0, 0)
 }

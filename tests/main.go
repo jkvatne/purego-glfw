@@ -11,41 +11,41 @@ import (
 var testName string
 
 func main() {
-	flag.StringVar(&testName, "t", "", "Test can be: -tearing, -window, -cursor, -threadds, -msaa, -reopen, -timeout, -monitor, -opacity")
+	flag.StringVar(&testName, "t", "", "Test can be: -tearing, -window, -cursor, -threads, -msaa, -reopen, -timeout, -monitor, -opacity")
 	flag.Parse()
 	switch testName {
 	case "title":
-		title()
+		TitleMain()
 	case "reopen":
-		reopen()
+		ReopenMain()
 	case "msaa":
-		msaa()
+		MsaaMain()
 	case "timeout":
-		timeout()
+		TimeoutMain()
 	case "monitor":
-		monitor()
+		MonitorMain()
 	case "threads":
-		threads()
+		ThreadsMain()
 	case "icon":
-		icon()
+		IconMain()
 	case "cursor":
-		cursor()
+		CursorMain()
 	case "window":
-		windowinfo()
+		WindowInfoMain()
 	case "opacity":
-		opacity()
+		OpacityMain()
 	case "tearing":
-		tearing()
+		TearingMain()
 	default:
-		title()
-		threads()
-		opacity()
-		msaa()
-		timeout()
-		reopen()
-		icon()
-		windowinfo()
-		monitor()
-		cursor()
+		TitleMain()
+		ThreadsMain()
+		OpacityMain()
+		MsaaMain()
+		TimeoutMain()
+		ReopenMain()
+		IconMain()
+		WindowInfoMain()
+		MonitorMain()
+		CursorMain()
 	}
 }

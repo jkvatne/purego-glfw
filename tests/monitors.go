@@ -139,7 +139,7 @@ func test_mode(monitor *glfw.Monitor, i int, timeShownSec float64) {
 	window.MakeContextCurrent()
 	err = gl.Init()
 	if err != nil {
-		fmt.Printf("Failed to enter mode %d: %s\n", i, formatMode(&mode))
+		panic(fmt.Sprintf("Failed to enter mode %d: %s\n", i, formatMode(&mode)))
 	}
 	glfw.SwapInterval(1)
 	glfw.SetTime(0.0)
@@ -177,14 +177,17 @@ func test_mode(monitor *glfw.Monitor, i int, timeShownSec float64) {
 	glfw.PollEvents()
 }
 
-func monitor() {
+func MonitorMain() {
 	fmt.Printf("\nMonitor test started\n")
 	runtime.LockOSThread()
+	// Initialize the glfw library
 	err := glfw.Init()
 	if err != nil {
-		panic("glfw.Init error: " + err.Error())
+		panic(err.Error())
 	}
+	defer glfw.Terminate()
 	glfw.SetErrorCallback(error_callback)
+
 	monitors := glfw.GetMonitors()
 	for i := 0; i < len(monitors); i++ {
 		list_modes(monitors[i])

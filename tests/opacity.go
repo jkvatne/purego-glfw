@@ -13,12 +13,17 @@ import (
 	"github.com/neclepsio/gl/all-core/gl"
 )
 
-func opacity() {
+func OpacityMain() {
 	fmt.Printf("\nThis windows should gradualy be transparent\n")
 	runtime.LockOSThread()
-	if err := glfw.Init(); err != nil {
-		panic(err)
+	// Initialize the glfw library
+	err := glfw.Init()
+	if err != nil {
+		panic(err.Error())
 	}
+	defer glfw.Terminate()
+	glfw.SetErrorCallback(error_callback)
+
 	glfw.WindowHint(glfw.ContextVersionMajor, 2)
 	glfw.WindowHint(glfw.ContextVersionMinor, 0)
 	window, err := glfw.CreateWindow(400, 400, "Transparent", nil, nil)

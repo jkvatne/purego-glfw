@@ -101,6 +101,9 @@ func swapBuffersWGL(window *_GLFWwindow) {
 
 func getCurrentWindow() *_GLFWwindow {
 	p := glfwPlatformGetTls(&_glfw.contextSlot)
+	// if p == 0 {
+	// fmt.Println("TLS not set")
+	// }
 	window := _glfw.windowListHead
 	for window != nil {
 		if uintptr(unsafe.Pointer(window)) == p {
@@ -158,7 +161,7 @@ func getCurrentContext() HANDLE {
 func makeCurrent(dc HDC, handle HANDLE) bool {
 	r1, _, err := _glfw.wgl.wglMakeCurrent.Call(uintptr(dc), uintptr(handle))
 	if !errors.Is(err, syscall.Errno(0)) {
-		// OBS panic("wgl makeCurrent failed, " + err.Error())
+		slog.Error("wgl makeCurrent failed", "err", err, "dc", dc, "handle", handle)
 	}
 	return r1 != 0
 }
@@ -320,10 +323,10 @@ func glfwCreateContextWGL(window *_GLFWwindow, ctxconfig *_GLFWctxconfig, fbconf
 	var pfd PIXELFORMATDESCRIPTOR
 	hShare := syscall.Handle(0)
 	if ctxconfig.share != nil {
-		hShare = ctxconfig.share.Win32.handle
+		hShare = ctxconfig.share.Win32.Handle
 	}
 	share := ctxconfig.share
-	window.context.wgl.dc = getDC(window.Win32.handle)
+	window.context.wgl.dc = getDC(window.Win32.Handle)
 	if window.context.wgl.dc == 0 {
 		return fmt.Errorf("WGL: Failed to retrieve DC for window")
 	}
@@ -414,7 +417,7 @@ func glfwCreateContextWGL(window *_GLFWwindow, ctxconfig *_GLFWctxconfig, fbconf
 			return fmt.Errorf("WGL: Failed to create OpenGL context")
 		}
 		if share != nil {
-			if shareLists(share.Win32.handle, window.context.wgl.handle) {
+			if shareLists(share.Win32.Handle, window.context.wgl.handle) {
 				return fmt.Errorf("WGL: Failed to enable sharing with specified OpenGL context")
 			}
 		}

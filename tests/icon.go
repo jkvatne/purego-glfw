@@ -8,8 +8,8 @@ import (
 	"runtime"
 	"time"
 
-	"github.com/neclepsio/gl/all-core/gl"
 	glfw "github.com/jkvatne/purego-glfw"
+	"github.com/neclepsio/gl/all-core/gl"
 )
 
 // a simple glfw logo
@@ -75,14 +75,18 @@ func key_callback8(window *glfw.Window, key glfw.Key, scancode int, action glfw.
 	}
 }
 
-func icon() {
+func IconMain() {
 	fmt.Println("\nWindows icon test. Changes the icon in the upper left corner of the window")
 	fmt.Println("and the icon on the task bar. Press space to change color, escape to exit, X to clear icon.")
 	runtime.LockOSThread()
+
+	// Initialize the glfw library
 	err := glfw.Init()
 	if err != nil {
 		panic(err.Error())
 	}
+	defer glfw.Terminate()
+	glfw.SetErrorCallback(error_callback)
 
 	window, err := glfw.CreateWindow(500, 500, "Window Icon", nil, nil)
 	if err != nil {
@@ -90,7 +94,9 @@ func icon() {
 	}
 	window.MakeContextCurrent()
 	gl.Init()
-
+	if err != nil {
+		panic("gl Init error, " + err.Error())
+	}
 	window.SetKeyCallback(key_callback8)
 	set_icon(window, cur_icon_color)
 

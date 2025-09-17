@@ -73,19 +73,24 @@ func CheckError(sts uint32, program uint32, source string) {
 	}
 }
 
-func reopen() {
+func ReopenMain() {
 	runtime.LockOSThread()
 	fmt.Printf("Test reopening windows, including full-screen\n")
 	count := 1
 	var monitor *glfw.Monitor
+
+	// Initialize the glfw library
 	err := glfw.Init()
 	if err != nil {
-		panic("glfwInit err: " + err.Error())
+		panic(err.Error())
 	}
+	defer glfw.Terminate()
+	glfw.SetErrorCallback(error_callback)
+
 	glfw.WindowHint(glfw.ContextVersionMajor, 2)
 	glfw.WindowHint(glfw.ContextVersionMinor, 0)
 	glfw.SetTime(0)
-	for glfw.GetTime() < 5.0 {
+	for glfw.GetTime() < 10.0 {
 		monitor = nil
 		if count&1 == 0 {
 			monitors := glfw.GetMonitors()
@@ -106,6 +111,8 @@ func reopen() {
 			glfw.Terminate()
 			fmt.Printf("Could not create window: %v\n", err)
 		}
+		window.SetCloseCallback(window_close_callback)
+		window.SetKeyCallback(key_callback)
 		if monitor != nil {
 			fmt.Printf("Opening full screen window on monitor %s took %0.3f seconds\n",
 				monitor.GetMonitorName(),
@@ -116,14 +123,8 @@ func reopen() {
 		window.MakeContextCurrent()
 		gl.Init()
 		glfw.SwapInterval(1)
-
 		gl.ClearColor(100, 100, 0, 256)
 		gl.Clear(gl.COLOR_BUFFER_BIT)
-		window.SetCloseCallback(window_close_callback)
-		window.SetKeyCallback(key_callback)
-		window.MakeContextCurrent()
-		gl.Init()
-		glfw.SwapInterval(1)
 		vertex_shader := gl.CreateShader(gl.VERTEX_SHADER)
 		csources, free := gl.Strs(vertex_shader_text)
 		gl.ShaderSource(vertex_shader, 1, csources, nil)
@@ -153,7 +154,7 @@ func reopen() {
 
 		t := glfw.GetTime()
 		for {
-			if glfw.GetTime() > t+1.0 {
+			if glfw.GetTime() > t+2.0 {
 				break
 			}
 			w, h := window.GetFramebufferSize()

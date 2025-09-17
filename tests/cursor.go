@@ -214,7 +214,8 @@ func key_callback_cursor(window *glfw.Window, key glfw.Key, scancode int, action
 	}
 }
 
-func cursor() {
+func CursorMain() {
+	runtime.LockOSThread()
 	fmt.Printf(usage)
 
 	// type mat4x4 [4]vec4
@@ -226,11 +227,13 @@ func cursor() {
 	)
 
 	fmt.Println("Cursor test")
-	runtime.LockOSThread()
+	// Initialize the glfw library
 	err := glfw.Init()
 	if err != nil {
 		panic(err.Error())
 	}
+	defer glfw.Terminate()
+	glfw.SetErrorCallback(error_callback)
 
 	// tracking_cursor := create_tracking_cursor()
 	for i := 0; i < CURSOR_FRAME_COUNT; i++ {

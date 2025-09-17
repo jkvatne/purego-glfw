@@ -11,12 +11,17 @@ import (
 
 // UTF-8 window tear_title test
 
-func title() {
+func TitleMain() {
 	fmt.Printf("Windows title should show non-latin utf characters\n")
 	runtime.LockOSThread()
-	if err := glfw.Init(); err != nil {
-		panic(err)
+	// Initialize the glfw library
+	err := glfw.Init()
+	if err != nil {
+		panic(err.Error())
 	}
+	defer glfw.Terminate()
+	glfw.SetErrorCallback(error_callback)
+
 	window, err := glfw.CreateWindow(800, 400, "Temp", nil, nil)
 	if err != nil {
 		glfw.Terminate()

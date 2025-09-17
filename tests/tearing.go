@@ -77,17 +77,21 @@ func key_callback10(window *glfw.Window, key glfw.Key, scancode int, action glfw
 	}
 }
 
-func tearing() {
+func TearingMain() {
 	fmt.Println("Tearing test")
 	runtime.LockOSThread()
 
 	frame_count := 0
 	var vertex_buffer2 uint32
+
+	// Initialize the glfw library
 	err := glfw.Init()
 	if err != nil {
-		fmt.Printf("Failed to initialize glfw: %v", err)
-		os.Exit(1)
+		panic(err.Error())
 	}
+	defer glfw.Terminate()
+	glfw.SetErrorCallback(error_callback)
+
 	glfw.WindowHint(glfw.ContextVersionMajor, 2)
 	glfw.WindowHint(glfw.ContextVersionMinor, 0)
 	window, err := glfw.CreateWindow(640, 480, "Tearing detector", nil, nil)

@@ -457,6 +457,7 @@ func TlsSetValue(index int, value uintptr) {
 	if !errors.Is(err, syscall.Errno(0)) {
 		panic("_TTlsGetValue failed, " + err.Error())
 	}
+	// fmt.Printf("TlsSetValue index=%v, value=%v\n", index, value)
 }
 
 func TlsGetValue(index int) uintptr {
@@ -464,6 +465,7 @@ func TlsGetValue(index int) uintptr {
 	if !errors.Is(err, syscall.Errno(0)) {
 		panic("_TTlsGetValue failed, " + err.Error())
 	}
+	// fmt.Printf("TlsGetValue index=%v, return=%v\n", index, r)
 	return r
 }
 

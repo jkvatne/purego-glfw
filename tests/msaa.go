@@ -61,20 +61,22 @@ func checkError(sts uint32, program uint32, source string) {
 	}
 }
 
-func msaa() {
+func MsaaMain() {
 	var samples int32 = 4
 	var window *glfw.Window
 	var vertex_buffer2 uint32
 	fmt.Printf("Multisample anti-aliasing test.\n")
 	fmt.Printf("Notice bottom side aliasing at the left and not at the right side\n")
 	runtime.LockOSThread()
+	// Initialize the glfw library
 	err := glfw.Init()
 	if err != nil {
-		fmt.Println("init glfw error: " + err.Error())
-		os.Exit(1)
+		panic(err.Error())
 	}
-	fmt.Printf("Requesting MSAA with %d samples\n", samples)
+	defer glfw.Terminate()
+	glfw.SetErrorCallback(error_callback)
 
+	fmt.Printf("Requesting MSAA with %d samples\n", samples)
 	_ = glfw.WindowHint(glfw.Samples, int(samples))
 	_ = glfw.WindowHint(glfw.ContextVersionMajor, 2)
 	_ = glfw.WindowHint(glfw.ContextVersionMinor, 0)
