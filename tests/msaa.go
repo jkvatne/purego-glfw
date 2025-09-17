@@ -39,6 +39,10 @@ func key_callback2(window *glfw.Window, key glfw.Key, scancode int, action glfw.
 	if action != glfw.Press {
 		return
 	}
+	if scancode > 0 && mods == 0 {
+		// To avoid unused parameter
+	}
+
 	switch key {
 	case glfw.KeySpace:
 		glfw.SetTime(0.0)

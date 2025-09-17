@@ -37,17 +37,9 @@ func TitleMain() {
 
 	// Test clipboard
 	glfw.SetClipboardString("Test")
-	if err != nil {
-		fmt.Printf("Could not set clipboard: %v\n", err)
-	} else {
-		fmt.Printf("Clipboard set to Test\n")
-	}
+	fmt.Printf("Clipboard set to Test\n")
 	s := glfw.GetClipboardString()
-	if err != nil {
-		fmt.Printf("Could not gset clipboard: %v\n", err)
-	} else {
-		fmt.Printf("Clipboard read correctly the value %s\n", s)
-	}
+	fmt.Printf("Clipboard read the value %s\n", s)
 	if s != "Test" {
 		panic("Invalid clipboard string")
 	}

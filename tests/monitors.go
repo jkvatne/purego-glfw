@@ -76,7 +76,7 @@ func formatMode(mode *glfw.GLFWvidmode) string {
 }
 
 func framebuffer_size_callback(window *glfw.Window, width int, height int) {
-	fmt.Printf("Framebuffer resized to %dx%d\n", width, height)
+	fmt.Printf("Framebuffer resized to %dx%d   handle=%v\n", width, height, window.Win32.Handle)
 	gl.Viewport(0, 0, int32(width), int32(height))
 }
 

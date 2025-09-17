@@ -39,12 +39,15 @@ void main()
 var vertices = [4][2]float32{{-0.5, -0.5}, {0.5, -0.5}, {0.5, 0.5}, {-0.5, 0.5}}
 
 func window_close_callback(window *glfw.Window) {
-	fmt.Printf("Close callback triggered\n")
+	fmt.Printf("Close callback triggered for %d\n", window.Win32.Handle)
 }
 
 func key_callback(window *glfw.Window, key glfw.Key, scancode int, action glfw.Action, mods glfw.ModifierKey) {
 	if action != glfw.Press {
 		return
+	}
+	if scancode > 0 && mods == 0 {
+		// To avoid unused parameter
 	}
 	switch key {
 	case glfw.KeyQ:
@@ -87,8 +90,8 @@ func ReopenMain() {
 	defer glfw.Terminate()
 	glfw.SetErrorCallback(error_callback)
 
-	glfw.WindowHint(glfw.ContextVersionMajor, 2)
-	glfw.WindowHint(glfw.ContextVersionMinor, 0)
+	_ = glfw.WindowHint(glfw.ContextVersionMajor, 2)
+	_ = glfw.WindowHint(glfw.ContextVersionMinor, 0)
 	glfw.SetTime(0)
 	for glfw.GetTime() < 10.0 {
 		monitor = nil
@@ -121,7 +124,10 @@ func ReopenMain() {
 			fmt.Printf("Opening regular window took %0.3f seconds\n", glfw.GetTime()-base)
 		}
 		window.MakeContextCurrent()
-		gl.Init()
+		err = gl.Init()
+		if err != nil {
+			panic(err.Error())
+		}
 		glfw.SwapInterval(1)
 		gl.ClearColor(100, 100, 0, 256)
 		gl.Clear(gl.COLOR_BUFFER_BIT)

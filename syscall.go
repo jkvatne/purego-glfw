@@ -47,7 +47,6 @@ var (
 	_GetCurrentThreadId      = kernel32.NewProc("GetCurrentThreadId")
 	_GlobalAlloc             = kernel32.NewProc("GlobalAlloc")
 	_GlobalFree              = kernel32.NewProc("GlobalFree")
-	_MemMove                 = kernel32.NewProc("MemMove")
 	_GlobalLock              = kernel32.NewProc("GlobalLock")
 	_GlobalUnlock            = kernel32.NewProc("GlobalUnlock")
 	_RtlMoveMemory           = kernel32.NewProc("RtlMoveMemory")
@@ -395,7 +394,7 @@ func GetMonitorInfo(hMonitor HMONITOR) *MONITORINFO {
 
 // GetDeviceCaps
 func GetDeviceCaps(dc HDC, flags int) int {
-	r1, _, err := _GetDeviceCaps.Call(uintptr(unsafe.Pointer(dc)), uintptr(flags))
+	r1, _, err := _GetDeviceCaps.Call(uintptr(dc), uintptr(flags))
 	if err != nil && !errors.Is(err, syscall.Errno(0)) {
 		panic("GetDeviceCaps failed, " + err.Error())
 	}
@@ -516,6 +515,7 @@ func GetSystemMetrics(index int32) int32 {
 	return int32(r)
 }
 
+/*
 func CreateIcon(hInstance, nWidth, nHeight int, cPlanes int, cBitsPixel, AndBits *uint8, XorBits *uint8) syscall.Handle {
 	r, _, err := _CreateIcon.Call(uintptr(hInstance), uintptr(nWidth), uintptr(nHeight), uintptr(cPlanes),
 		uintptr(unsafe.Pointer(AndBits)), uintptr(unsafe.Pointer(XorBits)))
@@ -524,6 +524,7 @@ func CreateIcon(hInstance, nWidth, nHeight int, cPlanes int, cBitsPixel, AndBits
 	}
 	return syscall.Handle(r)
 }
+*/
 
 func CreateDIBSection(hdc HDC, pbmi *BITMAPV5HEADER, usage uint32, ppvBits **uint8, hSection syscall.Handle, offset uint32) syscall.Handle {
 	r, _, err := _CreateDIBSection.Call(uintptr(hdc), uintptr(unsafe.Pointer(pbmi)), uintptr(usage), uintptr(unsafe.Pointer(ppvBits)),
@@ -589,7 +590,7 @@ func RegisterRawInputDevices(pRawInputDevices *RAWINPUTDEVICE, uiNumDevices uint
 
 func GetClientRect(hWnd syscall.Handle) RECT {
 	var area RECT
-	_, _, err := _GetClientRect.Call(uintptr(unsafe.Pointer(hWnd)), uintptr(unsafe.Pointer(&area)))
+	_, _, err := _GetClientRect.Call(uintptr(hWnd), uintptr(unsafe.Pointer(&area)))
 	if !errors.Is(err, syscall.Errno(0)) {
 		panic("GetClientRect failed, " + err.Error())
 	}

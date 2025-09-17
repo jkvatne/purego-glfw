@@ -64,6 +64,9 @@ func key_callback8(window *glfw.Window, key glfw.Key, scancode int, action glfw.
 	if action != glfw.Press {
 		return
 	}
+	if scancode > 0 && mods == 0 {
+		// To avoid unused parameter
+	}
 	switch key {
 	case glfw.KeyEscape:
 		window.SetShouldClose(true)
@@ -93,7 +96,7 @@ func IconMain() {
 		panic("Failed to create window, " + err.Error())
 	}
 	window.MakeContextCurrent()
-	gl.Init()
+	err = gl.Init()
 	if err != nil {
 		panic("gl Init error, " + err.Error())
 	}

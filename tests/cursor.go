@@ -79,9 +79,10 @@ func create_cursor(t float64) *glfw.Cursor {
 }
 
 func cursor_position_callback(window *glfw.Window, x float64, y float64) {
-	fmt.Printf("%0.3f: Cursor position callback: %f %f (%+f %+f)\n",
+	fmt.Printf("%0.3f: Cursor position callback: %f %f (%+f %+f) from %d\n",
 		glfw.GetTime(),
-		x, y, x-cursor_x, y-cursor_y)
+		x, y, x-cursor_x, y-cursor_y,
+		window.Win32.Handle)
 	cursor_x = x
 	cursor_y = y
 }
@@ -110,7 +111,7 @@ var x, y, w, h int
 var index int
 
 func key_callback_cursor(window *glfw.Window, key glfw.Key, scancode int, action glfw.Action, mods glfw.ModifierKey) {
-	fmt.Printf("Key %v, action %v, mods %v\n", key, action, mods)
+	fmt.Printf("Key %v, action %v, mods %v, scancode %v\n", key, action, mods, scancode)
 	hasKeyPress = true
 	if action != glfw.Press {
 		return
