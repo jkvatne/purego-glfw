@@ -180,11 +180,6 @@ func PollEvents() {
 	glfwPollEvents()
 }
 
-func WaitEvents() {
-	WaitMessage()
-	glfwPollEvents()
-}
-
 // WaitEventsTimeout waits a number of seconds or until an event is detected
 func WaitEventsTimeout(timeout float64) {
 	if timeout < 0.0 {
@@ -242,9 +237,9 @@ func WindowHint(hint Hint, v int) error {
 	case Visible:
 		_glfw.hints.window.visible = value != 0
 	case PositionX:
-		_glfw.hints.window.xpos = int32(value)
+		_glfw.hints.window.xpos = value
 	case PositionY:
-		_glfw.hints.window.ypos = int32(value)
+		_glfw.hints.window.ypos = value
 	case ScaleToMonitor:
 		_glfw.hints.window.scaleToMonitor = value != 0
 	case ScaleFramebuffer, CocoaRetinaFramebuffer:
@@ -256,15 +251,15 @@ func WindowHint(hint Hint, v int) error {
 	case MousePassthrough:
 		_glfw.hints.window.mousePassthrough = value != 0
 	case ClientAPI:
-		_glfw.hints.context.client = int32(value)
+		_glfw.hints.context.client = value
 	case ContextCreationAPI:
-		_glfw.hints.context.source = int32(value)
+		_glfw.hints.context.source = value
 	case ContextVersionMajor:
-		_glfw.hints.context.major = int32(value)
+		_glfw.hints.context.major = value
 	case ContextVersionMinor:
-		_glfw.hints.context.minor = int32(value)
+		_glfw.hints.context.minor = value
 	case ContextRobustness:
-		_glfw.hints.context.robustness = int32(value)
+		_glfw.hints.context.robustness = value
 	case OpenGLForwardCompatible:
 		_glfw.hints.context.forward = value != 0
 	case OpenGLDebugContext:
@@ -278,24 +273,9 @@ func WindowHint(hint Hint, v int) error {
 	case RefreshRate:
 		_glfw.hints.refreshRate = value
 	default:
-		return fmt.Errorf("Invalid window hint %d with value %d", hint, value)
+		return fmt.Errorf("invalid window hint %d with value %d", hint, value)
 	}
 	return nil
-}
-
-func WindowHintString(hint Hint, value string) {
-	switch hint {
-	case CocoaFrameName:
-		_glfw.hints.window.ns.frameName = value
-	case X11ClassName:
-		// _glfw.hints.window.x11.classNam = value
-	case X11InstanceName:
-		// _glfw.hints.window.x11.instanceName = value
-	case WaylandAppId:
-		// _glfw.hints.window.wl.appId =  value
-	default:
-		panic(fmt.Sprintf("Invalid Window hint %d with value %s", hint, value))
-	}
 }
 
 // GetClipboardString returns the contents of the system clipboard
@@ -489,7 +469,7 @@ func (w *Window) SetOpacity(opacity float64) {
 	glfwSetWindowOpacity(w, opacity)
 }
 
-// RequestWindowAttention funciton requests user attention to the specified window.
+// RequestAttention funciton requests user attention to the specified window.
 func (w *Window) RequestAttention() {
 	glfwRequestWindowAttention(w)
 }
@@ -529,7 +509,7 @@ func (w *Window) Show() {
 	}
 }
 
-// Show makes the Window visible if it was previously hidden.
+// Hide makes the Window invisible if it was previously shown.
 func (w *Window) Hide() {
 	glfwHideWindow(w)
 }
@@ -617,10 +597,6 @@ func Terminate() {
 	glfwTerminate()
 }
 
-func getTime() int64 {
-	return time.Now().UnixNano()
-}
-
 var startTime atomic.Int64
 
 func GetTime() float64 {
@@ -657,61 +633,61 @@ func Init() error {
 	return nil
 }
 
-func (window *Window) GetInputMode(mode InputMode) int {
+func (w *Window) GetInputMode(mode InputMode) int {
 	switch mode {
 	case CursorMode:
-		return window.cursorMode
+		return w.cursorMode
 	case StickyKeys:
-		return toInt(window.stickyKeys)
+		return toInt(w.stickyKeys)
 	case StickyMouseButtons:
-		return toInt(window.stickyMouseButtons)
+		return toInt(w.stickyMouseButtons)
 	case LockKeyMods:
-		return toInt(window.lockKeyMods)
+		return toInt(w.lockKeyMods)
 	case RawMouseMotion:
-		return int(window.rawMouseMotion)
+		return w.rawMouseMotion
 	default:
 		panic("Unknown InputMode")
 	}
 	return 0
 }
 
-func (window *Window) Focused() bool {
-	return window.Win32.Handle == GetActiveWindow()
+func (w *Window) Focused() bool {
+	return w.Win32.Handle == GetActiveWindow()
 }
 
-func (window *Window) SetCursorMode(mode int) {
-	if window.Focused() {
+func (w *Window) SetCursorMode(mode int) {
+	if w.Focused() {
 		if mode == CursorDisabled {
-			_glfw.win32.restoreCursorPosX, _glfw.win32.restoreCursorPosY = window.GetCursorPos()
+			_glfw.win32.restoreCursorPosX, _glfw.win32.restoreCursorPosY = w.GetCursorPos()
 			// Center Cursor In Content Area
-			x, y := window.GetCursorPos()
-			window.SetCursorPos(x/2, y/2)
-			if window.rawMouseMotion != 0 {
-				enableRawMouseMotion(window)
+			x, y := w.GetCursorPos()
+			w.SetCursorPos(x/2, y/2)
+			if w.rawMouseMotion != 0 {
+				enableRawMouseMotion(w)
 			}
-		} else if _glfw.win32.disabledCursorWindow == window {
-			if window.rawMouseMotion != 0 {
-				disableRawMouseMotion(window)
+		} else if _glfw.win32.disabledCursorWindow == w {
+			if w.rawMouseMotion != 0 {
+				disableRawMouseMotion(w)
 			}
 		}
 		if mode == CursorDisabled || mode == CursorCaptured {
-			captureCursor(window)
+			captureCursor(w)
 		} else {
 			releaseCursor()
 		}
 		if mode == CursorDisabled {
-			_glfw.win32.disabledCursorWindow = window
-		} else if _glfw.win32.disabledCursorWindow == window {
+			_glfw.win32.disabledCursorWindow = w
+		} else if _glfw.win32.disabledCursorWindow == w {
 			_glfw.win32.disabledCursorWindow = nil
-			window.SetCursorPos(_glfw.win32.restoreCursorPosX, _glfw.win32.restoreCursorPosY)
+			w.SetCursorPos(_glfw.win32.restoreCursorPosX, _glfw.win32.restoreCursorPosY)
 		}
 	}
-	if cursorInContentArea(window) {
-		updateCursorImage(window)
+	if cursorInContentArea(w) {
+		updateCursorImage(w)
 	}
 }
 
-func (window *Window) SetInputMode(mode int, value int) {
+func (w *Window) SetInputMode(mode int, value int) {
 	switch mode {
 	case CursorMode:
 		if value != CursorNormal &&
@@ -720,58 +696,58 @@ func (window *Window) SetInputMode(mode int, value int) {
 			value != CursorCaptured {
 			fmt.Printf("Invalid cursor mode 0x%08X", value)
 		}
-		if window.cursorMode == value {
+		if w.cursorMode == value {
 			return
 		}
-		window.cursorMode = value
-		window.virtualCursorPosX, window.virtualCursorPosY = window.GetCursorPos()
-		window.SetCursorMode(value)
+		w.cursorMode = value
+		w.virtualCursorPosX, w.virtualCursorPosY = w.GetCursorPos()
+		w.SetCursorMode(value)
 	case StickyKeys:
 		value = min(1, max(0, value))
-		if window.stickyKeys == (value != 0) {
+		if w.stickyKeys == (value != 0) {
 			return
 		}
 		// Release all sticky keys
 		for i := 0; i <= KeyLast; i++ {
-			if window.keys[i] == Stick {
-				window.keys[i] = Release
+			if w.keys[i] == Stick {
+				w.keys[i] = Release
 			}
 		}
-		window.stickyKeys = value != 0
+		w.stickyKeys = value != 0
 	case StickyMouseButtons:
 		value = min(1, max(0, value))
-		if window.stickyMouseButtons == (value != 0) {
+		if w.stickyMouseButtons == (value != 0) {
 			return
 		}
 		if value == 0 {
 			// Release all sticky mouse buttons
 			for i := MouseButton(0); i <= MouseButtonLast; i++ {
-				if window.mouseButtons[i] == Stick {
-					window.mouseButtons[i] = Release
+				if w.mouseButtons[i] == Stick {
+					w.mouseButtons[i] = Release
 				}
 			}
-			window.stickyMouseButtons = false
+			w.stickyMouseButtons = false
 		}
 	case LockKeyMods:
 		value = min(1, max(0, value))
-		window.lockKeyMods = value != 0
+		w.lockKeyMods = value != 0
 	case RawMouseMotion:
 		value = min(1, max(0, value))
-		if window.rawMouseMotion == value {
+		if w.rawMouseMotion == value {
 			return
 		}
-		window.rawMouseMotion = value
-		setRawMouseMotion(window, value != 0)
+		w.rawMouseMotion = value
+		setRawMouseMotion(w, value != 0)
 	case UnlimitedMouseButtons:
 		value = min(1, max(0, value))
-		window.disableMouseButtonLimit = value != 0
+		w.disableMouseButtonLimit = value != 0
 	default:
 		panic(fmt.Sprintf("Invalid input mode 0x%08X", mode))
 	}
 }
 
-func (window *Window) SetCursorPos(x, y float64) {
-	glfwSetCursorPos(window, x, y)
+func (w *Window) SetCursorPos(x, y float64) {
+	glfwSetCursorPos(w, x, y)
 }
 
 func setRawMouseMotion(window *Window, enabled bool) {
@@ -848,9 +824,4 @@ func SwapInterval(interval int) {
 
 func PostEmptyEvent() {
 	glfwPostEmptyEvent()
-}
-
-// PostEmptyMessage will post a zero message to the given window
-func PostEmptyMessage(w *Window) {
-	PostMessageW(w.Win32.Handle, 0, 0, 0)
 }

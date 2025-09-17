@@ -24,8 +24,8 @@ func OpacityMain() {
 	defer glfw.Terminate()
 	glfw.SetErrorCallback(error_callback)
 
-	glfw.WindowHint(glfw.ContextVersionMajor, 2)
-	glfw.WindowHint(glfw.ContextVersionMinor, 0)
+	_ = glfw.WindowHint(glfw.ContextVersionMajor, 2)
+	_ = glfw.WindowHint(glfw.ContextVersionMinor, 0)
 	window, err := glfw.CreateWindow(400, 400, "Transparent", nil, nil)
 	if err != nil {
 		glfw.Terminate()

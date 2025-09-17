@@ -362,8 +362,8 @@ const (
 	_QS_KEY                        = 0x1
 	_QS_MOUSEMOVE                  = 0x2
 	_QS_MOUSEBUTTON                = 0x4
-	_QS_MOUSE                      = (_QS_MOUSEMOVE | _QS_MOUSEBUTTON)
-	_QS_INPUT                      = (_QS_MOUSE | _QS_KEY)
+	_QS_MOUSE                      = _QS_MOUSEMOVE | _QS_MOUSEBUTTON
+	_QS_INPUT                      = _QS_MOUSE | _QS_KEY
 	_QS_POSTMESSAGE                = 0x8
 	_QS_TIMER                      = 0x10
 	_QS_PAINT                      = 0x20

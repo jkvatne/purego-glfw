@@ -10,17 +10,17 @@ import (
 
 func glfwIsValidContextConfig(ctxconfig *_GLFWctxconfig) error {
 	if ctxconfig.source != NativeContextAPI && ctxconfig.source != EGLContextAPI && ctxconfig.source != OSMesaContextAPI {
-		return errors.New("Invalid context creation API")
+		return errors.New("invalid context creation API")
 	}
 	if ctxconfig.client != NoAPI && ctxconfig.client != OpenGLAPI && ctxconfig.client != OpenGLESAPI {
-		return errors.New("Invalid cclient API")
+		return errors.New("invalid cclient API")
 	}
 	if ctxconfig.share != nil {
 		if ctxconfig.client == NoAPI || ctxconfig.share.context.client == OpenGLAPI {
-			return errors.New("No context API")
+			return errors.New("no context API")
 		}
 		if ctxconfig.client != ctxconfig.share.context.client {
-			return errors.New("Context creation APIs do not match between contexts")
+			return errors.New("context creation APIs do not match between contexts")
 		}
 	}
 	if ctxconfig.client == OpenGLAPI {
@@ -28,19 +28,19 @@ func glfwIsValidContextConfig(ctxconfig *_GLFWctxconfig) error {
 			(ctxconfig.major == 1 && ctxconfig.minor > 5) ||
 			(ctxconfig.major == 2 && ctxconfig.minor > 1) ||
 			(ctxconfig.major == 3 && ctxconfig.minor > 3) {
-			return fmt.Errorf("Invalid OpenGL version %d.%d", ctxconfig.major, ctxconfig.minor)
+			return fmt.Errorf("invalid OpenGL version %d.%d", ctxconfig.major, ctxconfig.minor)
 		}
 		if ctxconfig.profile != 0 {
 			if ctxconfig.profile != OpenGLCoreProfile && ctxconfig.profile != OpenGLCompatProfile {
-				return fmt.Errorf("Invalid OpenGL profile")
+				return fmt.Errorf("invalid OpenGL profile")
 			}
 			if ctxconfig.major <= 2 || ctxconfig.major == 3 && ctxconfig.minor < 2 {
 				// Desktop OpenGL context profiles are only defined for version 3.2 and above
-				return fmt.Errorf("Context profiles are only defined for OpenGL version 3.2 and above")
+				return fmt.Errorf("context profiles are only defined for OpenGL version 3.2 and above")
 			}
 			if ctxconfig.forward && ctxconfig.major <= 2 {
 				// Forward-compatible contexts are only defined for OpenGL version 3.0 and above
-				return fmt.Errorf("Forward-compatibility is only defined for OpenGL version 3.0 and above")
+				return fmt.Errorf("forward-compatibility is only defined for OpenGL version 3.0 and above")
 			}
 		}
 	} else if ctxconfig.client == OpenGLESAPI {
@@ -49,13 +49,13 @@ func glfwIsValidContextConfig(ctxconfig *_GLFWctxconfig) error {
 			// OpenGL ES 1.x series ended with version 1.1
 			// OpenGL ES 2.x series ended with version 2.0
 			// For now, let everything else through
-			return fmt.Errorf("Invalid OpenGL ES version %i.%i", ctxconfig.major, ctxconfig.minor)
+			return fmt.Errorf("invalid OpenGL ES version %d.%d", ctxconfig.major, ctxconfig.minor)
 		}
 	}
 
 	if ctxconfig.robustness != 0 {
 		if ctxconfig.robustness != NoResetNotification && ctxconfig.robustness != LoseContextOnReset {
-			return fmt.Errorf("Invalid context robustness mode 0x%08X", ctxconfig.robustness)
+			return fmt.Errorf("invalid context robustness mode 0x%08X", ctxconfig.robustness)
 		}
 	}
 	return nil
@@ -169,7 +169,7 @@ func glfwRefreshContextAttribs(window *_GLFWwindow, ctxconfig *_GLFWctxconfig) e
 	if !errors.Is(err, syscall.Errno(0)) {
 		return fmt.Errorf("String retrieval is broken, " + err.Error())
 	}
-	version := GoStr((*uint8)(unsafe.Pointer(uintptr(r))))
+	version := GoStr((*uint8)(unsafe.Pointer(r)))
 	prefixes := []string{"OpenGL ES-CM ", "OpenGL ES-CL ", "OpenGL ES ", ""}
 	for s := range prefixes {
 		if strings.HasPrefix(version, prefixes[s]) {
@@ -181,7 +181,7 @@ func glfwRefreshContextAttribs(window *_GLFWwindow, ctxconfig *_GLFWctxconfig) e
 	var v [3]int32
 	for _, ch := range version {
 		if ch >= '0' && ch <= '9' {
-			v[i] = v[i]*10 + int32(ch) - int32('0')
+			v[i] = v[i]*10 + ch - '0'
 		} else {
 			i++
 			if i >= 3 {
@@ -193,16 +193,16 @@ func glfwRefreshContextAttribs(window *_GLFWwindow, ctxconfig *_GLFWctxconfig) e
 	window.context.minor = v[1]
 	window.context.revision = v[2]
 	if window.context.major == 0 {
-		return fmt.Errorf("No version found in OpenGL version string")
+		return fmt.Errorf("no version found in OpenGL version string")
 	}
 	if window.context.major < ctxconfig.major || window.context.major == ctxconfig.major && window.context.minor < ctxconfig.minor {
 		// The desired OpenGL version is greater than the actual version
 		// This only happens if the machine lacks {GLX|WGL}_ARB_create_context
 		// /and/ the user has requested an OpenGL version greater than 1.0
 		if window.context.client == OpenGLAPI {
-			return fmt.Errorf("Requested OpenGL version %d.%d, got version %d.%d", ctxconfig.major, ctxconfig.minor, window.context.major, window.context.minor)
+			return fmt.Errorf("requested OpenGL version %d.%d, got version %d.%d", ctxconfig.major, ctxconfig.minor, window.context.major, window.context.minor)
 		} else {
-			return fmt.Errorf("Requested OpenGL ES version %d.%d, got version %d.%d", ctxconfig.major, ctxconfig.minor, window.context.major, window.context.minor)
+			return fmt.Errorf("requested OpenGL ES version %d.%d, got version %d.%d", ctxconfig.major, ctxconfig.minor, window.context.major, window.context.minor)
 		}
 		// makeContextCurrentWGL(previous)
 	}
@@ -212,7 +212,7 @@ func glfwRefreshContextAttribs(window *_GLFWwindow, ctxconfig *_GLFWctxconfig) e
 		// users as early as possible that their build may be broken
 		window.context.GetStringi = window.context.getProcAddress("glGetStringi")
 		if window.context.GetStringi == 0 {
-			return fmt.Errorf("Entry point retrieval is broken for glGetStringi")
+			return fmt.Errorf("entry point retrieval is broken for glGetStringi")
 		}
 	}
 	if window.context.client == OpenGLAPI {
@@ -289,12 +289,11 @@ func glfwRefreshContextAttribs(window *_GLFWwindow, ctxconfig *_GLFWctxconfig) e
 	// Clearing the front buffer to black to avoid garbage pixels left over from
 	// previous uses of our bit of VRAM
 	glClear := window.context.getProcAddress("glClear")
-	syscall.SyscallN(glClear, _GL_COLOR_BUFFER_BIT)
+	_, _, _ = syscall.SyscallN(glClear, _GL_COLOR_BUFFER_BIT)
 	if window.doublebuffer {
 		window.context.swapBuffers(window)
 	}
-	glfwMakeContextCurrent(previous)
-	return nil
+	return glfwMakeContextCurrent(previous)
 }
 
 func getIntegerv(window *Window, name int, value *int) {
@@ -305,18 +304,18 @@ func getIntegerv(window *Window, name int, value *int) {
 }
 
 func glfwMakeContextCurrent(window *_GLFWwindow) error {
-	// previous := (*Window)(unsafe.Pointer(glfwPlatformGetTls(&_glfw.contextSlot)))
+	var err error
 	previous := getCurrentWindow()
 	if window != nil && window.context.client == NoAPI {
 		return fmt.Errorf("glfwMakeContextCurrent failed: Cannot make current with a window that has no OpenGL or OpenGL ES context")
 	}
 	if previous != nil && (window == nil || window.context.source != previous.context.source) {
-		previous.context.makeCurrent(nil)
+		err = previous.context.makeCurrent(nil)
 	}
 	if window != nil {
-		window.context.makeCurrent(window)
+		err = window.context.makeCurrent(window)
 	}
-	return nil
+	return err
 }
 
 func glfwGetCurrentContext() *Window {

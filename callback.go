@@ -108,7 +108,7 @@ func (w *Window) SetScrollCallback(cbfun ScrollCallback) (previous ScrollCallbac
 	return previous
 }
 
-// SetWindowCloseCallback will set set the close callback of the specified window, which is
+// SetCloseCallback will set set the close callback of the specified window, which is
 // called when the user attempts to close the window, for example by clicking
 // the close widget in the title bar.
 func (w *Window) SetCloseCallback(cbfun CloseCallback) (previous CloseCallback) {

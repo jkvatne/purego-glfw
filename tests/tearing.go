@@ -15,8 +15,6 @@ import (
 	"github.com/neclepsio/gl/all-core/gl"
 )
 
-var vertices3 = [8]float32{-0.25, -1.0, 0.25, -1.0, 0.25, 1.0, -0.25, 1.0}
-
 var (
 	swap_tear  bool
 	tear_title string
@@ -92,8 +90,8 @@ func TearingMain() {
 	defer glfw.Terminate()
 	glfw.SetErrorCallback(error_callback)
 
-	glfw.WindowHint(glfw.ContextVersionMajor, 2)
-	glfw.WindowHint(glfw.ContextVersionMinor, 0)
+	_ = glfw.WindowHint(glfw.ContextVersionMajor, 2)
+	_ = glfw.WindowHint(glfw.ContextVersionMinor, 0)
 	window, err := glfw.CreateWindow(640, 480, "Tearing detector", nil, nil)
 	if err != nil {
 		glfw.Terminate()
@@ -114,14 +112,14 @@ func TearingMain() {
 	gl.BufferData(gl.ARRAY_BUFFER, 32, unsafe.Pointer(&vertices2[0]), gl.STATIC_DRAW)
 
 	vertex_shader := gl.CreateShader(gl.VERTEX_SHADER)
-	csources, free := gl.Strs(vertex_shader_text2)
-	gl.ShaderSource(vertex_shader, 1, csources, nil)
+	cSources, free := gl.Strs(vertex_shader_text2)
+	gl.ShaderSource(vertex_shader, 1, cSources, nil)
 	free()
 	gl.CompileShader(vertex_shader)
 
 	fragment_shader := gl.CreateShader(gl.FRAGMENT_SHADER)
-	csources, free = gl.Strs(fragment_shader_text2)
-	gl.ShaderSource(fragment_shader, 1, csources, nil)
+	cSources, free = gl.Strs(fragment_shader_text2)
+	gl.ShaderSource(fragment_shader, 1, cSources, nil)
 	free()
 	gl.CompileShader(fragment_shader)
 
@@ -130,11 +128,11 @@ func TearingMain() {
 	gl.AttachShader(program, fragment_shader)
 	gl.LinkProgram(program)
 
-	mvp_location := gl.GetUniformLocation(program, gl.Str("MVP\x00"))
-	vpos_location := gl.GetAttribLocation(program, gl.Str("vPos\x00"))
+	mvpLocation := gl.GetUniformLocation(program, gl.Str("MVP\x00"))
+	vPosLocation := gl.GetAttribLocation(program, gl.Str("vPos\x00"))
 
-	gl.EnableVertexAttribArray(uint32(vpos_location))
-	gl.VertexAttribPointer(uint32(vpos_location), 2, gl.FLOAT, false, 4, nil)
+	gl.EnableVertexAttribArray(uint32(vPosLocation))
+	gl.VertexAttribPointer(uint32(vPosLocation), 2, gl.FLOAT, false, 4, nil)
 	glfw.SetTime(0)
 	for !window.ShouldClose() {
 		position := math.Cos(float64(glfw.GetTime())*4.0) * 0.75
@@ -145,7 +143,7 @@ func TearingMain() {
 		m := mat4x4_translate(float32(position), 0.0, 0.0)
 		mvp := mat4x4_mul(p, m)
 		gl.UseProgram(program)
-		gl.UniformMatrix4fv(mvp_location, 1, false, &mvp[0])
+		gl.UniformMatrix4fv(mvpLocation, 1, false, &mvp[0])
 		gl.DrawArrays(gl.TRIANGLE_FAN, 0, 4)
 		window.SwapBuffers()
 		glfw.PollEvents()

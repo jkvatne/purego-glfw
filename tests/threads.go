@@ -8,7 +8,6 @@ import (
 	"fmt"
 	"math"
 	"runtime"
-	"sync"
 	"sync/atomic"
 	"time"
 	"unsafe"
@@ -75,8 +74,6 @@ func key_callback5(window *glfw.Window, key glfw.Key, scancode int, action glfw.
 	}
 }
 
-var m sync.Mutex
-
 func CompilePrograms() uint32 {
 	// Setup vertex shader
 	var vertexShaderSource = `
@@ -129,9 +126,9 @@ func thread(self *Thread) {
 	gl.BindBuffer(gl.ARRAY_BUFFER, vertex_buffer)
 
 	// Create and setup attribute (vPos)
-	vposLocation := gl.GetAttribLocation(program, gl.Str("vPos\x00"))
-	gl.EnableVertexAttribArray(uint32(vposLocation))
-	gl.VertexAttribPointer(uint32(vposLocation), 2, gl.FLOAT, false, 4, nil)
+	vPosLocation := gl.GetAttribLocation(program, gl.Str("vPos\x00"))
+	gl.EnableVertexAttribArray(uint32(vPosLocation))
+	gl.VertexAttribPointer(uint32(vPosLocation), 2, gl.FLOAT, false, 4, nil)
 
 	for running.Load() {
 		// Clear screen to a color unique to this window
@@ -176,7 +173,7 @@ func ThreadsMain() {
 	}
 
 	// Initialize the gl library. This has to be done with a valid context (i.e. a window).
-	// We use window 0 here. It is detached after intialization
+	// We use window 0 here. It is detached after initialization
 	threadDefs[0].window.MakeContextCurrent()
 	err = gl.Init()
 	if err != nil {

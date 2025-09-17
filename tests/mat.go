@@ -2,7 +2,7 @@ package main
 
 import "math"
 
-// Memory layout: m[0][0], m[0][1], m[0][2], m[0][3], m[1][0], m[i][j] = meme[i*4+j]
+// Mat4 Memory layout: m[0][0], m[0][1], m[0][2], m[0][3], m[1][0], m[i][j] = meme[i*4+j]
 type Mat4 [16]float32
 
 func mat4x4_ortho(left, right, bottom, top, near, far float32) Mat4 {

@@ -8,7 +8,6 @@ const EDS_ROTATEDMODE = 0x00000004
 const CDS_TEST = 0x00000002
 
 // Monitor structure
-//
 type Monitor struct {
 	name        [128]byte
 	userPointer unsafe.Pointer
@@ -87,8 +86,8 @@ func (m *Monitor) GetMonitorName() string {
 }
 
 // GetVideoMode returns the current video mode of the monitor
-func (monitor *Monitor) GetVideoMode() GLFWvidmode {
-	return glfwGetVideoMode(monitor)
+func (m *Monitor) GetVideoMode() GLFWvidmode {
+	return glfwGetVideoMode(m)
 }
 
 // GetVideoModes returns a slice with all the monitor's video modes

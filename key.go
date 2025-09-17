@@ -80,8 +80,6 @@ const (
 	KeyGraveAccent  = 96  /* ` */
 	KeyWorld1       = 161 /* non-US #1 */
 	KeyWorld2       = 162 /* non-US #2 */
-
-	/* Function keys */
 	KeyEscape       = 256
 	KeyEnter        = 257
 	KeyTab          = 258

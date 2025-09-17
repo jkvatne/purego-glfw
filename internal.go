@@ -336,7 +336,7 @@ func glfwInputKey(window *_GLFWwindow, key Key, scancode int, action Action, mod
 	}
 
 	if window.keyCallback != nil {
-		window.keyCallback(window, key, scancode, Action(action), mods)
+		window.keyCallback(window, key, scancode, action, mods)
 	}
 }
 
@@ -605,7 +605,7 @@ func windowProc(hwnd syscall.Handle, msg uint32, wParam, lParam uintptr) uintptr
 			button = MouseButtonLeft
 		} else if msg == _WM_RBUTTONDOWN || msg == _WM_RBUTTONUP {
 			button = MouseButtonRight
-		} else if msg == _WM_MBUTTONDOWN || msg == _WM_MBUTTONUP {
+		} else {
 			button = MouseButtonMiddle
 		}
 		var action Action
@@ -670,8 +670,8 @@ func windowProc(hwnd syscall.Handle, msg uint32, wParam, lParam uintptr) uintptr
 		}
 
 		if window.cursorMode == CursorDisabled {
-			dx := float64(x) - window.lastCursorPosX
-			dy := float64(y) - window.lastCursorPosY
+			dx := x - window.lastCursorPosX
+			dy := y - window.lastCursorPosY
 			if _glfw.win32.disabledCursorWindow != window {
 				break
 			}
@@ -841,21 +841,21 @@ func glfwSetCursor(window *_GLFWwindow, cursor *Cursor) {
 }
 
 func SetFocus(window *_GLFWwindow) {
-	_, _, err := _SetFocus.Call(uintptr(unsafe.Pointer(window.Win32.Handle)))
+	_, _, err := _SetFocus.Call(uintptr(window.Win32.Handle))
 	if err != nil && !errors.Is(err, syscall.Errno(0)) {
 		panic("SetFocus failed, " + err.Error())
 	}
 }
 
 func BringWindowToTop(window *_GLFWwindow) {
-	_, _, err := _BringWindowToTop.Call(uintptr(unsafe.Pointer(window.Win32.Handle)))
+	_, _, err := _BringWindowToTop.Call(uintptr(window.Win32.Handle))
 	if err != nil && !errors.Is(err, syscall.Errno(0)) {
 		panic("BringWindowToTop failed, " + err.Error())
 	}
 }
 
 func SetForegroundWindow(window *_GLFWwindow) {
-	_, _, err := _SetForegroundWindow.Call(uintptr(unsafe.Pointer(window.Win32.Handle)))
+	_, _, err := _SetForegroundWindow.Call(uintptr(window.Win32.Handle))
 	if err != nil && !errors.Is(err, syscall.Errno(0)) {
 		panic("SetForegroundWindow failed, " + err.Error())
 	}
@@ -1093,7 +1093,7 @@ func glfwSetVideoMode(monitor *Monitor, desired *GLFWvidmode) error {
 		} else if result == _DISP_CHANGE_RESTART {
 			description = "Computer restart required"
 		}
-		return fmt.Errorf("Win32: Failed to set video mode: %s", description)
+		return fmt.Errorf("win32: Failed to set video mode: %s", description)
 	}
 	return nil
 }
@@ -1158,7 +1158,7 @@ func releaseMonitor(window *Window) {
 
 func glfwSetPos(w *Window, xPos, yPos int32) {
 	rect := RECT{Left: xPos, Top: yPos, Right: xPos, Bottom: yPos}
-	adjustWindowRect(&rect, getWindowStyle(w), 0, getWindowExStyle(w), GetDpiForWindow(w.Win32.Handle), "glfwSetWindowPos")
+	adjustWindowRect(&rect, getWindowStyle(w), 0, getWindowExStyle(w), GetDpiForWindow(w.Win32.Handle))
 	SetWindowPos(w.Win32.Handle, 0, rect.Left, rect.Top, 0, 0, SWP_NOACTIVATE|SWP_NOZORDER|SWP_NOSIZE)
 }
 
@@ -1520,7 +1520,7 @@ func glfwGetPos(w *Window) (x, y int32) {
 
 func glfwGetFramebufferSize(w *Window) (width int, height int) {
 	var area RECT
-	_, _, err := _GetClientRect.Call(uintptr(unsafe.Pointer(w.Win32.Handle)), uintptr(unsafe.Pointer(&area)))
+	_, _, err := _GetClientRect.Call(uintptr(w.Win32.Handle), uintptr(unsafe.Pointer(&area)))
 	if !errors.Is(err, syscall.Errno(0)) {
 		panic(err)
 	}
@@ -1544,7 +1544,7 @@ func glfwWaitEventsTimeout(timeout float64) {
 
 func glfwSetSize(w *Window, width, height int) {
 	rect := RECT{0, 0, int32(width), int32(height)}
-	adjustWindowRect(&rect, getWindowStyle(w), 0, getWindowExStyle(w), GetDpiForWindow(w.Win32.Handle), "glfwSetWindowSize")
+	adjustWindowRect(&rect, getWindowStyle(w), 0, getWindowExStyle(w), GetDpiForWindow(w.Win32.Handle))
 	SetWindowPos(w.Win32.Handle, 0, 0, 0, int32(width), int32(height), SWP_NOACTIVATE|SWP_NOOWNERZORDER|SWP_NOMOVE|SWP_NOZORDER)
 }
 
@@ -1642,7 +1642,8 @@ func createNativeWindow(window *_GLFWwindow, wndconfig *_GLFWwndconfig, fbconfig
 		frameWidth = mi.RcMonitor.Right - mi.RcMonitor.Left
 		frameHeight = mi.RcMonitor.Bottom - mi.RcMonitor.Top
 	} else {
-		rect := RECT{0, 0, int32(wndconfig.width), int32(wndconfig.height)}
+		rect := RECT{0, 0,
+			wndconfig.width, wndconfig.height}
 		window.maximized = wndconfig.maximized
 		if wndconfig.maximized {
 			style |= ws_MAXIMIZE
@@ -1652,8 +1653,8 @@ func createNativeWindow(window *_GLFWwindow, wndconfig *_GLFWwndconfig, fbconfig
 			frameX = _CW_USEDEFAULT
 			frameY = _CW_USEDEFAULT
 		} else {
-			frameX = int32(wndconfig.xpos) + rect.Left
-			frameY = int32(wndconfig.ypos) + rect.Top
+			frameX = wndconfig.xpos + rect.Left
+			frameY = wndconfig.ypos + rect.Top
 		}
 		frameWidth = rect.Right - rect.Left
 		frameHeight = rect.Bottom - rect.Top
@@ -1772,14 +1773,10 @@ func glfwTerminate() {
 }
 
 func glfwPlatformInit() error {
-	var err error
 	createKeyTables()
 	SetProcessDpiAwareness()
 	_glfw.instance = GetModuleHandle()
-	if err != nil {
-		return fmt.Errorf("glfw platform init failed %v ", err.Error())
-	}
-	err = createHelperWindow()
+	err := createHelperWindow()
 	if err != nil {
 		return err
 	}
@@ -1850,10 +1847,10 @@ func glfwCreateWindow(width, height int32, title string, monitor *Monitor, share
 
 	window.videoMode.Width = width
 	window.videoMode.Height = height
-	window.videoMode.RedBits = int32(fbconfig.redBits)
-	window.videoMode.GreenBits = int32(fbconfig.greenBits)
-	window.videoMode.BlueBits = int32(fbconfig.blueBits)
-	window.videoMode.RefreshRate = int32(_glfw.hints.refreshRate)
+	window.videoMode.RedBits = fbconfig.redBits
+	window.videoMode.GreenBits = fbconfig.greenBits
+	window.videoMode.BlueBits = fbconfig.blueBits
+	window.videoMode.RefreshRate = _glfw.hints.refreshRate
 
 	window.monitor = monitor
 	window.resizable = wndconfig.resizable
@@ -1872,7 +1869,7 @@ func glfwCreateWindow(width, height int32, title string, monitor *Monitor, share
 
 	if err := glfwPlatformCreateWindow(window, &wndconfig, &ctxconfig, &fbconfig); err != nil {
 		// glfwDestroyWindow(window)
-		return nil, fmt.Errorf("Error creating window, %v", err.Error())
+		return nil, fmt.Errorf("error creating window, %v", err.Error())
 	}
 	return window, nil
 }
@@ -1963,7 +1960,7 @@ func glfwGetWindowFrameSize(window *_GLFWwindow, left, top, right, bottom *int32
 	rect.Right = width
 	rect.Bottom = height
 	dpi := GetDpiForWindow(window.Win32.Handle)
-	adjustWindowRect(&rect, getWindowStyle(window), 0, getWindowExStyle(window), dpi, "glfwGetWindowFrameSize")
+	adjustWindowRect(&rect, getWindowStyle(window), 0, getWindowExStyle(window), dpi)
 	*left = -rect.Left
 	*top = -rect.Top
 	*right = rect.Right - width
@@ -1998,7 +1995,7 @@ func glfwGetCursorPos(w *_GLFWwindow, x *int32, y *int32) {
 
 func glfwGetWindowSize(window *_GLFWwindow, width *int32, height *int32) {
 	var area RECT
-	_, _, err := _GetClientRect.Call(uintptr(unsafe.Pointer(window.Win32.Handle)), uintptr(unsafe.Pointer(&area)))
+	_, _, err := _GetClientRect.Call(uintptr(window.Win32.Handle), uintptr(unsafe.Pointer(&area)))
 	if !errors.Is(err, syscall.Errno(0)) {
 		panic(err)
 	}
@@ -2022,7 +2019,6 @@ func glfwGetClipboardString() (string, error) {
 		}
 		break
 	}
-	defer _CloseClipboard.Call()
 	hMem, _, err := _GetClipboardData.Call(cFmtUnicodeText)
 	if hMem == 0 {
 		return "", err
@@ -2134,7 +2130,7 @@ func glfwSetWindowMonitor(window *Window, monitor *Monitor, xpos int32, ypos int
 				fitToMonitor(window)
 			}
 		} else {
-			rect := RECT{(xpos), (ypos), xpos + width, ypos + height}
+			rect := RECT{xpos, ypos, xpos + width, ypos + height}
 			if IsWindows10Version1607OrGreater() {
 				AdjustWindowRectExForDpi(&rect, getWindowStyle(window), 0, getWindowExStyle(window), GetDpiForWindow(window.Win32.Handle))
 			} else {
@@ -2259,11 +2255,11 @@ func glfwPollMonitors() {
 
 func glfwSetWindowSize(window *Window, width, height int32) {
 	rect := RECT{0, 0, width, height}
-	adjustWindowRect(&rect, getWindowStyle(window), 0, getWindowExStyle(window), GetDpiForWindow(window.Win32.Handle), "glfwSetWindowSize")
+	adjustWindowRect(&rect, getWindowStyle(window), 0, getWindowExStyle(window), GetDpiForWindow(window.Win32.Handle))
 	SetWindowPos(window.Win32.Handle, 0, 0, 0, rect.Right-rect.Left, rect.Bottom-rect.Top, SWP_NOACTIVATE|SWP_NOOWNERZORDER|SWP_NOMOVE|SWP_NOZORDER)
 }
 
-func adjustWindowRect(rect *RECT, style uint32, menu int, exStyle uint32, dpi int, from string) {
+func adjustWindowRect(rect *RECT, style uint32, menu int, exStyle uint32, dpi int) {
 	if IsWindows10Version1607OrGreater() {
 		AdjustWindowRectExForDpi(rect, style, 0, exStyle, dpi)
 	} else {

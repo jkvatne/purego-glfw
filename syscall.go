@@ -1,6 +1,3 @@
-// This file contains the window system calls
-// The entry points are found in dwmapi.dll, gdi32.dll, ntdll.dll, shcore.dll and kernel32.dll
-// Most functions panic on error, except when an error is expected during normal operation.
 package glfw
 
 import (
@@ -11,6 +8,10 @@ import (
 
 	"golang.org/x/sys/windows"
 )
+
+// This file contains the window system calls
+// The entry points are found in dwmapi.dll, gdi32.dll, ntdll.dll, shcore.dll and kernel32.dll
+// Most functions panic on error, except when an error is expected during normal operation.
 
 var (
 	dwmapi                   = windows.NewLazySystemDLL("dwmapi.dll")
@@ -95,7 +96,6 @@ var (
 	_RemovePropW                   = user32.NewProc("RemovePropW")
 	_MsgWaitForMultipleObjects     = user32.NewProc("MsgWaitForMultipleObjects")
 	_GetSystemMetrics              = user32.NewProc("GetSystemMetrics")
-	_CreateIcon                    = user32.NewProc("CreateIcon")
 	_DestroyIcon                   = user32.NewProc("DestroyIcon")
 	_CreateIconIndirect            = user32.NewProc("CreateIconIndirect")
 	_GetClassLongPtrW              = user32.NewProc("GetClassLongPtrW")
@@ -220,17 +220,8 @@ func DispatchMessage(m *Msg) {
 	_, _, _ = _DispatchMessage.Call(uintptr(unsafe.Pointer(m)))
 }
 
-// WaitMessage blocks thread execution until the thread needs to process a new message
-// It will panic on errors.
-func WaitMessage() {
-	_, _, err := _WaitMessage.Call()
-	if !errors.Is(err, syscall.Errno(0)) {
-		panic("WaitMessage failed, " + err.Error())
-	}
-}
-
 func PostMessageW(hWnd syscall.Handle, msg uint32, wParam, lParam uintptr) {
-	_, _, _ = _PostMessageW.Call(uintptr(hWnd), uintptr(msg), uintptr(wParam), uintptr(lParam))
+	_, _, _ = _PostMessageW.Call(uintptr(hWnd), uintptr(msg), wParam, lParam)
 }
 
 // CreateWindowEx will create a new window. It returns an error if creation failed
@@ -392,7 +383,6 @@ func GetMonitorInfo(hMonitor HMONITOR) *MONITORINFO {
 	return &lmpi
 }
 
-// GetDeviceCaps
 func GetDeviceCaps(dc HDC, flags int) int {
 	r1, _, err := _GetDeviceCaps.Call(uintptr(dc), uintptr(flags))
 	if err != nil && !errors.Is(err, syscall.Errno(0)) {
@@ -695,7 +685,7 @@ func LoadCursor(cursorID uint16) syscall.Handle {
 	if h == 0 {
 		panic("LoadCursor failed")
 	}
-	return syscall.Handle(h)
+	return h
 }
 
 func ChangeDisplaySettingsEx(name *uint16, mode *DEVMODEW, hWnd syscall.Handle, flags uint32, lParam uintptr) int32 {
