@@ -656,8 +656,8 @@ func windowProc(hwnd syscall.Handle, msg uint32, wParam, lParam uintptr) uintptr
 		return 0
 
 	case _WM_MOUSEMOVE:
-		x := float64(int(lParam & 0xffff))
-		y := float64(int((lParam >> 16) & 0xffff))
+		x := float64(int16(lParam & 0xffff))
+		y := float64(int16(lParam >> 16))
 		if !window.Win32.cursorTracked {
 			var tme TRACKMOUSEEVENT
 			tme.dwFlags = _TME_LEAVE
