@@ -4,12 +4,12 @@ package main
 
 import (
 	"fmt"
+	"math/rand"
 	"os"
 	"runtime"
 
 	glfw "github.com/jkvatne/purego-glfw"
 	"github.com/neclepsio/gl/all-core/gl"
-	"golang.org/x/exp/rand"
 )
 
 func error_callback(error int, description string) {

@@ -3,10 +3,10 @@
 ## Introduction
 
 This is a translation of the official glfw from C to Go.
-It implements the same interface as https://github.com/go-gl/v3.3
-The C code comes from https://github.com/glfw/glfw
+It implements the same interface as found in https://github.com/go-gl/glfw/tree/master/v3.3/glfw
+The original C code comes from https://github.com/glfw/glfw
 
-Only Windows is currently because the other platforms can easily use the
+Only Windows is currently supported because the other platforms can easily use the
 orignal glfw. On Windows there is often problems using the CGO functions.
 This code can be used without any C compiler. It is pure Go.
 
@@ -22,22 +22,22 @@ go get -u github.com/jkvatne/purego-glfw
 ```
 
 ## Dependencies
-```
-golang.design/x/clipboard
-```
-This is needed for clipboard support on windows.
-- clipbord.Init()
-- clipboard.Read()
-- clibport.Write()
 
 ```
-golang.org/x/sys/windows
+golang.org/x/sys
 ```
 This is used to import the types LazyDLL and LazyProc.
 
-## Limitations
+```
+github.com/neclepsio/gl
+```
+This is used for testing only, in order to draw graphics in the test windows.
+It is a fork of go-gl that does not use CGO. This means you can run the tests
+with CGO disabled. (Set the environment variable CGO_ENABLED=0)
+
+## Known limitations
 
 - Only standard OpenGl is supported. No Vulkan or OpenGL ES.
-- Only Windows 10 or later is supported (Can perhaps work on Windows 8).
-- Monitor connect/disconnect is not supported while the app is running
+- Only Windows 10 or later is supported (Can perhaps work on Windows 8 and 10).
+- Monitor connect/disconnect is not detected while the app is running
 - Joystick is not supported
