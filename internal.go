@@ -87,15 +87,20 @@ type _GLFWwindow struct {
 	lockKeyMods             bool
 	disableMouseButtonLimit bool
 
-	cursorMode              int
-	rawMouseMotion          int
-	mouseButtons            [MouseButtonLast + 1]Action
-	keys                    [KeyLast + 1]Action
-	virtualCursorPosX       float64 // Virtual cursor position when cursor is disabled
-	virtualCursorPosY       float64 // Virtual cursor position when cursor is disabled
-	context                 *_GLFWcontext
-	lastCursorPosX          float64 // The last received cursor position, regardless of source
-	lastCursorPosY          float64 // The last received cursor position, regardless of source
+	cursorMode        int
+	rawMouseMotion    int
+	mouseButtons      [MouseButtonLast + 1]Action
+	keys              [KeyLast + 1]Action
+	virtualCursorPosX float64 // Virtual cursor position when cursor is disabled
+	virtualCursorPosY float64 // Virtual cursor position when cursor is disabled
+	context           *_GLFWcontext
+	lastCursorPosX    float64 // The last received cursor position, regardless of source
+	lastCursorPosY    float64 // The last received cursor position, regardless of source
+
+	attribs     [40]int32
+	values      [40]int32
+	attribCount int
+
 	charCallback            CharCallback
 	focusCallback           FocusCallback
 	keyCallback             KeyCallback

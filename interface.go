@@ -188,7 +188,7 @@ func WaitEventsTimeout(timeout float64) {
 	glfwWaitEventsTimeout(timeout)
 }
 
-func WindowHint(hint Hint, v int) error {
+func WindowHint(hint Hint, v int) {
 	value := int32(v)
 	switch hint {
 	case RedBits:
@@ -272,10 +272,9 @@ func WindowHint(hint Hint, v int) error {
 		_glfw.hints.context.release = value
 	case RefreshRate:
 		_glfw.hints.refreshRate = value
-	default:
-		return fmt.Errorf("invalid window hint %d with value %d", hint, value)
+		// default:
+		//	return fmt.Errorf("invalid window hint %d with value %d", hint, value)
 	}
-	return nil
 }
 
 // GetClipboardString returns the contents of the system clipboard

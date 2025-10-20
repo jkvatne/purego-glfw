@@ -150,7 +150,7 @@ func thread(self *Thread) {
 func ThreadsMain() {
 	threadCount := len(threadDefs)
 	runtime.LockOSThread()
-	runtime.GOMAXPROCS(1)
+	runtime.GOMAXPROCS(16)
 	fmt.Printf("\nTesting drawing windows in different goroutines\n")
 	fmt.Printf("Window count = %d\n", threadCount)
 	fmt.Printf("runtime.NumCPU() = %d\n", runtime.NumCPU())

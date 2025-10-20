@@ -11,6 +11,10 @@ import (
 	"golang.org/x/sys/windows"
 )
 
+var (
+	opengl32 = windows.NewLazySystemDLL("opengl32.dll")
+)
+
 const (
 	wgl_NUMBER_PIXEL_FORMATS_ARB                = 0x2000
 	wgl_DRAW_TO_WINDOW_ARB                      = 0x2001
@@ -60,29 +64,19 @@ const (
 	wgl_CONTEXT_RELEASE_BEHAVIOR_FLUSH_ARB      = 0x2098
 )
 
-var (
-	attribs     [40]int32
-	values      [40]int32
-	attribCount int
-)
-
-func addAttrib(a int32) {
-	attribs[attribCount] = a
-	attribCount++
+func addAttrib(w *Window, a int32) {
+	w.attribs[w.attribCount] = a
+	w.attribCount++
 }
 
-func findAttrib(a int32) int32 {
-	for i := 0; i < attribCount; i++ {
-		if attribs[i] == a {
-			return values[i]
+func findAttrib(w *Window, a int32) int32 {
+	for i := 0; i < w.attribCount; i++ {
+		if w.attribs[i] == a {
+			return w.values[i]
 		}
 	}
 	panic("WGL: Unknown pixel format attribute requested")
 }
-
-var (
-	opengl32 = windows.NewLazySystemDLL("opengl32.dll")
-)
 
 func wglGetProcAddress(name string) uintptr {
 	var b [64]byte
@@ -437,53 +431,53 @@ func wglGetPixelFormatAttribivARB(dc HDC, pixelFormat int32, layerPlane int, nAt
 	}
 }
 
-func choosePixelFormatWGL(window *_GLFWwindow, ctxConfig *_GLFWctxconfig, fbConfig *_GLFWfbconfig) int32 {
+func choosePixelFormatWGL(w *_GLFWwindow, ctxConfig *_GLFWctxconfig, fbConfig *_GLFWfbconfig) int32 {
 	var (
 		closest                               *_GLFWfbconfig
 		pixelFormat, nativeCount, usableCount int32
 		pfd                                   PIXELFORMATDESCRIPTOR
 	)
-	nativeCount = describePixelFormat(window.context.wgl.dc, 1, int(unsafe.Sizeof(pfd)), nil)
-	attribCount = 0
+	nativeCount = describePixelFormat(w.context.wgl.dc, 1, int(unsafe.Sizeof(pfd)), nil)
+	w.attribCount = 0
 	if _glfw.wgl.ARB_pixel_format {
-		addAttrib(wgl_SUPPORT_OPENGL_ARB)
-		addAttrib(wgl_DRAW_TO_WINDOW_ARB)
-		addAttrib(wgl_PIXEL_TYPE_ARB)
-		addAttrib(wgl_ACCELERATION_ARB)
-		addAttrib(wgl_RED_BITS_ARB)
-		addAttrib(wgl_RED_SHIFT_ARB)
-		addAttrib(wgl_GREEN_BITS_ARB)
-		addAttrib(wgl_GREEN_SHIFT_ARB)
-		addAttrib(wgl_BLUE_BITS_ARB)
-		addAttrib(wgl_BLUE_SHIFT_ARB)
-		addAttrib(wgl_ALPHA_BITS_ARB)
-		addAttrib(wgl_ALPHA_SHIFT_ARB)
-		addAttrib(wgl_DEPTH_BITS_ARB)
-		addAttrib(wgl_STENCIL_BITS_ARB)
-		addAttrib(wgl_ACCUM_BITS_ARB)
-		addAttrib(wgl_ACCUM_RED_BITS_ARB)
-		addAttrib(wgl_ACCUM_GREEN_BITS_ARB)
-		addAttrib(wgl_ACCUM_BLUE_BITS_ARB)
-		addAttrib(wgl_ACCUM_ALPHA_BITS_ARB)
-		addAttrib(wgl_AUX_BUFFERS_ARB)
-		addAttrib(wgl_STEREO_ARB)
-		addAttrib(wgl_DOUBLE_BUFFER_ARB)
+		addAttrib(w, wgl_SUPPORT_OPENGL_ARB)
+		addAttrib(w, wgl_DRAW_TO_WINDOW_ARB)
+		addAttrib(w, wgl_PIXEL_TYPE_ARB)
+		addAttrib(w, wgl_ACCELERATION_ARB)
+		addAttrib(w, wgl_RED_BITS_ARB)
+		addAttrib(w, wgl_RED_SHIFT_ARB)
+		addAttrib(w, wgl_GREEN_BITS_ARB)
+		addAttrib(w, wgl_GREEN_SHIFT_ARB)
+		addAttrib(w, wgl_BLUE_BITS_ARB)
+		addAttrib(w, wgl_BLUE_SHIFT_ARB)
+		addAttrib(w, wgl_ALPHA_BITS_ARB)
+		addAttrib(w, wgl_ALPHA_SHIFT_ARB)
+		addAttrib(w, wgl_DEPTH_BITS_ARB)
+		addAttrib(w, wgl_STENCIL_BITS_ARB)
+		addAttrib(w, wgl_ACCUM_BITS_ARB)
+		addAttrib(w, wgl_ACCUM_RED_BITS_ARB)
+		addAttrib(w, wgl_ACCUM_GREEN_BITS_ARB)
+		addAttrib(w, wgl_ACCUM_BLUE_BITS_ARB)
+		addAttrib(w, wgl_ACCUM_ALPHA_BITS_ARB)
+		addAttrib(w, wgl_AUX_BUFFERS_ARB)
+		addAttrib(w, wgl_STEREO_ARB)
+		addAttrib(w, wgl_DOUBLE_BUFFER_ARB)
 
 		if _glfw.wgl.ARB_multisample {
-			addAttrib(wgl_SAMPLES_ARB)
+			addAttrib(w, wgl_SAMPLES_ARB)
 		}
 		if ctxConfig.client == OpenGLAPI {
 			if _glfw.wgl.ARB_framebuffer_sRGB || _glfw.wgl.EXT_framebuffer_sRGB {
-				addAttrib(wgl_FRAMEBUFFER_SRGB_CAPABLE_ARB)
+				addAttrib(w, wgl_FRAMEBUFFER_SRGB_CAPABLE_ARB)
 			}
 		} else {
 			if _glfw.wgl.EXT_colorspace {
-				addAttrib(wgl_COLORSPACE_EXT)
+				addAttrib(w, wgl_COLORSPACE_EXT)
 			}
 		}
 		attrib := int32(wgl_NUMBER_PIXEL_FORMATS_ARB)
 		var extensionCount int32
-		wglGetPixelFormatAttribivARB(window.context.wgl.dc, 1, 0, 1, &attrib, &extensionCount)
+		wglGetPixelFormatAttribivARB(w.context.wgl.dc, 1, 0, 1, &attrib, &extensionCount)
 		nativeCount = min(nativeCount, extensionCount)
 	}
 	usableConfigs := make([]_GLFWfbconfig, nativeCount)
@@ -492,56 +486,56 @@ func choosePixelFormatWGL(window *_GLFWwindow, ctxConfig *_GLFWctxconfig, fbConf
 		pixelFormat = int32(i) + 1
 		if _glfw.wgl.ARB_pixel_format {
 			// Get pixel format attributes through "modern" extension
-			values[0] = 0
-			wglGetPixelFormatAttribivARB(window.context.wgl.dc, pixelFormat, 0, 1 /*attribCount*/, &attribs[2], &values[2])
-			for j := 0; j < attribCount; j++ {
-				wglGetPixelFormatAttribivARB(window.context.wgl.dc, pixelFormat, 0, 1 /*attribCount*/, &attribs[j], &values[j])
+			w.values[0] = 0
+			wglGetPixelFormatAttribivARB(w.context.wgl.dc, pixelFormat, 0, 1 /*attribCount*/, &w.attribs[2], &w.values[2])
+			for j := 0; j < w.attribCount; j++ {
+				wglGetPixelFormatAttribivARB(w.context.wgl.dc, pixelFormat, 0, 1 /*attribCount*/, &w.attribs[j], &w.values[j])
 			}
-			if findAttrib(wgl_SUPPORT_OPENGL_ARB) == 0 || findAttrib(wgl_DRAW_TO_WINDOW_ARB) == 0 {
+			if findAttrib(w, wgl_SUPPORT_OPENGL_ARB) == 0 || findAttrib(w, wgl_DRAW_TO_WINDOW_ARB) == 0 {
 				continue
 			}
-			if findAttrib(wgl_PIXEL_TYPE_ARB) != wgl_TYPE_RGBA_ARB {
+			if findAttrib(w, wgl_PIXEL_TYPE_ARB) != wgl_TYPE_RGBA_ARB {
 				continue
 			}
-			if findAttrib(wgl_ACCELERATION_ARB) == wgl_NO_ACCELERATION_ARB {
+			if findAttrib(w, wgl_ACCELERATION_ARB) == wgl_NO_ACCELERATION_ARB {
 				continue
 			}
-			if (findAttrib(wgl_DOUBLE_BUFFER_ARB) != 0) != fbConfig.doublebuffer {
+			if (findAttrib(w, wgl_DOUBLE_BUFFER_ARB) != 0) != fbConfig.doublebuffer {
 				continue
 			}
-			u.redBits = findAttrib(wgl_RED_BITS_ARB)
-			u.greenBits = findAttrib(wgl_GREEN_BITS_ARB)
-			u.blueBits = findAttrib(wgl_BLUE_BITS_ARB)
-			u.alphaBits = findAttrib(wgl_ALPHA_BITS_ARB)
-			u.depthBits = findAttrib(wgl_DEPTH_BITS_ARB)
-			u.stencilBits = findAttrib(wgl_STENCIL_BITS_ARB)
-			u.accumRedBits = findAttrib(wgl_ACCUM_RED_BITS_ARB)
-			u.accumGreenBits = findAttrib(wgl_ACCUM_GREEN_BITS_ARB)
-			u.accumBlueBits = findAttrib(wgl_ACCUM_BLUE_BITS_ARB)
-			u.accumAlphaBits = findAttrib(wgl_ACCUM_ALPHA_BITS_ARB)
-			u.auxBuffers = findAttrib(wgl_AUX_BUFFERS_ARB)
-			if findAttrib(wgl_STEREO_ARB) != 0 {
+			u.redBits = findAttrib(w, wgl_RED_BITS_ARB)
+			u.greenBits = findAttrib(w, wgl_GREEN_BITS_ARB)
+			u.blueBits = findAttrib(w, wgl_BLUE_BITS_ARB)
+			u.alphaBits = findAttrib(w, wgl_ALPHA_BITS_ARB)
+			u.depthBits = findAttrib(w, wgl_DEPTH_BITS_ARB)
+			u.stencilBits = findAttrib(w, wgl_STENCIL_BITS_ARB)
+			u.accumRedBits = findAttrib(w, wgl_ACCUM_RED_BITS_ARB)
+			u.accumGreenBits = findAttrib(w, wgl_ACCUM_GREEN_BITS_ARB)
+			u.accumBlueBits = findAttrib(w, wgl_ACCUM_BLUE_BITS_ARB)
+			u.accumAlphaBits = findAttrib(w, wgl_ACCUM_ALPHA_BITS_ARB)
+			u.auxBuffers = findAttrib(w, wgl_AUX_BUFFERS_ARB)
+			if findAttrib(w, wgl_STEREO_ARB) != 0 {
 				u.stereo = true
 			}
 			if _glfw.wgl.ARB_multisample {
-				u.samples = findAttrib(wgl_SAMPLES_ARB)
+				u.samples = findAttrib(w, wgl_SAMPLES_ARB)
 			}
 			if ctxConfig.client == OpenGLAPI {
 				if _glfw.wgl.ARB_framebuffer_sRGB || _glfw.wgl.EXT_framebuffer_sRGB {
-					if findAttrib(wgl_FRAMEBUFFER_SRGB_CAPABLE_ARB) != 0 {
+					if findAttrib(w, wgl_FRAMEBUFFER_SRGB_CAPABLE_ARB) != 0 {
 						u.sRGB = true
 					}
 				}
 			} else {
 				if _glfw.wgl.EXT_colorspace {
-					if findAttrib(wgl_COLORSPACE_EXT) == wgl_COLORSPACE_SRGB_EXT {
+					if findAttrib(w, wgl_COLORSPACE_EXT) == wgl_COLORSPACE_SRGB_EXT {
 						u.sRGB = true
 					}
 				}
 			}
 		} else {
 			// Get pixel format attributes through legacy PFDs
-			if describePixelFormat(window.context.wgl.dc, pixelFormat, int(unsafe.Sizeof(pfd)), &pfd) == 0 {
+			if describePixelFormat(w.context.wgl.dc, pixelFormat, int(unsafe.Sizeof(pfd)), &pfd) == 0 {
 				panic("WGL: Failed to describe pixel format")
 			}
 			if (pfd.dwFlags&PFD_DRAW_TO_WINDOW) == 0 || (pfd.dwFlags&PFD_SUPPORT_OPENGL) == 0 {

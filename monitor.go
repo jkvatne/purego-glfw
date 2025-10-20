@@ -4,9 +4,6 @@ import (
 	"unsafe"
 )
 
-const EDS_ROTATEDMODE = 0x00000004
-const CDS_TEST = 0x00000002
-
 // Monitor structure
 type Monitor struct {
 	name        [128]byte
