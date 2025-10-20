@@ -1538,8 +1538,10 @@ func glfwDetachCurrentContext() {
 	_ = makeContextCurrentWGL(nil)
 }
 
+// glfwPostEmptyEvent will post an empty event into the eventqueue of the thread
+// that initialized glfw.
 func glfwPostEmptyEvent() {
-	PostMessageW(0, 0, 0, 0)
+	PostMessageW(_glfw.win32.helperWindowHandle, 0, 0, 0)
 }
 
 func glfwWaitEventsTimeout(timeout float64) {
