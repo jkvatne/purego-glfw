@@ -13,7 +13,7 @@ import (
 	"unsafe"
 
 	glfw "github.com/jkvatne/purego-glfw"
-	"github.com/neclepsio/gl/all-core/gl"
+	gl "github.com/jkvatne/purego-glfw/gl"
 )
 
 var running atomic.Bool
@@ -166,8 +166,8 @@ func ThreadsMain() {
 
 	// Create one window for each thread in different locations
 	for i := 0; i < threadCount; i++ {
-		_ = glfw.WindowHint(glfw.PositionX, threadDefs[i].x)
-		_ = glfw.WindowHint(glfw.PositionY, threadDefs[i].y)
+		glfw.WindowHint(glfw.PositionX, threadDefs[i].x)
+		glfw.WindowHint(glfw.PositionY, threadDefs[i].y)
 		threadDefs[i].window, err = glfw.CreateWindow(400, 120, threadDefs[i].title, nil, nil)
 		threadDefs[i].window.SetKeyCallback(key_callback5)
 	}

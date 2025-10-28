@@ -7,7 +7,7 @@ import (
 	"time"
 
 	glfw "github.com/jkvatne/purego-glfw"
-	"github.com/neclepsio/gl/all-core/gl"
+	gl "github.com/jkvatne/purego-glfw/gl"
 )
 
 func key_callback_window(window *glfw.Window, key glfw.Key, scancode int, action glfw.Action, mods glfw.ModifierKey) {

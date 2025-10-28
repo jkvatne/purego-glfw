@@ -10,7 +10,7 @@ import (
 	"unsafe"
 
 	glfw "github.com/jkvatne/purego-glfw"
-	"github.com/neclepsio/gl/all-core/gl"
+	gl "github.com/jkvatne/purego-glfw/gl"
 )
 
 func OpacityMain() {
@@ -24,8 +24,8 @@ func OpacityMain() {
 	defer glfw.Terminate()
 	glfw.SetErrorCallback(error_callback)
 
-	_ = glfw.WindowHint(glfw.ContextVersionMajor, 2)
-	_ = glfw.WindowHint(glfw.ContextVersionMinor, 0)
+	glfw.WindowHint(glfw.ContextVersionMajor, 2)
+	glfw.WindowHint(glfw.ContextVersionMinor, 0)
 	window, err := glfw.CreateWindow(400, 400, "Transparent", nil, nil)
 	if err != nil {
 		glfw.Terminate()

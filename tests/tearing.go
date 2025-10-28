@@ -12,7 +12,7 @@ import (
 	"unsafe"
 
 	glfw "github.com/jkvatne/purego-glfw"
-	"github.com/neclepsio/gl/all-core/gl"
+	gl "github.com/jkvatne/purego-glfw/gl"
 )
 
 var (
@@ -90,8 +90,8 @@ func TearingMain() {
 	defer glfw.Terminate()
 	glfw.SetErrorCallback(error_callback)
 
-	_ = glfw.WindowHint(glfw.ContextVersionMajor, 2)
-	_ = glfw.WindowHint(glfw.ContextVersionMinor, 0)
+	glfw.WindowHint(glfw.ContextVersionMajor, 2)
+	glfw.WindowHint(glfw.ContextVersionMinor, 0)
 	window, err := glfw.CreateWindow(640, 480, "Tearing detector", nil, nil)
 	if err != nil {
 		glfw.Terminate()

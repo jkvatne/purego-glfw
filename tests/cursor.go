@@ -8,7 +8,7 @@ import (
 	"unsafe"
 
 	glfw "github.com/jkvatne/purego-glfw"
-	"github.com/neclepsio/gl/all-core/gl"
+	gl "github.com/jkvatne/purego-glfw/gl"
 )
 
 // Cursor & input mode tests
@@ -257,8 +257,8 @@ func CursorMain() {
 		standard_cursors[i] = glfw.CreateStandardCursor(shapes[i])
 	}
 
-	_ = glfw.WindowHint(glfw.ContextVersionMajor, 2)
-	_ = glfw.WindowHint(glfw.ContextVersionMinor, 0)
+	glfw.WindowHint(glfw.ContextVersionMajor, 2)
+	glfw.WindowHint(glfw.ContextVersionMinor, 0)
 	window, err := glfw.CreateWindow(640, 480, "Cursor Test", nil, nil)
 	if err != nil {
 		glfw.Terminate()

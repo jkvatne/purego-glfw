@@ -12,7 +12,7 @@ import (
 	"unsafe"
 
 	glfw "github.com/jkvatne/purego-glfw"
-	"github.com/neclepsio/gl/all-core/gl"
+	gl "github.com/jkvatne/purego-glfw/gl"
 )
 
 var vertices2 = [8]float32{-0.6, 0.6, 0.6, -0.6, -0.6, -0.6, 0.6, 0.6}
@@ -81,9 +81,9 @@ func MsaaMain() {
 	glfw.SetErrorCallback(error_callback)
 
 	fmt.Printf("Requesting MSAA with %d samples\n", samples)
-	_ = glfw.WindowHint(glfw.Samples, int(samples))
-	_ = glfw.WindowHint(glfw.ContextVersionMajor, 2)
-	_ = glfw.WindowHint(glfw.ContextVersionMinor, 0)
+	glfw.WindowHint(glfw.Samples, int(samples))
+	glfw.WindowHint(glfw.ContextVersionMajor, 2)
+	glfw.WindowHint(glfw.ContextVersionMinor, 0)
 
 	window, err = glfw.CreateWindow(800, 400, "Aliasing Detector", nil, nil)
 	if err != nil {

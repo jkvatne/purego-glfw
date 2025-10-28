@@ -6,7 +6,7 @@ import (
 	"runtime"
 
 	glfw "github.com/jkvatne/purego-glfw"
-	"github.com/neclepsio/gl/all-core/gl"
+	gl "github.com/jkvatne/purego-glfw/gl"
 )
 
 // UTF-8 window tear_title test

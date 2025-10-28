@@ -10,7 +10,7 @@ import (
 	"unsafe"
 
 	glfw "github.com/jkvatne/purego-glfw"
-	"github.com/neclepsio/gl/all-core/gl"
+	gl "github.com/jkvatne/purego-glfw/gl"
 )
 
 // It closes and re-opens the GLFW window every five seconds, alternating
@@ -90,8 +90,8 @@ func ReopenMain() {
 	defer glfw.Terminate()
 	glfw.SetErrorCallback(error_callback)
 
-	_ = glfw.WindowHint(glfw.ContextVersionMajor, 2)
-	_ = glfw.WindowHint(glfw.ContextVersionMinor, 0)
+	glfw.WindowHint(glfw.ContextVersionMajor, 2)
+	glfw.WindowHint(glfw.ContextVersionMinor, 0)
 	glfw.SetTime(0)
 	for glfw.GetTime() < 10.0 {
 		monitor = nil

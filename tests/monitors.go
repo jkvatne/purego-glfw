@@ -8,7 +8,7 @@ import (
 	"runtime"
 
 	glfw "github.com/jkvatne/purego-glfw"
-	"github.com/neclepsio/gl/all-core/gl"
+	gl "github.com/jkvatne/purego-glfw/gl"
 )
 
 type colDef struct {
@@ -122,11 +122,11 @@ func test_mode(monitor *glfw.Monitor, i int, timeShownSec float64) {
 		return
 	}
 	mode := modes[i]
-	_ = glfw.WindowHint(glfw.Samples, 1)
-	_ = glfw.WindowHint(glfw.RedBits, int(mode.RedBits))
-	_ = glfw.WindowHint(glfw.GreenBits, int(mode.GreenBits))
-	_ = glfw.WindowHint(glfw.BlueBits, int(mode.BlueBits))
-	_ = glfw.WindowHint(glfw.RefreshRate, int(mode.RefreshRate))
+	glfw.WindowHint(glfw.Samples, 1)
+	glfw.WindowHint(glfw.RedBits, int(mode.RedBits))
+	glfw.WindowHint(glfw.GreenBits, int(mode.GreenBits))
+	glfw.WindowHint(glfw.BlueBits, int(mode.BlueBits))
+	glfw.WindowHint(glfw.RefreshRate, int(mode.RefreshRate))
 	color := colors[i%len(colors)]
 	fmt.Printf("Testing mode %d on monitor %s: %s color=%v\n", i, monitor.GetMonitorName(), formatMode(&mode), color)
 	window, err := glfw.CreateWindow(int(mode.Width), int(mode.Height), "Video Mode Test", monitor, nil)
