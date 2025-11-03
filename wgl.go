@@ -221,6 +221,10 @@ func getProcAddressWGL(procName string) uintptr {
 
 func _glfwInitWGL() error {
 	var pfd PIXELFORMATDESCRIPTOR
+	// Force the lazy handle to load now
+	if err := opengl32.Load(); err != nil {
+		return fmt.Errorf("your graphic card does not support OpenGl, 'opengl32.dll' not available: %w", err)
+	}
 	if _glfw.wgl.instance != nil {
 		return nil
 	}
@@ -232,6 +236,10 @@ func _glfwInitWGL() error {
 	_glfw.wgl.wglGetCurrentContext = opengl32.NewProc("wglGetCurrentContext")
 	_glfw.wgl.wglMakeCurrent = opengl32.NewProc("wglMakeCurrent")
 	_glfw.wgl.wglShareLists = opengl32.NewProc("wglShareLists")
+
+	if err := _glfw.wgl.wglGetProcAddress.Find(); err != nil {
+		return fmt.Errorf("your graphic card does not support OpenGl, wglGetProcAddress not found: %w", err)
+	}
 	// NOTE: A dummy context has to be created for opengl32.dll to load the
 	// OpenGL Installable Client Driver, from which we can then query WGL extensions
 	dc := getDC(_glfw.win32.helperWindowHandle)

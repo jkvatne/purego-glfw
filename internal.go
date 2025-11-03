@@ -1800,10 +1800,10 @@ func glfwPlatformCreateWindow(window *_GLFWwindow, wndconfig *_GLFWwndconfig, ct
 	}
 	if ctxconfig.client != NoAPI {
 		if err := _glfwInitWGL(); err != nil {
-			return fmt.Errorf("_glfwInitWGL error %v", err.Error())
+			return fmt.Errorf("could not create window, %v", err.Error())
 		}
 		if err := glfwCreateContextWGL(window, ctxconfig, fbconfig); err != nil {
-			return fmt.Errorf("glfwCreateContextWGL error %v", err.Error())
+			return fmt.Errorf("could not create graphical context, %v", err.Error())
 		}
 		if err := glfwRefreshContextAttribs(window, ctxconfig); err != nil {
 			return err
@@ -1875,8 +1875,7 @@ func glfwCreateWindow(width, height int32, title string, monitor *Monitor, share
 	window.denom = DontCare
 
 	if err := glfwPlatformCreateWindow(window, &wndconfig, &ctxconfig, &fbconfig); err != nil {
-		// glfwDestroyWindow(window)
-		return nil, fmt.Errorf("error creating window, %v", err.Error())
+		return nil, err
 	}
 	return window, nil
 }

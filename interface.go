@@ -344,7 +344,7 @@ func CreateStandardCursor(shape int) *Cursor {
 func CreateWindow(width, height int, title string, monitor *Monitor, share *Window) (*Window, error) {
 	wnd, err := glfwCreateWindow(int32(width), int32(height), title, monitor, share)
 	if err != nil {
-		return nil, fmt.Errorf("CreateWindow failed: %v", err)
+		return nil, err
 	}
 	return wnd, nil
 }
