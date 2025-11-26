@@ -343,11 +343,9 @@ func ExtensionSupported(extension string) bool {
 	}
 	if window.context.major >= 3 {
 		// Check if extension is in the modern OpenGL extensions string list
-		// count := window.context.getIntegerv(_GL_NUM_EXTENSIONS)
-		r, _, _ := syscall.SyscallN(window.context.GetIntegerv, uintptr(_GL_NUM_EXTENSIONS))
-		count := int(r)
+		var count int
+		getIntegerv(window, _GL_NUM_EXTENSIONS, &count)
 		for i := 0; i < count; i++ {
-			// en := window.context.GetStringi(_GL_EXTENSIONS, i)
 			r, _, _ := syscall.SyscallN(window.context.GetStringi, uintptr(_GL_EXTENSIONS), uintptr(i))
 			en := GoStr((*uint8)(unsafe.Pointer(r)))
 			if en == extension {
@@ -356,7 +354,6 @@ func ExtensionSupported(extension string) bool {
 		}
 	} else {
 		// Check if extension is in the old style OpenGL extensions string
-		// extensions := window.context.GetString(_GL_EXTENSIONS)
 		r, _, _ := syscall.SyscallN(window.context.GetStringi, uintptr(_GL_EXTENSIONS))
 		extensions := GoStr((*uint8)(unsafe.Pointer(r)))
 		if strings.Contains(extensions, extension) {
