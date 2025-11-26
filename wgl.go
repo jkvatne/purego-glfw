@@ -83,7 +83,9 @@ func wglGetProcAddress(name string) uintptr {
 	copy(b[:], name)
 	r, _, err := _glfw.wgl.wglGetProcAddress.Call(uintptr(unsafe.Pointer(&b)))
 	if !errors.Is(err, syscall.Errno(0)) {
-		panic("wglGetProcAddr " + err.Error() + "\n")
+		// Ignore errors. The address is checked before calling the extensions.
+		// This is done to enable use of older computers which does not have the extensions.
+		return 0
 	}
 	return r
 }
