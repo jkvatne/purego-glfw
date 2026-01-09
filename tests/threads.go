@@ -8,6 +8,7 @@ import (
 	"fmt"
 	"math"
 	"runtime"
+	"runtime/metrics"
 	"sync/atomic"
 	"time"
 	"unsafe"
@@ -147,6 +148,29 @@ func thread(self *Thread) {
 	}
 }
 
+func printMetric(name string, descr string) {
+	sample := []metrics.Sample{{Name: name}}
+	metrics.Read(sample)
+	if sample[0].Value.Kind() == metrics.KindUint64 {
+		var x int64 = int64(sample[0].Value.Uint64())
+		fmt.Printf("  %s: %v\n", descr, x)
+	} else {
+		fmt.Printf("  %s: not supported", descr)
+	}
+}
+func printMetrics() {
+	fmt.Println("Goroutine metrics:")
+	printMetric("/sched/goroutines-created:goroutines", "Created")
+	printMetric("/sched/goroutines:goroutines", "Live")
+	printMetric("/sched/goroutines/not-in-go:goroutines", "Syscall/CGO")
+	printMetric("/sched/goroutines/runnable:goroutines", "Runnable")
+	printMetric("/sched/goroutines/running:goroutines", "Running")
+	printMetric("/sched/goroutines/waiting:goroutines", "Waiting")
+	fmt.Println("Thread metrics:")
+	printMetric("/sched/gomaxprocs:threads", "/sched/gomaxprocs:threads")
+	printMetric("/sched/threads/total:threads", "/sched/total:threads")
+}
+
 func ThreadsMain() {
 	threadCount := len(threadDefs)
 	runtime.LockOSThread()
@@ -187,9 +211,11 @@ func ThreadsMain() {
 		go thread(&threadDefs[i])
 	}
 
+	printMetrics()
+
 	// Run the main loop for 4 seconds
 	glfw.SetTime(0)
-	for running.Load() && glfw.GetTime() < 4.0 {
+	for running.Load() && glfw.GetTime() < 2.0 {
 		glfw.PollEvents()
 		for i := 0; i < threadCount; i++ {
 			if threadDefs[i].window.ShouldClose() || glfw.GetTime() > 4.0 {
@@ -197,11 +223,8 @@ func ThreadsMain() {
 			}
 		}
 		time.Sleep(time.Millisecond * 1000)
+		printMetrics()
 	}
-
-	// Terminate the threads and wait 100mS for them to terminate.
-	running.Store(false)
-	time.Sleep(time.Millisecond * 100)
 
 	// Should be different ids for all threads
 	for i := 0; i < threadCount-1; i++ {
@@ -211,6 +234,12 @@ func ThreadsMain() {
 			}
 		}
 	}
+
+	printMetrics()
+
+	// Terminate the threads and wait 100mS for them to terminate.
+	running.Store(false)
+	time.Sleep(time.Millisecond * 100)
 
 	// Print out the thread IDs.
 	fmt.Printf("Thread IDs\n")
