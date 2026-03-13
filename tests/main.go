@@ -11,7 +11,7 @@ import (
 var testName string
 
 func main() {
-	flag.StringVar(&testName, "t", "", "Test can be: -tearing, -window, -cursor, -threads, -msaa, -reopen, -timeout, -monitor, -opacity")
+	flag.StringVar(&testName, "t", "", "string can tearing, window, cursor, threads, msaa, reopen, timeout, monitor or opacity")
 	flag.Parse()
 	switch testName {
 	case "title":
@@ -36,7 +36,7 @@ func main() {
 		OpacityMain()
 	case "tearing":
 		TearingMain()
-	default:
+	case "all":
 		TitleMain()
 		ThreadsMain()
 		OpacityMain()
@@ -47,5 +47,9 @@ func main() {
 		WindowInfoMain()
 		MonitorMain()
 		CursorMain()
+	case "":
+		OpacityMain()
+	default:
+		println("")
 	}
 }
