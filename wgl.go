@@ -4,6 +4,7 @@ import (
 	"errors"
 	"fmt"
 	"log/slog"
+	"strconv"
 	"strings"
 	"syscall"
 	"unsafe"
@@ -167,12 +168,12 @@ func setPixelFormat(dc HDC, iPixelFormat int32, pfd *PIXELFORMATDESCRIPTOR) int 
 	return int(ret)
 }
 
-func choosePixelFormat(dc HDC, pfd *PIXELFORMATDESCRIPTOR) int32 {
+func choosePixelFormat(dc HDC, pfd *PIXELFORMATDESCRIPTOR) (int32, error) {
 	ret, _, err := _ChoosePixelFormat.Call(uintptr(dc), uintptr(unsafe.Pointer(pfd)))
 	if !errors.Is(err, syscall.Errno(0)) {
-		panic("choosePixelFormat failed, " + err.Error())
+		return 0, fmt.Errorf("choosePixelFormat failed, " + err.Error())
 	}
-	return int32(ret)
+	return int32(ret), nil
 }
 
 func wglCreateContextAttribsARB(dc HDC, share syscall.Handle, attribs *int32) HANDLE {
@@ -250,11 +251,22 @@ func _glfwInitWGL() error {
 	pfd.dwFlags = PFD_DRAW_TO_WINDOW | PFD_SUPPORT_OPENGL | PFD_DOUBLEBUFFER
 	pfd.iPixelType = PFD_TYPE_RGBA
 	pfd.cColorBits = 24
-	if setPixelFormat(dc, choosePixelFormat(dc, &pfd), &pfd) == 0 {
+	if err := gdi32.Load(); err != nil {
+		return fmt.Errorf("could not load gdi32.dll: " + err.Error())
+	}
+	if err := _ChoosePixelFormat.Find(); err != nil {
+		panic("could not find ChoosePixelFormat() in gdi32.dll: " + err.Error())
+	}
+	if err := _SetPixelFormat.Find(); err != nil {
+		panic("could not find SetPixelFormat() in gdi32.dll: " + err.Error())
+	}
+	pf, err := choosePixelFormat(dc, &pfd)
+	if err != nil {
+		panic("call to gdi32.dll.choosePixelFormat() failed: " + err.Error())
+	}
+	if setPixelFormat(dc, pf, &pfd) == 0 {
 		err := syscall.GetLastError()
-		if err != nil {
-			panic(err)
-		}
+		panic("setPixelFormat(" + strconv.Itoa(int(pf)) + ") failed: " + err.Error())
 	}
 
 	rc := createContext(dc)
