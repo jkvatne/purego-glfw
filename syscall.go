@@ -3,6 +3,7 @@ package glfw
 import (
 	"errors"
 	"fmt"
+	"strconv"
 	"syscall"
 	"unsafe"
 
@@ -35,6 +36,7 @@ var (
 var (
 	ntdll                 = windows.NewLazySystemDLL("ntdll.dll")
 	_RtlVerifyVersionInfo = ntdll.NewProc("RtlVerifyVersionInfo")
+	_RtlGetVersion        = ntdll.NewProc("RtlGetVersion")
 )
 
 var (
@@ -131,8 +133,9 @@ var (
 )
 
 var (
-	shcore            = windows.NewLazySystemDLL("shcore.dll")
-	_GetDpiForMonitor = shcore.NewProc("GetDpiForMonitor")
+	shcore                  = windows.NewLazySystemDLL("shcore.dll")
+	_GetDpiForMonitor       = shcore.NewProc("GetDpiForMonitor")
+	_SetProcessDpiAwareness = shcore.NewProc("SetProcessDpiAwareness")
 )
 
 // GetActiveWindow returns value is the handle to the active window attached to the calling thread's message queue.
@@ -274,6 +277,22 @@ func UnregisterClass(class uint16, instance syscall.Handle) {
 	_, _, _ = _UnregisterClassW.Call(uintptr(class), uintptr(instance))
 }
 
+func GetWindowsVersion() (uint32, uint32, uint32) {
+	var osvi _OSVERSIONINFOW
+	osvi.dwOSVersionInfoSize = uint32(unsafe.Sizeof(osvi))
+	_, _, err := _RtlGetVersion.Call(uintptr(unsafe.Pointer(&osvi)))
+	if !errors.Is(err, syscall.Errno(0)) {
+		panic("GetWindowsVersion failed, " + err.Error())
+	}
+	return osvi.dwMajorVersion, osvi.dwMinorVersion, osvi.dwBuildNumber
+}
+
+// IsWindowsVistaOrGreater will allways return true.
+// This program will not work on Windows Vista or less
+func IsWindowsVistaOrGreater() bool {
+	return true
+}
+
 // IsWindows10Version1607OrGreater is true for version 10.0.14393 or newer
 func IsWindows10Version1607OrGreater() bool {
 	var osvi _OSVERSIONINFOEXW
@@ -323,14 +342,22 @@ func SetProcessDpiAwareness() {
 	var err error
 	if IsWindows10Version1703OrGreater() {
 		_, _, err = _SetProcessDpiAwarenessContext.Call(uintptr(DPI_AWARENESS_CONTEXT_PER_MONITOR_AWARE_V2))
+		// We will get error 5=Access denied if the awareness is already set. So ignore this error.
+		if !errors.Is(err, syscall.Errno(0)) && !errors.Is(err, syscall.Errno(5)) {
+			fmt.Println("Win10.0 v17030 or greater: SetProcessDpiAwarenessContext failed, " + err.Error() + "\n")
+		}
+
 	} else if IsWindows8Point1OrGreater() {
-		_, _, err = _SetProcessDpiAwarenessContext.Call(uintptr(PROCESS_PER_MONITOR_DPI_AWARE))
+		_, _, err = _SetProcessDpiAwareness.Call(uintptr(PROCESS_PER_MONITOR_DPI_AWARE))
+		if !errors.Is(err, syscall.Errno(0)) && !errors.Is(err, syscall.Errno(5)) {
+			fmt.Printf("Your computer has a Window version older than Win10.0v17030. You should upgrade Windows immediately.\n")
+			fmt.Println("SetProcessDpiAwareness(" + strconv.Itoa(PROCESS_PER_MONITOR_DPI_AWARE) + ") failed, " + err.Error() + "\n")
+		}
 	} else {
 		_, _, err = _SetProcessDPIAware.Call()
-	}
-	// We will get error 5=Access denied if the awareness is already set. So ignore this error.
-	if !errors.Is(err, syscall.Errno(0)) && !errors.Is(err, syscall.Errno(5)) {
-		panic("SetProcessDpiAwarenessContext failed, " + err.Error())
+		if !errors.Is(err, syscall.Errno(0)) && !errors.Is(err, syscall.Errno(5)) {
+			fmt.Println("Before Win8.10: SetProcessDPIAware() failed, " + err.Error() + "\n")
+		}
 	}
 }
 

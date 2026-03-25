@@ -203,6 +203,15 @@ type _OSVERSIONINFOEXW struct {
 	wReserved           uint8
 }
 
+type _OSVERSIONINFOW struct {
+	dwOSVersionInfoSize uint32
+	dwMajorVersion      uint32
+	dwMinorVersion      uint32
+	dwBuildNumber       uint32
+	dwPlatformId        uint32
+	szCSDVersion        [128]uint16
+}
+
 const (
 	VER_MAJORVERSION     = 0x0000002
 	VER_MINORVERSION     = 0x0000001
@@ -447,14 +456,25 @@ type PIXELFORMATDESCRIPTOR = struct {
 	dwDamageMask    uint32
 }
 
+// Values for the iPixelType field
 const (
-	PFD_TYPE_RGBA           = 0x00
-	PFD_DRAW_TO_WINDOW      = 0x04
-	PFD_SUPPORT_OPENGL      = 0x20
-	PFD_DOUBLEBUFFER        = 0x01
-	PFD_STEREO              = 0x02
-	PFD_GENERIC_FORMAT      = 0x00000040
-	PFD_GENERIC_ACCELERATED = 0x00001000
+	PFD_TYPE_RGBA       = 0x0000
+	PFD_TYPE_COLORINDEX = 0x0001
+)
+
+// Values for the dwFlags field
+const (
+	PFD_DOUBLEBUFFER        = 0x0001
+	PFD_STEREO              = 0x0002
+	PFD_DRAW_TO_WINDOW      = 0x0004
+	PFD_DRAW_TO_BITMAP      = 0x0008
+	PFD_SUPPORT_GDI         = 0x0010
+	PFD_SUPPORT_OPENGL      = 0x0020
+	PFD_GENERIC_FORMAT      = 0x0040
+	PFD_NEED_PALETTE        = 0x0080
+	PFD_GENERIC_ACCELERATED = 0x1000
+	PFD_NEED_SYSTEM_PALETTE = 0x2000
+	PFD_SUPPORT_COMPOSITION = 0x8000
 )
 const (
 	SWP_NOSIZE         = 0x0001

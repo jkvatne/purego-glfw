@@ -13,14 +13,7 @@ import (
 	"github.com/jkvatne/purego-glfw/gl"
 )
 
-func modeStr(mode *glfw.GLFWvidmode) string {
-	gcd := euclid(mode.Width, mode.Height)
-	return fmt.Sprintf("%dbit %d Hz (%d:%d)",
-		mode.RedBits+mode.GreenBits+mode.BlueBits,
-		mode.RefreshRate, mode.Width/gcd, mode.Height/gcd)
-}
-
-func OpacityMain() {
+func main() {
 	runtime.LockOSThread()
 	// Initialize the glfw library
 	err := glfw.Init()
@@ -28,17 +21,15 @@ func OpacityMain() {
 		panic(err.Error())
 	}
 	defer glfw.Terminate()
-	glfw.SetErrorCallback(error_callback)
 
 	monitors := glfw.GetMonitors()
 	fmt.Printf("Monitors: \n")
 	for _, m := range monitors {
 		SizeMmX, SizeMmY := m.GetPhysicalSize()
 		mScaleX, _ := m.GetContentScale()
-		mode := m.GetVideoMode()
 		PosX, PosY, SizePxX, SizePxY := m.GetWorkarea()
-		fmt.Printf("%s : W=%dmm, H=%dmm, W=%dpx, H=%dpx, X=%d, Y=%d, zoom=%0.0f%%, %s\n",
-			m.GetMonitorName(), SizeMmX, SizeMmY, SizePxX, SizePxY, PosX, PosY, mScaleX*100, modeStr(&mode))
+		fmt.Printf("%s : W=%dmm, H=%dmm, W=%dpx, H=%dpx, X=%d, Y=%d, zoom=%0.0f%%\n",
+			m.GetMonitorName(), SizeMmX, SizeMmY, SizePxX, SizePxY, PosX, PosY, mScaleX*100)
 	}
 
 	glfw.WindowHint(glfw.ContextVersionMajor, 2)

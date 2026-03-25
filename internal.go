@@ -1799,13 +1799,13 @@ func glfwPlatformCreateWindow(window *_GLFWwindow, wndconfig *_GLFWwndconfig, ct
 		return err
 	}
 	if ctxconfig.client != NoAPI {
-		if err := _glfwInitWGL(); err != nil {
+		if err = _glfwInitWGL(); err != nil {
 			return fmt.Errorf("could not create window, %v", err.Error())
 		}
-		if err := glfwCreateContextWGL(window, ctxconfig, fbconfig); err != nil {
+		if err = glfwCreateContextWGL(window, ctxconfig, fbconfig); err != nil {
 			return fmt.Errorf("could not create graphical context, %v", err.Error())
 		}
-		if err := glfwRefreshContextAttribs(window, ctxconfig); err != nil {
+		if err = glfwRefreshContextAttribs(window, ctxconfig); err != nil {
 			return err
 		}
 	}

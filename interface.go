@@ -611,6 +611,8 @@ func SetTime(newTime float64) {
 
 // Init is glfwInit(void)
 func Init() error {
+	majv, minv, build := GetWindowsVersion()
+	fmt.Printf("Windows version %d.%d.%d\n", majv, minv, build)
 	// Repeated calls do nothing
 	SetTime(0)
 	if _glfw.initialized {

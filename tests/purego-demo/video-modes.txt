@@ -1,0 +1,216 @@
+No 1: Col=32, RGBA=true, Flag=8024, Accum=0, Depth=32, Stencil=8, Aux=4
+No 2: Col=32, RGBA=true, Flag=8025, Accum=0, Depth=32, Stencil=8, Aux=4
+No 3: Col=32, RGBA=true, Flag=8425, Accum=0, Depth=32, Stencil=8, Aux=4
+No 4: Col=32, RGBA=true, Flag=8024, Accum=64, Depth=32, Stencil=8, Aux=4
+No 5: Col=32, RGBA=true, Flag=8025, Accum=64, Depth=32, Stencil=8, Aux=4
+No 6: Col=32, RGBA=true, Flag=8425, Accum=64, Depth=32, Stencil=8, Aux=4
+No 7: Col=32, RGBA=true, Flag=8024, Accum=0, Depth=32, Stencil=0, Aux=4
+No 8: Col=32, RGBA=true, Flag=8025, Accum=0, Depth=32, Stencil=0, Aux=4
+No 9: Col=32, RGBA=true, Flag=8425, Accum=0, Depth=32, Stencil=0, Aux=4
+No 10: Col=32, RGBA=true, Flag=8024, Accum=64, Depth=32, Stencil=0, Aux=4
+No 11: Col=32, RGBA=true, Flag=8025, Accum=64, Depth=32, Stencil=0, Aux=4
+No 12: Col=32, RGBA=true, Flag=8425, Accum=64, Depth=32, Stencil=0, Aux=4
+No 13: Col=32, RGBA=true, Flag=8024, Accum=0, Depth=24, Stencil=8, Aux=4
+No 14: Col=32, RGBA=true, Flag=8025, Accum=0, Depth=24, Stencil=8, Aux=4
+No 15: Col=32, RGBA=true, Flag=8425, Accum=0, Depth=24, Stencil=8, Aux=4
+No 16: Col=32, RGBA=true, Flag=8024, Accum=64, Depth=24, Stencil=8, Aux=4
+No 17: Col=32, RGBA=true, Flag=8025, Accum=64, Depth=24, Stencil=8, Aux=4
+No 18: Col=32, RGBA=true, Flag=8425, Accum=64, Depth=24, Stencil=8, Aux=4
+No 19: Col=32, RGBA=true, Flag=8024, Accum=0, Depth=16, Stencil=0, Aux=4
+No 20: Col=32, RGBA=true, Flag=8025, Accum=0, Depth=16, Stencil=0, Aux=4
+No 21: Col=32, RGBA=true, Flag=8425, Accum=0, Depth=16, Stencil=0, Aux=4
+No 22: Col=32, RGBA=true, Flag=8024, Accum=64, Depth=16, Stencil=0, Aux=4
+No 23: Col=32, RGBA=true, Flag=8025, Accum=64, Depth=16, Stencil=0, Aux=4
+No 24: Col=32, RGBA=true, Flag=8425, Accum=64, Depth=16, Stencil=0, Aux=4
+No 25: Col=32, RGBA=true, Flag=8024, Accum=0, Depth=0, Stencil=8, Aux=4
+No 26: Col=32, RGBA=true, Flag=8025, Accum=0, Depth=0, Stencil=8, Aux=4
+No 27: Col=32, RGBA=true, Flag=8425, Accum=0, Depth=0, Stencil=8, Aux=4
+No 28: Col=32, RGBA=true, Flag=8024, Accum=64, Depth=0, Stencil=8, Aux=4
+No 29: Col=32, RGBA=true, Flag=8025, Accum=64, Depth=0, Stencil=8, Aux=4
+No 30: Col=32, RGBA=true, Flag=8425, Accum=64, Depth=0, Stencil=8, Aux=4
+No 31: Col=32, RGBA=true, Flag=8024, Accum=0, Depth=0, Stencil=0, Aux=4
+No 32: Col=32, RGBA=true, Flag=8025, Accum=0, Depth=0, Stencil=0, Aux=4
+No 33: Col=32, RGBA=true, Flag=8425, Accum=0, Depth=0, Stencil=0, Aux=4
+No 34: Col=32, RGBA=true, Flag=8024, Accum=64, Depth=0, Stencil=0, Aux=4
+No 35: Col=32, RGBA=true, Flag=8025, Accum=64, Depth=0, Stencil=0, Aux=4
+No 36: Col=32, RGBA=true, Flag=8425, Accum=64, Depth=0, Stencil=0, Aux=4
+No 37: Col=32, RGBA=true, Flag=8004, Accum=0, Depth=32, Stencil=8, Aux=0
+No 38: Col=32, RGBA=true, Flag=8005, Accum=0, Depth=32, Stencil=8, Aux=0
+No 39: Col=32, RGBA=true, Flag=8405, Accum=0, Depth=32, Stencil=8, Aux=0
+No 40: Col=32, RGBA=true, Flag=8004, Accum=64, Depth=32, Stencil=8, Aux=0
+No 41: Col=32, RGBA=true, Flag=8005, Accum=64, Depth=32, Stencil=8, Aux=0
+No 42: Col=32, RGBA=true, Flag=8405, Accum=64, Depth=32, Stencil=8, Aux=0
+No 43: Col=32, RGBA=true, Flag=8004, Accum=0, Depth=32, Stencil=8, Aux=0
+No 44: Col=32, RGBA=true, Flag=8005, Accum=0, Depth=32, Stencil=8, Aux=0
+No 45: Col=32, RGBA=true, Flag=8405, Accum=0, Depth=32, Stencil=8, Aux=0
+No 46: Col=32, RGBA=true, Flag=8004, Accum=64, Depth=32, Stencil=8, Aux=0
+No 47: Col=32, RGBA=true, Flag=8005, Accum=64, Depth=32, Stencil=8, Aux=0
+No 48: Col=32, RGBA=true, Flag=8405, Accum=64, Depth=32, Stencil=8, Aux=0
+No 49: Col=32, RGBA=true, Flag=8004, Accum=0, Depth=32, Stencil=8, Aux=0
+No 50: Col=32, RGBA=true, Flag=8005, Accum=0, Depth=32, Stencil=8, Aux=0
+No 51: Col=32, RGBA=true, Flag=8405, Accum=0, Depth=32, Stencil=8, Aux=0
+No 52: Col=32, RGBA=true, Flag=8004, Accum=64, Depth=32, Stencil=8, Aux=0
+No 53: Col=32, RGBA=true, Flag=8005, Accum=64, Depth=32, Stencil=8, Aux=0
+No 54: Col=32, RGBA=true, Flag=8405, Accum=64, Depth=32, Stencil=8, Aux=0
+No 55: Col=32, RGBA=true, Flag=8004, Accum=0, Depth=32, Stencil=0, Aux=0
+No 56: Col=32, RGBA=true, Flag=8005, Accum=0, Depth=32, Stencil=0, Aux=0
+No 57: Col=32, RGBA=true, Flag=8405, Accum=0, Depth=32, Stencil=0, Aux=0
+No 58: Col=32, RGBA=true, Flag=8004, Accum=64, Depth=32, Stencil=0, Aux=0
+No 59: Col=32, RGBA=true, Flag=8005, Accum=64, Depth=32, Stencil=0, Aux=0
+No 60: Col=32, RGBA=true, Flag=8405, Accum=64, Depth=32, Stencil=0, Aux=0
+No 61: Col=32, RGBA=true, Flag=8004, Accum=0, Depth=32, Stencil=0, Aux=0
+No 62: Col=32, RGBA=true, Flag=8005, Accum=0, Depth=32, Stencil=0, Aux=0
+No 63: Col=32, RGBA=true, Flag=8405, Accum=0, Depth=32, Stencil=0, Aux=0
+No 64: Col=32, RGBA=true, Flag=8004, Accum=64, Depth=32, Stencil=0, Aux=0
+No 65: Col=32, RGBA=true, Flag=8005, Accum=64, Depth=32, Stencil=0, Aux=0
+No 66: Col=32, RGBA=true, Flag=8405, Accum=64, Depth=32, Stencil=0, Aux=0
+No 67: Col=32, RGBA=true, Flag=8004, Accum=0, Depth=32, Stencil=0, Aux=0
+No 68: Col=32, RGBA=true, Flag=8005, Accum=0, Depth=32, Stencil=0, Aux=0
+No 69: Col=32, RGBA=true, Flag=8405, Accum=0, Depth=32, Stencil=0, Aux=0
+No 70: Col=32, RGBA=true, Flag=8004, Accum=64, Depth=32, Stencil=0, Aux=0
+No 71: Col=32, RGBA=true, Flag=8005, Accum=64, Depth=32, Stencil=0, Aux=0
+No 72: Col=32, RGBA=true, Flag=8405, Accum=64, Depth=32, Stencil=0, Aux=0
+No 73: Col=32, RGBA=true, Flag=8004, Accum=0, Depth=24, Stencil=8, Aux=0
+No 74: Col=32, RGBA=true, Flag=8005, Accum=0, Depth=24, Stencil=8, Aux=0
+No 75: Col=32, RGBA=true, Flag=8405, Accum=0, Depth=24, Stencil=8, Aux=0
+No 76: Col=32, RGBA=true, Flag=8004, Accum=64, Depth=24, Stencil=8, Aux=0
+No 77: Col=32, RGBA=true, Flag=8005, Accum=64, Depth=24, Stencil=8, Aux=0
+No 78: Col=32, RGBA=true, Flag=8405, Accum=64, Depth=24, Stencil=8, Aux=0
+No 79: Col=32, RGBA=true, Flag=8004, Accum=0, Depth=24, Stencil=8, Aux=0
+No 80: Col=32, RGBA=true, Flag=8005, Accum=0, Depth=24, Stencil=8, Aux=0
+No 81: Col=32, RGBA=true, Flag=8405, Accum=0, Depth=24, Stencil=8, Aux=0
+No 82: Col=32, RGBA=true, Flag=8004, Accum=64, Depth=24, Stencil=8, Aux=0
+No 83: Col=32, RGBA=true, Flag=8005, Accum=64, Depth=24, Stencil=8, Aux=0
+No 84: Col=32, RGBA=true, Flag=8405, Accum=64, Depth=24, Stencil=8, Aux=0
+No 85: Col=32, RGBA=true, Flag=8004, Accum=0, Depth=24, Stencil=8, Aux=0
+No 86: Col=32, RGBA=true, Flag=8005, Accum=0, Depth=24, Stencil=8, Aux=0
+No 87: Col=32, RGBA=true, Flag=8405, Accum=0, Depth=24, Stencil=8, Aux=0
+No 88: Col=32, RGBA=true, Flag=8004, Accum=64, Depth=24, Stencil=8, Aux=0
+No 89: Col=32, RGBA=true, Flag=8005, Accum=64, Depth=24, Stencil=8, Aux=0
+No 90: Col=32, RGBA=true, Flag=8405, Accum=64, Depth=24, Stencil=8, Aux=0
+No 91: Col=32, RGBA=true, Flag=8004, Accum=0, Depth=16, Stencil=0, Aux=0
+No 92: Col=32, RGBA=true, Flag=8005, Accum=0, Depth=16, Stencil=0, Aux=0
+No 93: Col=32, RGBA=true, Flag=8405, Accum=0, Depth=16, Stencil=0, Aux=0
+No 94: Col=32, RGBA=true, Flag=8004, Accum=64, Depth=16, Stencil=0, Aux=0
+No 95: Col=32, RGBA=true, Flag=8005, Accum=64, Depth=16, Stencil=0, Aux=0
+No 96: Col=32, RGBA=true, Flag=8405, Accum=64, Depth=16, Stencil=0, Aux=0
+No 97: Col=32, RGBA=true, Flag=8004, Accum=0, Depth=16, Stencil=0, Aux=0
+No 98: Col=32, RGBA=true, Flag=8005, Accum=0, Depth=16, Stencil=0, Aux=0
+No 99: Col=32, RGBA=true, Flag=8405, Accum=0, Depth=16, Stencil=0, Aux=0
+No 100: Col=32, RGBA=true, Flag=8004, Accum=64, Depth=16, Stencil=0, Aux=0
+No 101: Col=32, RGBA=true, Flag=8005, Accum=64, Depth=16, Stencil=0, Aux=0
+No 102: Col=32, RGBA=true, Flag=8405, Accum=64, Depth=16, Stencil=0, Aux=0
+No 103: Col=32, RGBA=true, Flag=8004, Accum=0, Depth=16, Stencil=0, Aux=0
+No 104: Col=32, RGBA=true, Flag=8005, Accum=0, Depth=16, Stencil=0, Aux=0
+No 105: Col=32, RGBA=true, Flag=8405, Accum=0, Depth=16, Stencil=0, Aux=0
+No 106: Col=32, RGBA=true, Flag=8004, Accum=64, Depth=16, Stencil=0, Aux=0
+No 107: Col=32, RGBA=true, Flag=8005, Accum=64, Depth=16, Stencil=0, Aux=0
+No 108: Col=32, RGBA=true, Flag=8405, Accum=64, Depth=16, Stencil=0, Aux=0
+No 109: Col=32, RGBA=true, Flag=8004, Accum=0, Depth=0, Stencil=8, Aux=0
+No 110: Col=32, RGBA=true, Flag=8005, Accum=0, Depth=0, Stencil=8, Aux=0
+No 111: Col=32, RGBA=true, Flag=8405, Accum=0, Depth=0, Stencil=8, Aux=0
+No 112: Col=32, RGBA=true, Flag=8004, Accum=64, Depth=0, Stencil=8, Aux=0
+No 113: Col=32, RGBA=true, Flag=8005, Accum=64, Depth=0, Stencil=8, Aux=0
+No 114: Col=32, RGBA=true, Flag=8405, Accum=64, Depth=0, Stencil=8, Aux=0
+No 115: Col=32, RGBA=true, Flag=8004, Accum=0, Depth=0, Stencil=8, Aux=0
+No 116: Col=32, RGBA=true, Flag=8005, Accum=0, Depth=0, Stencil=8, Aux=0
+No 117: Col=32, RGBA=true, Flag=8405, Accum=0, Depth=0, Stencil=8, Aux=0
+No 118: Col=32, RGBA=true, Flag=8004, Accum=64, Depth=0, Stencil=8, Aux=0
+No 119: Col=32, RGBA=true, Flag=8005, Accum=64, Depth=0, Stencil=8, Aux=0
+No 120: Col=32, RGBA=true, Flag=8405, Accum=64, Depth=0, Stencil=8, Aux=0
+No 121: Col=32, RGBA=true, Flag=8004, Accum=0, Depth=0, Stencil=8, Aux=0
+No 122: Col=32, RGBA=true, Flag=8005, Accum=0, Depth=0, Stencil=8, Aux=0
+No 123: Col=32, RGBA=true, Flag=8405, Accum=0, Depth=0, Stencil=8, Aux=0
+No 124: Col=32, RGBA=true, Flag=8004, Accum=64, Depth=0, Stencil=8, Aux=0
+No 125: Col=32, RGBA=true, Flag=8005, Accum=64, Depth=0, Stencil=8, Aux=0
+No 126: Col=32, RGBA=true, Flag=8405, Accum=64, Depth=0, Stencil=8, Aux=0
+No 127: Col=32, RGBA=true, Flag=8004, Accum=0, Depth=0, Stencil=0, Aux=0
+No 128: Col=32, RGBA=true, Flag=8005, Accum=0, Depth=0, Stencil=0, Aux=0
+No 129: Col=32, RGBA=true, Flag=8405, Accum=0, Depth=0, Stencil=0, Aux=0
+No 130: Col=32, RGBA=true, Flag=8004, Accum=64, Depth=0, Stencil=0, Aux=0
+No 131: Col=32, RGBA=true, Flag=8005, Accum=64, Depth=0, Stencil=0, Aux=0
+No 132: Col=32, RGBA=true, Flag=8405, Accum=64, Depth=0, Stencil=0, Aux=0
+No 133: Col=32, RGBA=true, Flag=8004, Accum=0, Depth=0, Stencil=0, Aux=0
+No 134: Col=32, RGBA=true, Flag=8005, Accum=0, Depth=0, Stencil=0, Aux=0
+No 135: Col=32, RGBA=true, Flag=8405, Accum=0, Depth=0, Stencil=0, Aux=0
+No 136: Col=32, RGBA=true, Flag=8004, Accum=64, Depth=0, Stencil=0, Aux=0
+No 137: Col=32, RGBA=true, Flag=8005, Accum=64, Depth=0, Stencil=0, Aux=0
+No 138: Col=32, RGBA=true, Flag=8405, Accum=64, Depth=0, Stencil=0, Aux=0
+No 139: Col=32, RGBA=true, Flag=8004, Accum=0, Depth=0, Stencil=0, Aux=0
+No 140: Col=32, RGBA=true, Flag=8005, Accum=0, Depth=0, Stencil=0, Aux=0
+No 141: Col=32, RGBA=true, Flag=8405, Accum=0, Depth=0, Stencil=0, Aux=0
+No 142: Col=32, RGBA=true, Flag=8004, Accum=64, Depth=0, Stencil=0, Aux=0
+No 143: Col=32, RGBA=true, Flag=8005, Accum=64, Depth=0, Stencil=0, Aux=0
+No 144: Col=32, RGBA=true, Flag=8405, Accum=64, Depth=0, Stencil=0, Aux=0
+No 145: Col=128, RGBA=true, Flag=8004, Accum=0, Depth=32, Stencil=8, Aux=4
+No 146: Col=128, RGBA=true, Flag=8005, Accum=0, Depth=32, Stencil=8, Aux=4
+No 147: Col=128, RGBA=true, Flag=8405, Accum=0, Depth=32, Stencil=8, Aux=4
+No 148: Col=128, RGBA=true, Flag=8004, Accum=64, Depth=32, Stencil=8, Aux=4
+No 149: Col=128, RGBA=true, Flag=8005, Accum=64, Depth=32, Stencil=8, Aux=4
+No 150: Col=128, RGBA=true, Flag=8405, Accum=64, Depth=32, Stencil=8, Aux=4
+No 151: Col=128, RGBA=true, Flag=8004, Accum=0, Depth=32, Stencil=0, Aux=4
+No 152: Col=128, RGBA=true, Flag=8005, Accum=0, Depth=32, Stencil=0, Aux=4
+No 153: Col=128, RGBA=true, Flag=8405, Accum=0, Depth=32, Stencil=0, Aux=4
+No 154: Col=128, RGBA=true, Flag=8004, Accum=64, Depth=32, Stencil=0, Aux=4
+No 155: Col=128, RGBA=true, Flag=8005, Accum=64, Depth=32, Stencil=0, Aux=4
+No 156: Col=128, RGBA=true, Flag=8405, Accum=64, Depth=32, Stencil=0, Aux=4
+No 157: Col=128, RGBA=true, Flag=8004, Accum=0, Depth=24, Stencil=8, Aux=4
+No 158: Col=128, RGBA=true, Flag=8005, Accum=0, Depth=24, Stencil=8, Aux=4
+No 159: Col=128, RGBA=true, Flag=8405, Accum=0, Depth=24, Stencil=8, Aux=4
+No 160: Col=128, RGBA=true, Flag=8004, Accum=64, Depth=24, Stencil=8, Aux=4
+No 161: Col=128, RGBA=true, Flag=8005, Accum=64, Depth=24, Stencil=8, Aux=4
+No 162: Col=128, RGBA=true, Flag=8405, Accum=64, Depth=24, Stencil=8, Aux=4
+No 163: Col=128, RGBA=true, Flag=8004, Accum=0, Depth=16, Stencil=0, Aux=4
+No 164: Col=128, RGBA=true, Flag=8005, Accum=0, Depth=16, Stencil=0, Aux=4
+No 165: Col=128, RGBA=true, Flag=8405, Accum=0, Depth=16, Stencil=0, Aux=4
+No 166: Col=128, RGBA=true, Flag=8004, Accum=64, Depth=16, Stencil=0, Aux=4
+No 167: Col=128, RGBA=true, Flag=8005, Accum=64, Depth=16, Stencil=0, Aux=4
+No 168: Col=128, RGBA=true, Flag=8405, Accum=64, Depth=16, Stencil=0, Aux=4
+No 169: Col=128, RGBA=true, Flag=8004, Accum=0, Depth=0, Stencil=8, Aux=4
+No 170: Col=128, RGBA=true, Flag=8005, Accum=0, Depth=0, Stencil=8, Aux=4
+No 171: Col=128, RGBA=true, Flag=8405, Accum=0, Depth=0, Stencil=8, Aux=4
+No 172: Col=128, RGBA=true, Flag=8004, Accum=64, Depth=0, Stencil=8, Aux=4
+No 173: Col=128, RGBA=true, Flag=8005, Accum=64, Depth=0, Stencil=8, Aux=4
+No 174: Col=128, RGBA=true, Flag=8405, Accum=64, Depth=0, Stencil=8, Aux=4
+No 175: Col=128, RGBA=true, Flag=8004, Accum=0, Depth=0, Stencil=0, Aux=4
+No 176: Col=128, RGBA=true, Flag=8005, Accum=0, Depth=0, Stencil=0, Aux=4
+No 177: Col=128, RGBA=true, Flag=8405, Accum=0, Depth=0, Stencil=0, Aux=4
+No 178: Col=128, RGBA=true, Flag=8004, Accum=64, Depth=0, Stencil=0, Aux=4
+No 179: Col=128, RGBA=true, Flag=8005, Accum=64, Depth=0, Stencil=0, Aux=4
+No 180: Col=128, RGBA=true, Flag=8405, Accum=64, Depth=0, Stencil=0, Aux=4
+No 181: Col=32, RGBA=true, Flag=807C, Accum=64, Depth=32, Stencil=8, Aux=0
+No 182: Col=32, RGBA=true, Flag=807C, Accum=64, Depth=16, Stencil=8, Aux=0
+No 183: Col=32, RGBA=true, Flag=8465, Accum=64, Depth=32, Stencil=8, Aux=0
+No 184: Col=32, RGBA=true, Flag=8465, Accum=64, Depth=16, Stencil=8, Aux=0
+No 185: Col=32, RGBA=true, Flag=807C, Accum=64, Depth=32, Stencil=8, Aux=0
+No 186: Col=32, RGBA=true, Flag=807C, Accum=64, Depth=16, Stencil=8, Aux=0
+No 187: Col=32, RGBA=true, Flag=8465, Accum=64, Depth=32, Stencil=8, Aux=0
+No 188: Col=32, RGBA=true, Flag=8465, Accum=64, Depth=16, Stencil=8, Aux=0
+No 189: Col=32, RGBA=false, Flag=807C, Accum=0, Depth=32, Stencil=8, Aux=0
+No 190: Col=32, RGBA=false, Flag=807C, Accum=0, Depth=16, Stencil=8, Aux=0
+No 191: Col=32, RGBA=false, Flag=8465, Accum=0, Depth=32, Stencil=8, Aux=0
+No 192: Col=32, RGBA=false, Flag=8465, Accum=0, Depth=16, Stencil=8, Aux=0
+No 193: Col=24, RGBA=true, Flag=  78, Accum=64, Depth=32, Stencil=8, Aux=0
+No 194: Col=24, RGBA=true, Flag=  78, Accum=64, Depth=16, Stencil=8, Aux=0
+No 195: Col=24, RGBA=true, Flag=  78, Accum=64, Depth=32, Stencil=8, Aux=0
+No 196: Col=24, RGBA=true, Flag=  78, Accum=64, Depth=16, Stencil=8, Aux=0
+No 197: Col=24, RGBA=false, Flag=  78, Accum=0, Depth=32, Stencil=8, Aux=0
+No 198: Col=24, RGBA=false, Flag=  78, Accum=0, Depth=16, Stencil=8, Aux=0
+No 199: Col=16, RGBA=true, Flag=  78, Accum=32, Depth=32, Stencil=8, Aux=0
+No 200: Col=16, RGBA=true, Flag=  78, Accum=32, Depth=16, Stencil=8, Aux=0
+No 201: Col=16, RGBA=true, Flag=  78, Accum=32, Depth=32, Stencil=8, Aux=0
+No 202: Col=16, RGBA=true, Flag=  78, Accum=32, Depth=16, Stencil=8, Aux=0
+No 203: Col=16, RGBA=false, Flag=  78, Accum=0, Depth=32, Stencil=8, Aux=0
+No 204: Col=16, RGBA=false, Flag=  78, Accum=0, Depth=16, Stencil=8, Aux=0
+No 205: Col=8, RGBA=true, Flag=  78, Accum=32, Depth=32, Stencil=8, Aux=0
+No 206: Col=8, RGBA=true, Flag=  78, Accum=32, Depth=16, Stencil=8, Aux=0
+No 207: Col=8, RGBA=true, Flag=  78, Accum=32, Depth=32, Stencil=8, Aux=0
+No 208: Col=8, RGBA=true, Flag=  78, Accum=32, Depth=16, Stencil=8, Aux=0
+No 209: Col=8, RGBA=false, Flag=  78, Accum=0, Depth=32, Stencil=8, Aux=0
+No 210: Col=8, RGBA=false, Flag=  78, Accum=0, Depth=16, Stencil=8, Aux=0
+No 211: Col=4, RGBA=true, Flag=  78, Accum=16, Depth=32, Stencil=8, Aux=0
+No 212: Col=4, RGBA=true, Flag=  78, Accum=16, Depth=16, Stencil=8, Aux=0
+No 213: Col=4, RGBA=true, Flag=  78, Accum=16, Depth=32, Stencil=8, Aux=0
+No 214: Col=4, RGBA=true, Flag=  78, Accum=16, Depth=16, Stencil=8, Aux=0
+No 215: Col=4, RGBA=false, Flag=  78, Accum=0, Depth=32, Stencil=8, Aux=0
+No 216: Col=4, RGBA=false, Flag=  78, Accum=0, Depth=16, Stencil=8, Aux=0

@@ -2,8 +2,10 @@ package glfw
 
 import (
 	"errors"
+	"flag"
 	"fmt"
 	"log/slog"
+	"os"
 	"strconv"
 	"strings"
 	"syscall"
@@ -13,7 +15,8 @@ import (
 )
 
 var (
-	opengl32 = windows.NewLazySystemDLL("opengl32.dll")
+	opengl32         = windows.NewLazySystemDLL("opengl32.dll")
+	outputVideoModes = flag.Bool("output-video-modes", false, "Show videomodes and mke a video-modes.txt file")
 )
 
 const (
@@ -222,15 +225,46 @@ func getProcAddressWGL(procName string) uintptr {
 	return opengl32.NewProc(procName).Addr()
 }
 
+func OutputPixelFormats(dc HDC) {
+	var pfd PIXELFORMATDESCRIPTOR
+	f, err := os.Create("video-modes.txt")
+	if err != nil {
+		slog.Error("Failed to open file video-modes.txt", "err", err)
+	}
+	defer func(f *os.File) {
+		_ = f.Close()
+	}(f)
+	e := int32(500)
+	for pf := int32(1); pf <= e; pf++ {
+		e = describePixelFormat(dc, pf, int(unsafe.Sizeof(pfd)), &pfd)
+		fmt.Printf("No %d: Col=%d, RGBA=%v, Flag=%4X, Accum=%d, Depth=%d, Stencil=%d, Aux=%d\n",
+			pf, pfd.cColorBits, pfd.iPixelType == 0, pfd.dwFlags, pfd.cAccumBits, pfd.cDepthBits, pfd.cStencilBits, pfd.cAuxBuffers)
+		s := fmt.Sprintf("No %d: Col=%d, RGBA=%v, Flag=%4X, Accum=%d, Depth=%d, Stencil=%d, Aux=%d\n",
+			pf, pfd.cColorBits, pfd.iPixelType == 0, pfd.dwFlags, pfd.cAccumBits, pfd.cDepthBits, pfd.cStencilBits, pfd.cAuxBuffers)
+		_, _ = f.WriteString(s)
+	}
+}
+
 func _glfwInitWGL() error {
 	var pfd PIXELFORMATDESCRIPTOR
 	// Force the lazy handle to load now
 	if err := opengl32.Load(); err != nil {
 		return fmt.Errorf("your graphic card does not support OpenGl, 'opengl32.dll' not available: %w", err)
 	}
+	if err := gdi32.Load(); err != nil {
+		return fmt.Errorf("could not load gdi32.dll: " + err.Error())
+	}
+	if err := _ChoosePixelFormat.Find(); err != nil {
+		return fmt.Errorf("could not find ChoosePixelFormat() in gdi32.dll: " + err.Error())
+	}
+	if err := _SetPixelFormat.Find(); err != nil {
+		return fmt.Errorf("could not find SetPixelFormat() in gdi32.dll: " + err.Error())
+	}
+
 	if _glfw.wgl.instance != nil {
 		return nil
 	}
+
 	_glfw.wgl.instance = opengl32
 	_glfw.wgl.wglCreateContext = opengl32.NewProc("wglCreateContext")
 	_glfw.wgl.wglDeleteContext = opengl32.NewProc("wglDeleteContext")
@@ -246,29 +280,31 @@ func _glfwInitWGL() error {
 	// NOTE: A dummy context has to be created for opengl32.dll to load the
 	// OpenGL Installable Client Driver, from which we can then query WGL extensions
 	dc := getDC(_glfw.win32.helperWindowHandle)
+	if *outputVideoModes {
+		OutputPixelFormats(dc)
+	}
+
+	// Select wanted functionality
 	pfd.nSize = uint16(unsafe.Sizeof(pfd))
 	pfd.nVersion = 1
+	pfd.cColorBits = 24
 	pfd.dwFlags = PFD_DRAW_TO_WINDOW | PFD_SUPPORT_OPENGL | PFD_DOUBLEBUFFER
 	pfd.iPixelType = PFD_TYPE_RGBA
-	pfd.cColorBits = 24
-	if err := gdi32.Load(); err != nil {
-		return fmt.Errorf("could not load gdi32.dll: " + err.Error())
-	}
-	if err := _ChoosePixelFormat.Find(); err != nil {
-		panic("could not find ChoosePixelFormat() in gdi32.dll: " + err.Error())
-	}
-	if err := _SetPixelFormat.Find(); err != nil {
-		panic("could not find SetPixelFormat() in gdi32.dll: " + err.Error())
-	}
 	pf, err := choosePixelFormat(dc, &pfd)
 	if err != nil {
-		panic("call to gdi32.dll.choosePixelFormat() failed: " + err.Error())
+		// Retry with no doublebuffer
+		pfd.dwFlags = PFD_DRAW_TO_WINDOW | PFD_SUPPORT_OPENGL
+		pf, err = choosePixelFormat(dc, &pfd)
+		if err != nil {
+			fmt.Println("call to gdi32.dll.choosePixelFormat() failed: " + err.Error())
+			fmt.Println("Default to pixel format 1")
+			pf = 1
+		}
 	}
 	if setPixelFormat(dc, pf, &pfd) == 0 {
 		err := syscall.GetLastError()
-		panic("setPixelFormat(" + strconv.Itoa(int(pf)) + ") failed: " + err.Error())
+		fmt.Println("setPixelFormat(" + strconv.Itoa(int(pf)) + ") failed: " + err.Error())
 	}
-
 	rc := createContext(dc)
 	if rc == 0 {
 		panic("WGL: Failed to create dummy context")
@@ -343,7 +379,7 @@ func glfwCreateContextWGL(window *_GLFWwindow, ctxConfig *_GLFWctxconfig, fbConf
 	if window.context.wgl.dc == 0 {
 		return fmt.Errorf("WGL: Failed to retrieve DC for window")
 	}
-	pixelFormat := choosePixelFormatWGL(window, ctxConfig, fbConfig) // 14
+	pixelFormat := choosePixelFormatWGL(window, ctxConfig, fbConfig)
 	if pixelFormat == 0 {
 		return fmt.Errorf("WGL: Failed to retrieve PixelFormat for window")
 	}
